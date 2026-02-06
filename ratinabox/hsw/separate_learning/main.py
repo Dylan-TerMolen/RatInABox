@@ -1,17 +1,19 @@
-import numpy as np
-import scipy.io
 import argparse
 import itertools
+import os
+
+import numpy as np
+import ratinabox
 import scipy.io
 import scipy.stats as stats
-from envA_rectangle import simulate_envA
-from envB_oval import simulate_envB
-from CombinedPlaceTebcNeurons import CombinedPlaceTebcNeurons
-from trial_marker import determine_cs_us
-from learningTransfer import assess_learning_transfer
-from actualVexpected import compare_actual_expected_firing
-import os
-import ratinabox
+
+from ratinabox.hsw import config
+from ratinabox.hsw.separate_learning.actualVexpected import compare_actual_expected_firing
+from ratinabox.hsw.separate_learning.CombinedPlaceTebcNeurons import CombinedPlaceTebcNeurons
+from ratinabox.hsw.separate_learning.envA_rectangle import simulate_envA
+from ratinabox.hsw.separate_learning.envB_oval import simulate_envB
+from ratinabox.hsw.separate_learning.learningTransfer import assess_learning_transfer
+from ratinabox.hsw.separate_learning.trial_marker import determine_cs_us
 
 """
 Simulation Script for Neuronal Firing Rate Analysis
@@ -72,10 +74,9 @@ Requirements:
     - Adjust environment settings and neuron parameters as needed in the script.
 """
 
-save_directory='/Users/Hannah/Programming/data_eyeblink/rat314/ratinabox_data/results'
-ratinabox.figure_directory = '/Users/Hannah/Programming/data_eyeblink/rat314/ratinabox_data/results'
-# Create the directory if it doesn't exist
-os.makedirs(save_directory, exist_ok=True)
+# Set up save directory using config
+save_directory = config.get_save_directory(model_name='separate_learning', is_work=False)
+config.setup_ratinabox_figure_directory(save_directory)
 
 def parse_list(arg_value):
     if isinstance(arg_value, list):
@@ -110,7 +111,7 @@ def get_distribution_values(dist_type, params, size):
         return np.clip(stats.poisson(lam).rvs(size=size), 0, 1)
 
 # Load MATLAB file and extract position data
-matlab_file_path = '/Users/Hannah/Programming/data_eyeblink/rat314/ratinabox_data/pos314.mat'  # Replace with your MATLAB file path
+matlab_file_path = config.get_matlab_file_path()
 data = scipy.io.loadmat(matlab_file_path)
 position_data_envA = data['envA314_522']  # Adjust variable name as needed
 position_data_envB = data['envB314_524']  # Adjust variable name as needed

@@ -3,37 +3,39 @@ import sys
 # Reconfigure stdout for immediate flushing
 sys.stdout.reconfigure(line_buffering=True, write_through=True)
 
-sys.path.append('/Users/Hannah/Programming/Hannahs-CEBRAs')
-import numpy as np
-import scipy.io
 import argparse
-import itertools
-import scipy.io
-import scipy.stats as stats
-from envA_rectangle2 import simulate_envA
-from envB_oval2 import simulate_envB
-from trial_marker2 import determine_cs_us
-from learningTransfer2 import assess_learning_transfer
-from actualVexpected2 import compare_actual_expected_firing
-from map_trial_markers_to_interpolated_times import map_trial_markers_to_interpolated_times
-from ratinabox.Environment import Environment
-from ratinabox.Agent import Agent
-from assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
-import os
-import ratinabox
-import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
-from cond_decoding_AvsB import cond_decoding_AvsB
-from pos_decoding_self import pos_decoding_self
-from pos_decoding_AvsB import pos_decoding_AvsB
-from cebra import CEBRA
 import cProfile
-import pstats
-import random
 import datetime
 import gc
+import itertools
+import os
+import pstats
+import random
 import time
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import ratinabox
+import scipy.io
+import scipy.stats as stats
+from cebra import CEBRA
+from ratinabox.Agent import Agent
+from ratinabox.Environment import Environment
+from scipy.interpolate import interp1d
+
+from hannahs_cebras import cond_decoding_AvsB, pos_decoding_self, pos_decoding_AvsB
+from ratinabox.hsw import config
+from ratinabox.hsw.additive_model.actualVexpected2 import compare_actual_expected_firing
+from ratinabox.hsw.additive_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
+from ratinabox.hsw.additive_model.envA_rectangle2 import simulate_envA
+from ratinabox.hsw.additive_model.envB_oval2 import simulate_envB
+from ratinabox.hsw.additive_model.learningTransfer2 import assess_learning_transfer
+from ratinabox.hsw.additive_model.map_trial_markers_to_interpolated_times import map_trial_markers_to_interpolated_times
+from ratinabox.hsw.additive_model.trial_marker2 import determine_cs_us
+
+
+
 
 
 """
@@ -66,7 +68,7 @@ Arguments:
     --balance_dist    : Specifies the type of distribution for the balance factor.
                         Options are 'fixed' and 'gaussian'.
                         Default is 'fixed'.
-                        Additional options is 'additive' wherein place and  tebc get cumulatily added. this only makes
+                        !!!Additional options is 'additive' wherein place and  tebc get cumulatily added. this only makes
                         sense with a balace value of 1
     --balance_std     : Standard deviation for the Gaussian distribution of the balance factor.
                         Only used if --balance_dist is set to 'gaussian'.
@@ -78,23 +80,26 @@ Arguments:
                         Options are 'fixed', 'binomial', 'normal', 'poisson'.
                         Default is 'fixed'.
     --percent_place_cells: what percent of place cells you want
+    -- num_iters: number of iterations (optional, default is 1)
+    -- -optional_param: put work if at work for that file system
+
 
 Examples:
+    python main2.py --balance_values 0.3,0.5,0.7 --balance_dist gaussian --balance_std 0.1 --responsive_values 0.4,0.6,0.8 --responsive_type binomial --percent_place_cells .7 --num_iters 4
 
+    python main2.py --balance_values 0.3,0.5 --balance_dist gaussian --balance_std 0.5 --responsive_values 0.4,0.6 --responsive_type binomial --percent_place_cells .7 --num_iters 4
 
-    python main2.py --balance_values 0.3,0.5,0.7 --balance_dist gaussian --balance_std 0.1 --responsive_values 0.4,0.6,0.8 --responsive_type binomial --percent_place_cells .7 --num_iters 1
+    python main2.py --balance_values 0.3 --balance_dist gaussian --balance_std 0.1 --responsive_values 0.4 --responsive_type binomial --percent_place_cells .7 --num_iters 4
 
-    python main2.py --balance_values 0.3,0.5 --balance_dist gaussian --balance_std 0.5 --responsive_values 0.4,0.6 --responsive_type binomial --percent_place_cells .7 --num_iters 1
+    python main2.py --balance_values 0.5 --balance_dist fixed --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 4
 
-    python main2.py --balance_values 0.3 --balance_dist gaussian --balance_std 0.1 --responsive_values 0.4 --responsive_type binomial --percent_place_cells .7 --num_iters 1
+    python main2.py --balance_values 0.5,0.7 --balance_dist fixed --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 4
 
-    python main2.py --balance_values 0.5 --balance_dist fixed --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 1
+    python main2.py --balance_values 0,.25,.5,.75,1 --balance_dist fixed --responsive_values .25,.5,.75,1 --responsive_type fixed --percent_place_cells 1,.85,.7,.55 --num_iters 4
 
-    python main2.py --balance_values 0.5,0.7 --balance_dist fixed --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 1
+    python /home/hsw967/Programming/RatInABox/HSW/additive_model/main2.py --balance_values 1 --balance_dist additive --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 4 --optional_param work
 
-    python main2.py --balance_values 0,.25,.5,.75,1 --balance_dist fixed --responsive_values .25,.5,.75,1 --responsive_type fixed --percent_place_cells 1,.85,.7,.55 --num_iters 1
-
-    python main2.py --balance_values 1 --balance_dist additive --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 1 --optional_param work
+    python /home/hsw967/Programming/RatInABox/HSW/additive_model/main2.py --balance_values 1 --balance_dist additive --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 4 --optional_param work
 
 
 Description:
@@ -108,8 +113,6 @@ Requirements:
     - Adjust environment settings and neuron parameters as needed in the script.
 """
 
-
-
 # Function to process the list-like arguments
 def parse_list(arg_value):
     if ',' in arg_value:
@@ -117,7 +120,7 @@ def parse_list(arg_value):
     else:
         return float(arg_value)
 
-# Combine argument parsing for SLURM and script-specific arguments
+# Parse command-line arguments
 parser = argparse.ArgumentParser(description='Simulation Script for Neuronal Firing Rate Analysis')
 parser.add_argument('--balance_values', type=str, help='List of balance values or means for Gaussian distribution')
 parser.add_argument('--balance_dist', choices=['fixed', 'gaussian', 'additive'], default='fixed', help='Distribution type for balance')
@@ -125,7 +128,7 @@ parser.add_argument('--balance_std', type=float, default=0.1, help='Standard dev
 parser.add_argument('--responsive_values', type=str, help='List of responsive rates or probabilities for distributions')
 parser.add_argument('--responsive_type', choices=['fixed', 'binomial', 'normal', 'poisson'], default='fixed', help='Type of distribution for responsive rate')
 parser.add_argument('--percent_place_cells', type=str, required=True, help='Percentage of place cells (single value or comma-separated list)')
-parser.add_argument('--num_iters', type=int, default=1, help='Number of iterations')
+parser.add_argument('--num_iters', type=int, default=1, help='optional parameter for number of iterations')
 parser.add_argument('--optional_param', type=str, help='Optional parameter for additional functionality')
 
 args = parser.parse_args()
@@ -140,27 +143,14 @@ optional_param = args.optional_param
 num_iters = args.num_iters
 
 # Determine if the optional parameter is provided
-work = False
-if optional_param is not None:
-    work = True
+work = optional_param is not None
 
-
-###OLD WORK DIRECTORY
-#if work:
-#    save_directory = '/home/hsw967/Programming/data_eyeblink/rat314/ratinabox_data/results'
-#    ratinabox.figure_directory = save_directory
-#    os.makedirs(save_directory, exist_ok=True)
-if work:
-    save_directory = '/projects/p32072/Programming/data_eyeblink/rat314/ratinabox_data/dependent_results'
-    ratinabox.figure_directory = save_directory
-    os.makedirs(save_directory, exist_ok=True)
-else:
-    save_directory = '/Users/Hannah/Programming/data_eyeblink/rat314/ratinabox_data/results'
-    ratinabox.figure_directory = save_directory
-    os.makedirs(save_directory, exist_ok=True)
+# Set up save directory using config
+save_directory = config.get_save_directory(model_name='additive', is_work=work)
+config.setup_ratinabox_figure_directory(save_directory)
 
 # Construct the filename
-results_filename = f"DM_grid_search_results-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}.txt"
+results_filename = f"AM_grid_search_results-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}.txt"
 results_filepath = os.path.join(save_directory, results_filename)
 
 def parse_list(arg_value):
@@ -190,13 +180,8 @@ def get_distribution_values(dist_type, params, size):
 
 
 
-
 # Load MATLAB file and extract position data
-if work:
-    matlab_file_path = '/home/hsw967/Programming/data_eyeblink/rat314/ratinabox_data/pos314.mat'
-else:
-    matlab_file_path = '/Users/Hannah/Programming/data_eyeblink/rat314/ratinabox_data/pos314.mat'  # Replace with your MATLAB file path
-
+matlab_file_path = config.get_matlab_file_path(is_work=work)
 data = scipy.io.loadmat(matlab_file_path)
 position_data_envA = data['envA314_522']  # Adjust variable name as needed
 position_data_envB = data['envB314_524']  # Adjust variable name as needed
@@ -208,7 +193,6 @@ responsive_values = parse_list(args.responsive_values) if args.responsive_values
 percent_place_cells = parse_list(args.percent_place_cells) if args.percent_place_cells else [0.7]
 balance_zero_done = False
 responsive_zero_done = False
-
 
 # Define desired time steps for interpolation (e.g., at a fixed interval)
 # Interpolate for EnvA
@@ -279,6 +263,7 @@ agentA.import_trajectory(times=desired_time_stepsA, positions=interpolated_posit
 agentB = Agent(envB)
 agentB.import_trajectory(times=desired_time_stepsB, positions=interpolated_positions_envB, interpolate=False)
 
+
 # Calculate the total number of runs
 total_runs = len(balance_values) * len(responsive_values) * len(percent_place_cells) * num_iters
 num_columns = 25  # Adjust this based on the number of parameters and metrics
@@ -299,15 +284,17 @@ headers = [
 run_count = 0
 
 
+
 # Perform grid search over balance and responsive rates
 with open(results_filepath, "w") as results_file:
     for balance_value, responsive_val, percent_place_cell in itertools.product(balance_values, responsive_values, percent_place_cells):
-        # Use balance_value, responsive_val, and percent_place_cell in your simulation
-        # Skip redundant zero value iterations
         print(balance_value)
         print(responsive_val)
         print(percent_place_cell)
         for i in range(num_iters):
+            # Use balance_value, responsive_val, and percent_place_cell in your simulation
+            # Skip redundant zero value iterations
+
 
             balance_distribution = get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons)
             responsive_distribution = get_distribution_values(args.responsive_type, [responsive_val], num_neurons)
@@ -316,9 +303,9 @@ with open(results_filepath, "w") as results_file:
             tebc_responsive_neurons, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
 
             # Profile the function
-            #cProfile.runctx('simulate_envA(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, cell_types)', globals(), locals(), 'profile_stats.prof')
-            #p = pstats.Stats('profile_stats.prof')
-            #p.sort_stats('cumulative').print_stats(10)
+    #        cProfile.runctx('simulate_envA(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells_values, cell_types)', globals(), locals(), 'profile_stats.prof')
+    #        p = pstats.Stats('profile_stats.prof')
+    #        p.sort_stats('cumulative').print_stats(10)
 
             # Now run the function normally to capture its output
             spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_envA(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells_values, cell_types)
@@ -355,27 +342,26 @@ with open(results_filepath, "w") as results_file:
             '''
 
 
-
-
             #####save
             '''
             # Construct the full file paths
-            filename_envA = f"DM_response_envA_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
-            filename_envB = f"DM_response_envB_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
+            filename_envA = f"AM_response_envA_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
+            filename_envB = f"AM_response_envB_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
             full_path_envA = os.path.join(save_directory, filename_envA)
             full_path_envB = os.path.join(save_directory, filename_envB)
-
             # Save the response arrays to files
+
+
             #np.save(full_path_envA, spikesA)
             #np.save(full_path_envB, spikesB)
             np.save(full_path_envA, firingrate_envA)
             np.save(full_path_envB, firingrate_envB)
-            ######
             '''
+
+            ######
 
             # Assess learning transfer and other metrics
             #organize to run in cebra
-
             response_envA = np.transpose(spikesA)
             response_envB = np.transpose(spikesB)
 
@@ -390,6 +376,23 @@ with open(results_filepath, "w") as results_file:
             envB_eyeblink = envB_eyeblink[envB_eyeblink > 0]
             envB_eyeblink = np.where(envB_eyeblink <= 5, 1, 2)
 
+
+
+            '''
+            filename_envA = f"ratinabox_pos"
+            if work:
+                full_path_envA = os.path.join('/home/hsw967/Programming/data_eyeblink/rat314/trainingdata', filename_envA)
+            else:
+                full_path_envA = os.path.join('/Users/Hannah/Programming/data_eyeblink/rat314/trainingdata', filename_envA)
+            np.save(full_path_envA, posA)
+
+            filename_envA = f"ratinabox_spikes"
+            if work:
+                full_path_envA = os.path.join('/home/hsw967/Programming/data_eyeblink/rat314/trainingdata', filename_envA)
+            else:
+                full_path_envA = os.path.join('/Users/Hannah/Programming/data_eyeblink/rat314/trainingdata', filename_envA)
+            np.save(full_path_envA, response_envA)
+            '''
 
 
             #run cebra decoding
@@ -419,8 +422,6 @@ with open(results_filepath, "w") as results_file:
             #POS DECODE
             err_allA, err_allB_usingA, err_all_shuffA, err_all_shuffB_usingA, err_allB_usingB = pos_decoding_AvsB(response_envA, posA, response_envB, posB, .7)
 
-
-
             # Construct the identifier for this iteration
             identifier = f"{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_PCs_{args.percent_place_cells}.npy"
 
@@ -444,13 +445,20 @@ with open(results_filepath, "w") as results_file:
 
             # Right before the problematic line
 
-            # Attempt to assign to the matrix
             try:
                 results_matrix[run_count] = [
                     balance_value, responsive_val, percent_place_cell,
                     fract_control_all, fract_test_all,
                     *err_allA, *err_allB_usingA, *err_all_shuffA, *err_all_shuffB_usingA, *err_allB_usingB
                 ]
+
+            #try:
+            #    results_matrix[run_count] = [
+            #        balance_value, responsive_val, percent_place_cell,
+            #        fract_control_all, fract_test_all,
+            #        *err_allA, *err_allB_usingA, *err_all_shuffA, *err_all_shuffB_usingA, *err_allB_usingB
+            #    ]
+
             except ValueError as e:
                 print("Error occurred:", e)
                 print([
@@ -462,6 +470,7 @@ with open(results_filepath, "w") as results_file:
             # At the end of each iteration, explicitly delete large objects
             # Example: if `spikesA` and `spikesB` are large, you can delete them
             current_date = datetime.datetime.now().strftime("%Y%m%d")
+
             # When constructing filenames, prepend them with the save_directory path
             filename_spikesA = os.path.join(save_directory, f'spikesA_balance_{balance_value}_responsive_{responsive_val}_PC_{percent_place_cell}_iteration_{i}_{current_date}.csv')
             filename_spikesB = os.path.join(save_directory, f'spikesB_balance_{balance_value}_responsive_{responsive_val}_PC_{percent_place_cell}_iteration_{i}_{current_date}.csv')
@@ -473,6 +482,7 @@ with open(results_filepath, "w") as results_file:
             pd.DataFrame(spikesB).to_csv(filename_spikesB, index=False)
             pd.DataFrame(firingrate_envA).to_csv(filename_firingrate_envA, index=False)
             pd.DataFrame(firingrate_envB).to_csv(filename_firingrate_envB, index=False)
+
 
             del spikesA, spikesB, firingrate_envA, firingrate_envB
             del response_envA, response_envB
@@ -486,13 +496,12 @@ with open(results_filepath, "w") as results_file:
 
             #print(f"Saved results to {full_path_envA} and {full_path_envB}")
 
-
 # Get the current date
 current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-results_filename = f"DM_results_matrix-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}"
-
 # Construct filenames with the date and directory
+results_filename = f"AM_results_matrix-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}"
+
 csv_filename = os.path.join(save_directory, f"{results_filename}_{current_date}.csv")
 npy_filename = os.path.join(save_directory, f"{results_filename}_{current_date}.npy")
 

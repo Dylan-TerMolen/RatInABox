@@ -3,37 +3,36 @@ import sys
 # Reconfigure stdout for immediate flushing
 sys.stdout.reconfigure(line_buffering=True, write_through=True)
 
-sys.path.append('/Users/Hannah/Programming/Hannahs-CEBRAs')
-import numpy as np
-import scipy.io
 import argparse
-import itertools
-import scipy.io
-import scipy.stats as stats
-from envA_rectangle2 import simulate_envA
-from envB_oval2 import simulate_envB
-from trial_marker2 import determine_cs_us
-from learningTransfer2 import assess_learning_transfer
-from actualVexpected2 import compare_actual_expected_firing
-from map_trial_markers_to_interpolated_times import map_trial_markers_to_interpolated_times
-from ratinabox.Environment import Environment
-from ratinabox.Agent import Agent
-from assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
-import os
-import ratinabox
-import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
-from cond_decoding_AvsB import cond_decoding_AvsB
-from pos_decoding_self import pos_decoding_self
-from pos_decoding_AvsB import pos_decoding_AvsB
-from cebra import CEBRA
 import cProfile
-import pstats
-import random
 import datetime
 import gc
+import itertools
+import os
+import pstats
+import random
 import time
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import ratinabox
+import scipy.io
+import scipy.stats as stats
+from cebra import CEBRA
+from ratinabox.Agent import Agent
+from ratinabox.Environment import Environment
+from scipy.interpolate import interp1d
+
+from hannahs_cebras import cond_decoding_AvsB, pos_decoding_self, pos_decoding_AvsB
+from ratinabox.hsw import config
+from ratinabox.hsw.place_dep_model.actualVexpected2 import compare_actual_expected_firing
+from ratinabox.hsw.place_dep_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
+from ratinabox.hsw.place_dep_model.envA_rectangle2 import simulate_envA
+from ratinabox.hsw.place_dep_model.envB_oval2 import simulate_envB
+from ratinabox.hsw.place_dep_model.learningTransfer2 import assess_learning_transfer
+from ratinabox.hsw.place_dep_model.map_trial_markers_to_interpolated_times import map_trial_markers_to_interpolated_times
+from ratinabox.hsw.place_dep_model.trial_marker2 import determine_cs_us
 
 
 
@@ -129,24 +128,11 @@ num_iters = args.num_iters
 
 
 # Determine if the optional parameter is provided
-work = False
-if optional_param is not None:
-    work = True
+work = optional_param is not None
 
-
-###OLD WORK DIRECTORY
-#if work:
-#    save_directory = '/home/hsw967/Programming/data_eyeblink/rat314/ratinabox_data/results'
-#    ratinabox.figure_directory = save_directory
-#    os.makedirs(save_directory, exist_ok=True)
-if work:
-    save_directory = '/projects/p32072/Programming/data_eyeblink/rat314/ratinabox_data/place_dependent_results'
-    ratinabox.figure_directory = save_directory
-    os.makedirs(save_directory, exist_ok=True)
-else:
-    save_directory = '/Users/Hannah/Programming/data_eyeblink/rat314/ratinabox_data/results'
-    ratinabox.figure_directory = save_directory
-    os.makedirs(save_directory, exist_ok=True)
+# Set up save directory using config
+save_directory = config.get_save_directory(model_name='place_dependent', is_work=work)
+config.setup_ratinabox_figure_directory(save_directory)
 
 # Construct the filename
 results_filename = f"PDM_grid_search_results-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}.txt"
@@ -180,10 +166,7 @@ def get_distribution_values(dist_type, params, size):
 
 
 # Load MATLAB file and extract position data
-if work:
-    matlab_file_path = '/home/hsw967/Programming/data_eyeblink/rat314/ratinabox_data/pos314.mat'
-else:
-    matlab_file_path = '/Users/Hannah/Programming/data_eyeblink/rat314/ratinabox_data/pos314.mat'  # Replace with your MATLAB file path
+matlab_file_path = config.get_matlab_file_path(is_work=work)
 data = scipy.io.loadmat(matlab_file_path)
 position_data_envA = data['envA314_522']  # Adjust variable name as needed
 position_data_envB = data['envB314_524']  # Adjust variable name as needed

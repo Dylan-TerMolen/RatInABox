@@ -7,7 +7,7 @@ from trial_marker import determine_cs_us
 def simulate_envA(position_data, balance_distribution, responsive_distribution):
     # Define environment parameters for a rectangular environment
     env_params = {
-        #'boundary': [[0, 0], [0, 20 * 0.0254], [31 * 0.0254, 20 * 0.0254], [31 * 0.0254, 0]],
+        # 'boundary': [[0, 0], [0, 20 * 0.0254], [31 * 0.0254, 20 * 0.0254], [31 * 0.0254, 0]],
         'boundary': [[0, 0], [0, .6], [1.3, .6], [1.3, 0]],
         'boundary_conditions': 'solid'
     }
@@ -23,6 +23,10 @@ def simulate_envA(position_data, balance_distribution, responsive_distribution):
     # Import trajectory into the agent
     times = position_data[0]  # Timestamps
     positions = position_data[1:3].T  # Positions (x, y)
+
+    # Check min/max of position data
+    print(f"Position data range: x=[{positions[:, 0].min():.2f}, {positions[:, 0].max():.2f}], y=[{positions[:, 1].min():.2f}, {positions[:, 1].max():.2f}]")
+    print(f"Environment extent: x=[0, 1.3], y=[0, 0.6]")
 
     # Check for and handle duplicate timestamps
     unique_times, indices = np.unique(times, return_index=True)
