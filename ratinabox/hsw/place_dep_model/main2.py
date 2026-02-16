@@ -25,7 +25,6 @@ from ratinabox.Environment import Environment
 
 from hannahs_cebras import cond_decoding_AvsB, pos_decoding_self, pos_decoding_AvsB
 from ratinabox.hsw import config
-from ratinabox.hsw.place_dep_model.actualVexpected2 import compare_actual_expected_firing
 from ratinabox.hsw.place_dep_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
 from ratinabox.hsw.place_dep_model.envA_rectangle2 import simulate_envA
 from ratinabox.hsw.place_dep_model.envB_oval2 import simulate_envB

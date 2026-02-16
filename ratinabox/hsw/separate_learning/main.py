@@ -7,15 +7,11 @@ import ratinabox
 import scipy.io
 import scipy.stats as stats
 
-from ratinabox.hsw import config
-from ratinabox.hsw.separate_learning.actualVexpected import compare_actual_expected_firing
+from ratinabox.hsw import config, utils
 from ratinabox.hsw.separate_learning.CombinedPlaceTebcNeurons import CombinedPlaceTebcNeurons
 from ratinabox.hsw.separate_learning.envA_rectangle import simulate_envA
 from ratinabox.hsw.separate_learning.envB_oval import simulate_envB
-from ratinabox.hsw.separate_learning.learningTransfer import assess_learning_transfer
 from ratinabox.hsw.separate_learning.trial_marker import determine_cs_us
-
-from ratinabox.hsw.utils import parse_list, get_distribution_values
 
 """
 Simulation Script for Neuronal Firing Rate Analysis
@@ -82,10 +78,10 @@ config.setup_ratinabox_figure_directory(save_directory)
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='Simulation Script for Neuronal Firing Rate Analysis')
-parser.add_argument('--balance_values', type=parse_list, help='List of balance values or means for Gaussian distribution')
+parser.add_argument('--balance_values', type=utils.parse_list, help='List of balance values or means for Gaussian distribution')
 parser.add_argument('--balance_dist', choices=['fixed', 'gaussian'], default='fixed', help='Distribution type for balance')
 parser.add_argument('--balance_std', type=float, default=0.1, help='Standard deviation for Gaussian balance distribution')
-parser.add_argument('--responsive_values', type=parse_list, help='List of responsive rates or probabilities for distributions')
+parser.add_argument('--responsive_values', type=utils.parse_list, help='List of responsive rates or probabilities for distributions')
 parser.add_argument('--responsive_type', choices=['fixed', 'binomial', 'normal', 'poisson'], default='fixed', help='Type of distribution for responsive rate')
 args = parser.parse_args()
 
@@ -97,13 +93,13 @@ position_data_envB = data['envB314_524']  # Adjust variable name as needed
 
 # Set parameters
 num_neurons = 80
-balance_values = parse_list(args.balance_values) if args.balance_values else [0.5]
-responsive_values = parse_list(args.responsive_values) if args.responsive_values else [0.5]
+balance_values = utils.parse_list(args.balance_values) if args.balance_values else [0.5]
+responsive_values = utils.parse_list(args.responsive_values) if args.responsive_values else [0.5]
 
 # Perform grid search over balance and responsive rates
 for balance_value, responsive_val in itertools.product(balance_values, responsive_values):
-    balance_distribution = get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons)
-    responsive_distribution = get_distribution_values(args.responsive_type, [responsive_val], num_neurons)
+    balance_distribution = utils.get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons)
+    responsive_distribution = utils.get_distribution_values(args.responsive_type, [responsive_val], num_neurons)
 
     # Simulate in Environment A and Environment B
     response_envA, agentA, combined_neuronsA = simulate_envA(position_data_envA, balance_distribution, responsive_distribution)
