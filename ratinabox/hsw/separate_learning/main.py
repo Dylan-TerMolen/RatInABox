@@ -11,7 +11,6 @@ from ratinabox.hsw import config, utils
 from ratinabox.hsw.separate_learning.CombinedPlaceTebcNeurons import CombinedPlaceTebcNeurons
 from ratinabox.hsw.separate_learning.envA_rectangle import simulate_envA
 from ratinabox.hsw.separate_learning.envB_oval import simulate_envB
-from ratinabox.hsw.separate_learning.trial_marker import determine_cs_us
 
 """
 Simulation Script for Neuronal Firing Rate Analysis

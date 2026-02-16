@@ -28,7 +28,6 @@ from ratinabox.hsw import config
 from ratinabox.hsw.place_dep_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
 from ratinabox.hsw.place_dep_model.envA_rectangle2 import simulate_envA
 from ratinabox.hsw.place_dep_model.envB_oval2 import simulate_envB
-from ratinabox.hsw.place_dep_model.trial_marker2 import determine_cs_us
 
 from ratinabox.hsw import utils
 from ratinabox.hsw.environment_builder import build_rectangular_environment

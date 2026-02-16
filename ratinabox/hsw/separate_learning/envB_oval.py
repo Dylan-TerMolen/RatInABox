@@ -2,7 +2,7 @@ import numpy as np
 from ratinabox.Environment import Environment
 from ratinabox.Agent import Agent
 from CombinedPlaceTebcNeurons import CombinedPlaceTebcNeurons
-from trial_marker import determine_cs_us
+from ratinabox.hsw import utils
 
 
 #modeling environment B (oval)
@@ -73,7 +73,7 @@ def simulate_envB(position_data, balance_distribution, responsive_distribution):
 
         # Determine if CS or US is present
         trial_marker = position_data[3, index]
-        cs_present, us_present = determine_cs_us(trial_marker)
+        cs_present, us_present = utils.determine_cs_us(trial_marker)
 
         # Update last CS/US time if necessary
         if cs_present and (last_CS_time is None or times[index] > last_CS_time):

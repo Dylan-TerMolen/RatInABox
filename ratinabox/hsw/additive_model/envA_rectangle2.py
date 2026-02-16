@@ -1,7 +1,7 @@
 import numpy as np
 from ratinabox.Environment import Environment
 from ratinabox.Agent import Agent
-from trial_marker2 import determine_cs_us
+from ratinabox.hsw import utils
 from TEBCcells import TEBC
 import cProfile
 import pstats
@@ -62,7 +62,7 @@ def simulate_envA(agent, position_data, balance_distribution, responsive_distrib
 
 
         #figuring out TEBC firing
-        cs_present, us_present = determine_cs_us(trial_marker)
+        cs_present, us_present = utils.determine_cs_us(trial_marker)
 
         if cs_present:
             last_CS_time = current_time if last_CS_time is None else max(last_CS_time, current_time)
