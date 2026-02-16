@@ -33,7 +33,7 @@ from ratinabox.hsw.place_dep_model.learningTransfer2 import assess_learning_tran
 from ratinabox.hsw.place_dep_model.trial_marker2 import determine_cs_us
 
 from ratinabox.hsw.utils import parse_list, get_distribution_values, interpolate_position_data
-
+from ratinabox.hsw.environment_builder import build_rectangular_environment
 
 """
 Simulation Script for Neuronal Firing Rate Analysis
@@ -150,35 +150,8 @@ responsive_zero_done = False
 position_data_envA, desired_time_stepsA, interpolated_positions_envA = interpolate_position_data(position_data_envA)
 position_data_envB, desired_time_stepsB, interpolated_positions_envB = interpolate_position_data(position_data_envB)
 
-#define environments
-
-position_data_envA[1:3] = position_data_envA[1:3]
-positions = position_data_envA[1:3].T
-max_x = np.max(positions[:, 0])
-max_y = np.max(positions[:, 1])
-min_x = np.min(positions[:, 0])
-min_y = np.min(positions[:, 1])
-
-# Create environments for EnvA and EnvB
-envA_params = {
-    'boundary': [[min_x, min_y], [min_x, max_y], [max_x, max_y], [max_x, min_y]],
-    'boundary_conditions': 'solid'
-}
-
-envA = Environment(params=envA_params)
-position_data_envB[1:3] = position_data_envB[1:3]
-positions = position_data_envB[1:3].T
-max_x = np.max(positions[:, 0])
-max_y = np.max(positions[:, 1])
-min_x = np.min(positions[:, 0])
-min_y = np.min(positions[:, 1])
-
-
-envB_params = {
-    'boundary': [[min_x, min_y], [min_x, max_y], [max_x, max_y], [max_x, min_y]],
-    'boundary_conditions': 'solid'
-}
-envB = Environment(params=envB_params)
+envA = build_rectangular_environment(position_data_envA[1:3].T)
+envB = build_rectangular_environment(position_data_envB[1:3].T)
 
 #boot up the agents
 agentA = Agent(envA)
