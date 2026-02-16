@@ -97,6 +97,26 @@ def determine_cs_us(trial_marker):
     return cs_present, us_present
 
 
+def max_excluding_outliers(matrix):
+    # Flatten the matrix to a 1D array
+    data = np.array(matrix).flatten()
+
+    # Compute Q1 and Q3
+    Q1 = np.percentile(data, 25)
+    Q3 = np.percentile(data, 75)
+
+    # Calculate the Interquartile Range
+    IQR = Q3 - Q1
+
+    # Identify outliers
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    non_outliers = [x for x in data if lower_bound <= x <= upper_bound]
+
+    # Return the maximum of non-outlier values
+    return max(non_outliers) if non_outliers else None
+
+
 # UNUSED: The following functions are not currently called anywhere in the codebase
 def _calculate_similarity(response_envA, response_envB):
     # Ensure that both arrays are of the same length

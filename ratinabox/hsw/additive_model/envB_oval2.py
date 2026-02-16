@@ -92,29 +92,8 @@ def simulate_envB(agent, position_data, balance_distribution, responsive_distrib
 
 
 
-    FR_MAX = max_excluding_outliers(firing_rates)
+    FR_MAX = utils.max_excluding_outliers(firing_rates)
     FR_MIN = 0
     cell_spikes = np.random.uniform(FR_MIN, FR_MAX, size=(firing_rates.shape)) < firing_rates
     spikes = cell_spikes.astype(int)
     return spikes, eyeblink_neurons, firing_rates, agent
-
-
-
-def max_excluding_outliers(matrix):
-    # Flatten the matrix to a 1D array
-    data = np.array(matrix).flatten()
-
-    # Compute Q1 and Q3
-    Q1 = np.percentile(data, 25)
-    Q3 = np.percentile(data, 75)
-
-    # Calculate the Interquartile Range
-    IQR = Q3 - Q1
-
-    # Identify outliers
-    lower_bound = Q1 - 1.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
-    non_outliers = [x for x in data if lower_bound <= x <= upper_bound]
-
-    # Return the maximum of non-outlier values
-    return max(non_outliers) if non_outliers else None
