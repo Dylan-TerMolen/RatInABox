@@ -29,7 +29,7 @@ def get_distribution_values(dist_type, params, size):
     elif dist_type == 'additive':
         return np.full(size, 100)
 
-def map_trial_markers_to_interpolated_times(original_times, trial_markers, interpolated_times):
+def _map_trial_markers_to_interpolated_times(original_times, trial_markers, interpolated_times):
     """
     Maps trial markers to the nearest time points in the interpolated times.
 
@@ -67,7 +67,7 @@ def interpolate_position_data(position_data, step=1/30):
     trial_markers = position_data[3, :]
     times = position_data[0]
     desired_time_steps = np.arange(min(times), max(times), step=step)
-    interpolated_trial_markers = map_trial_markers_to_interpolated_times(times, trial_markers, desired_time_steps)
+    interpolated_trial_markers = _map_trial_markers_to_interpolated_times(times, trial_markers, desired_time_steps)
     positions = position_data[1:3].T
     position_interp_func = interp1d(times, positions, axis=0, kind="cubic", fill_value="extrapolate")
     interpolated_positions = position_interp_func(desired_time_steps) / 100
