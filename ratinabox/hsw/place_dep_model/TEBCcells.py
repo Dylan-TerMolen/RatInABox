@@ -113,7 +113,7 @@ class TEBC(PlaceCells):
                 response_func = response_profiles[cell_type]['response_func']
                 tebc_response = response_func(time_since_CS, time_since_US)
             firing_rates[i] = (1 - self.balance_distribution[i]) * place_response + self.balance_distribution[i] * tebc_response
-            firing_rates[i] = add_jitter_percentage(firing_rates[i])
+            firing_rates[i] = self.add_jitter_percentage(firing_rates[i])
         return firing_rates
 
 
@@ -121,7 +121,7 @@ class TEBC(PlaceCells):
         # Return the current firing rates of all neurons
         return self.firing_rates
 
-    def add_jitter_percentage(value, jitter_percentage=10):
+    def add_jitter_percentage(self, value, jitter_percentage=10):
         jitter_amount = value * (jitter_percentage / 100)
         jitter = random.uniform(-jitter_amount, jitter_amount)
         return value + jitter

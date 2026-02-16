@@ -122,7 +122,7 @@ class TEBC(PlaceCells):
         # Return the current firing rates of all neurons
         return self.firing_rates
 
-    def add_jitter_percentage(value, jitter_percentage=10):
+    def add_jitter_percentage(self, value, jitter_percentage=10):
         jitter_amount = value * (jitter_percentage / 100)
         jitter = random.uniform(-jitter_amount, jitter_amount)
         return value + jitter
