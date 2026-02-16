@@ -22,7 +22,6 @@ import scipy.stats as stats
 from cebra import CEBRA
 from ratinabox.Agent import Agent
 from ratinabox.Environment import Environment
-from scipy.interpolate import interp1d
 
 from hannahs_cebras import cond_decoding_AvsB, pos_decoding_self, pos_decoding_AvsB
 from ratinabox.hsw import config
@@ -31,11 +30,9 @@ from ratinabox.hsw.additive_model.assign_tebc_types_and_responsiveness import as
 from ratinabox.hsw.additive_model.envA_rectangle2 import simulate_envA
 from ratinabox.hsw.additive_model.envB_oval2 import simulate_envB
 from ratinabox.hsw.additive_model.learningTransfer2 import assess_learning_transfer
-from ratinabox.hsw.additive_model.map_trial_markers_to_interpolated_times import map_trial_markers_to_interpolated_times
 from ratinabox.hsw.additive_model.trial_marker2 import determine_cs_us
 
-
-
+from ratinabox.hsw.utils import parse_list, get_distribution_values, interpolate_position_data
 
 
 """
@@ -113,19 +110,12 @@ Requirements:
     - Adjust environment settings and neuron parameters as needed in the script.
 """
 
-# Function to process the list-like arguments
-def parse_list(arg_value):
-    if ',' in arg_value:
-        return [float(item) for item in arg_value.split(',')]
-    else:
-        return float(arg_value)
-
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='Simulation Script for Neuronal Firing Rate Analysis')
-parser.add_argument('--balance_values', type=str, help='List of balance values or means for Gaussian distribution')
+parser.add_argument('--balance_values', type=str, default=0.5, help='List of balance values or means for Gaussian distribution')
 parser.add_argument('--balance_dist', choices=['fixed', 'gaussian', 'additive'], default='fixed', help='Distribution type for balance')
 parser.add_argument('--balance_std', type=float, default=0.1, help='Standard deviation for Gaussian balance distribution')
-parser.add_argument('--responsive_values', type=str, help='List of responsive rates or probabilities for distributions')
+parser.add_argument('--responsive_values', type=str, default=0.5, help='List of responsive rates or probabilities for distributions')
 parser.add_argument('--responsive_type', choices=['fixed', 'binomial', 'normal', 'poisson'], default='fixed', help='Type of distribution for responsive rate')
 parser.add_argument('--percent_place_cells', type=str, required=True, help='Percentage of place cells (single value or comma-separated list)')
 parser.add_argument('--num_iters', type=int, default=1, help='optional parameter for number of iterations')
@@ -134,8 +124,6 @@ parser.add_argument('--optional_param', type=str, help='Optional parameter for a
 args = parser.parse_args()
 
 # Process the arguments
-#balance_values = args.balance_values if args.balance_values else [0.5]
-#responsive_values = args.responsive_values if args.responsive_values else [0.5]
 balance_values = parse_list(args.balance_values)
 responsive_values = parse_list(args.responsive_values)
 percent_place_cells_values = parse_list(args.percent_place_cells)
@@ -153,33 +141,6 @@ config.setup_ratinabox_figure_directory(save_directory)
 results_filename = f"AM_grid_search_results-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}.txt"
 results_filepath = os.path.join(save_directory, results_filename)
 
-def parse_list(arg_value):
-    if isinstance(arg_value, list):
-        return [float(item) for item in arg_value]
-    else:
-        return [float(item) for item in arg_value.split(',')]
-
-
-def get_distribution_values(dist_type, params, size):
-    if dist_type == 'fixed':
-        return np.full(size, params[0])
-    elif dist_type == 'gaussian':
-        mean, std = params
-        return np.clip(stats.norm(mean, std).rvs(size=size), 0, 1)
-    elif dist_type == 'binomial':
-        p = params[0]
-        return np.random.binomial(1, p, size=size)
-    elif dist_type == 'normal':
-        mean, std = params
-        return np.clip(stats.norm(mean, std).rvs(size=size), 0, 1)
-    elif dist_type == 'poisson':
-        lam = params[0]
-        return np.clip(stats.poisson(lam).rvs(size=size), 0, 1)
-    elif dist_type == 'additive':
-        return np.full(size, 100)
-
-
-
 # Load MATLAB file and extract position data
 matlab_file_path = config.get_matlab_file_path(is_work=work)
 data = scipy.io.loadmat(matlab_file_path)
@@ -194,37 +155,9 @@ percent_place_cells = parse_list(args.percent_place_cells) if args.percent_place
 balance_zero_done = False
 responsive_zero_done = False
 
-# Define desired time steps for interpolation (e.g., at a fixed interval)
-# Interpolate for EnvA
-trial_markers_envA = position_data_envA[3, :]
-times_envA = position_data_envA[0]
-desired_time_stepsA = np.arange(min(times_envA), max(times_envA), step=1/30)  # Example: 75 Hz sampling rate
-interpolated_trial_markers_envA = map_trial_markers_to_interpolated_times(times_envA, trial_markers_envA, desired_time_stepsA)
-trial_markers_envA = interpolated_trial_markers_envA
-positions_envA = position_data_envA[1:3].T
-position_interp_func_envA = interp1d(times_envA, positions_envA, axis=0, kind="cubic", fill_value="extrapolate")
-interpolated_positions_envA = position_interp_func_envA(desired_time_stepsA)/100
-position_data_envA = np.column_stack((desired_time_stepsA,
-                                               interpolated_positions_envA[:, 0],  # x positions
-                                               interpolated_positions_envA[:, 1],  # y positions
-                                               trial_markers_envA))
-
-position_data_envA = position_data_envA.T
-
-# Interpolate for EnvB
-trial_markers_envB = position_data_envB[3, :]
-times_envB = position_data_envB[0]
-desired_time_stepsB = np.arange(min(times_envB), max(times_envB), step=1/30)  # Example: 75 Hz sampling rate
-interpolated_trial_markers_envB = map_trial_markers_to_interpolated_times(times_envB, trial_markers_envB, desired_time_stepsB)
-trial_markers_envB = interpolated_trial_markers_envB
-positions_envB = position_data_envB[1:3].T
-position_interp_func_envB = interp1d(times_envB, positions_envB, axis=0, kind="cubic", fill_value="extrapolate")
-interpolated_positions_envB = position_interp_func_envB(desired_time_stepsB)/100
-position_data_envB = np.column_stack((desired_time_stepsB,
-                                               interpolated_positions_envB[:, 0],  # x positions
-                                               interpolated_positions_envB[:, 1],  # y positions
-                                               trial_markers_envB))
-position_data_envB = position_data_envB.T
+# Interpolate position data to uniform time steps
+position_data_envA, desired_time_stepsA, interpolated_positions_envA = interpolate_position_data(position_data_envA)
+position_data_envB, desired_time_stepsB, interpolated_positions_envB = interpolate_position_data(position_data_envB)
 
 #define environments
 
@@ -396,7 +329,7 @@ with open(results_filepath, "w") as results_file:
 
 
             #run cebra decoding
-            fract_control_all, fract_test_all = cond_decoding_AvsB(response_envA_test, envA_eyeblink, response_envB_test, envB_eyeblink)
+            fract_control_all, fract_test_all = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
 
 
             #run position decoding for env A

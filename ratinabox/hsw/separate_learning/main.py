@@ -15,6 +15,8 @@ from ratinabox.hsw.separate_learning.envB_oval import simulate_envB
 from ratinabox.hsw.separate_learning.learningTransfer import assess_learning_transfer
 from ratinabox.hsw.separate_learning.trial_marker import determine_cs_us
 
+from ratinabox.hsw.utils import parse_list, get_distribution_values
+
 """
 Simulation Script for Neuronal Firing Rate Analysis
 Note: advise using a conda environment:
@@ -78,13 +80,6 @@ Requirements:
 save_directory = config.get_save_directory(model_name='separate_learning', is_work=False)
 config.setup_ratinabox_figure_directory(save_directory)
 
-def parse_list(arg_value):
-    if isinstance(arg_value, list):
-        return [float(item) for item in arg_value]
-    else:
-        return [float(item) for item in arg_value.split(',')]
-
-
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='Simulation Script for Neuronal Firing Rate Analysis')
 parser.add_argument('--balance_values', type=parse_list, help='List of balance values or means for Gaussian distribution')
@@ -93,22 +88,6 @@ parser.add_argument('--balance_std', type=float, default=0.1, help='Standard dev
 parser.add_argument('--responsive_values', type=parse_list, help='List of responsive rates or probabilities for distributions')
 parser.add_argument('--responsive_type', choices=['fixed', 'binomial', 'normal', 'poisson'], default='fixed', help='Type of distribution for responsive rate')
 args = parser.parse_args()
-
-def get_distribution_values(dist_type, params, size):
-    if dist_type == 'fixed':
-        return np.full(size, params[0])
-    elif dist_type == 'gaussian':
-        mean, std = params
-        return np.clip(stats.norm(mean, std).rvs(size=size), 0, 1)
-    elif dist_type == 'binomial':
-        p = params[0]
-        return np.random.binomial(1, p, size=size)
-    elif dist_type == 'normal':
-        mean, std = params
-        return np.clip(stats.norm(mean, std).rvs(size=size), 0, 1)
-    elif dist_type == 'poisson':
-        lam = params[0]
-        return np.clip(stats.poisson(lam).rvs(size=size), 0, 1)
 
 # Load MATLAB file and extract position data
 matlab_file_path = config.get_matlab_file_path()

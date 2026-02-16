@@ -1,7 +1,6 @@
 import numpy as np
 from ratinabox.Environment import Environment
 from ratinabox.Agent import Agent
-from ratinabox.Neurons import Neurons, PlaceCells
 from trial_marker2 import determine_cs_us
 from TEBCcells import TEBC
 import cProfile
@@ -10,6 +9,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from ratinabox.hsw.cell_builder import CellBuilder
 
 
 
@@ -28,35 +28,22 @@ a place input model, which penalizes both incorrect classifications of active an
 
 
 def simulate_envB(agent, position_data, responsive_distribution, tebc_responsive_neurons, percent_place_cells):
-    N = 80  # Number of neurons
-
-    # Define place cell parameters for EnvA
-    PCs = PlaceCells(agent, params={
-        "n": N,
-        "description": "gaussian",
-        "widths": 0.20,
-        "place_cell_centres": None,
-        "wall_geometry": "geodesic",
-        "min_fr": 0,
-        "max_fr": 1, #treating this as a percent
-        "save_history": True
-        #"noise_std":0.15
-    })
+    PCs = CellBuilder.build_place_cells(agent)
 
     if isinstance(percent_place_cells, list):
         percent_place_cells = float(percent_place_cells[0])
 
     percent_to_zero_out = round(1 - percent_place_cells)
-    num_elements_to_zero_out = int(N * percent_to_zero_out)
+    num_elements_to_zero_out = int(PCs.n * percent_to_zero_out)
 
     # Randomly select indices to zero out
-    indices_to_zero_out = random.sample(range(N), num_elements_to_zero_out)
+    indices_to_zero_out = random.sample(range(PCs.n), num_elements_to_zero_out)
 
-    eyeblink_neurons = TEBC(agent, N, responsive_distribution, PCs.params, tebc_responsive_neurons)
+    eyeblink_neurons = TEBC(agent, PCs.n, responsive_distribution, PCs.params, tebc_responsive_neurons)
 
 
-    firing_rates = np.zeros((N, position_data.shape[1]))
-    spikes = np.zeros((N, position_data.shape[1]))
+    firing_rates = np.zeros((PCs.n, position_data.shape[1]))
+    spikes = np.zeros((PCs.n, position_data.shape[1]))
 
     eyeblink_neurons.calculate_smoothed_velocity(position_data)
 
@@ -81,7 +68,7 @@ def simulate_envB(agent, position_data, responsive_distribution, tebc_responsive
         vel = eyeblink_neurons.smoothed_velocity[index];
         FR = np.array(PCs.history['firingrate'][-1])
         if vel < 0.02:
-            place_firing = [.02/30] * N
+            place_firing = [.02/30] * PCs.n
             field_baseline = place_firing
         else:
             FR_mod = firing_rate_function(vel*100) #getting to cm/s
