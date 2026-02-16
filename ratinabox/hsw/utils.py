@@ -78,3 +78,20 @@ def interpolate_position_data(position_data, step=1/30):
         interpolated_trial_markers
     )).T
     return position_data_interp, desired_time_steps, interpolated_positions
+
+
+def calculate_similarity(response_envA, response_envB):
+    # Ensure that both arrays are of the same length
+    min_length = min(len(response_envA), len(response_envB))
+    response_envA = response_envA[:min_length]
+    response_envB = response_envB[:min_length]
+
+    # Calculate a similarity metric (e.g., correlation) between responses in EnvA and EnvB
+    similarity = np.corrcoef(response_envA, response_envB)[0, 1]
+    return similarity
+
+
+def assess_learning_transfer(response_envA, response_envB, balance_value, responsive_value):
+    # Calculate the similarity score for the given balance and responsive values
+    similarity_score = calculate_similarity(response_envA, response_envB)
+    return similarity_score

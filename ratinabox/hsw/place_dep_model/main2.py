@@ -29,10 +29,9 @@ from ratinabox.hsw.place_dep_model.actualVexpected2 import compare_actual_expect
 from ratinabox.hsw.place_dep_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
 from ratinabox.hsw.place_dep_model.envA_rectangle2 import simulate_envA
 from ratinabox.hsw.place_dep_model.envB_oval2 import simulate_envB
-from ratinabox.hsw.place_dep_model.learningTransfer2 import assess_learning_transfer
 from ratinabox.hsw.place_dep_model.trial_marker2 import determine_cs_us
 
-from ratinabox.hsw.utils import parse_list, get_distribution_values, interpolate_position_data
+from ratinabox.hsw import utils
 from ratinabox.hsw.environment_builder import build_rectangular_environment
 
 """
@@ -111,10 +110,10 @@ parser.add_argument('--optional_param', type=str, help='Optional parameter for a
 args = parser.parse_args()
 
 # Process the arguments
-#balance_values = parse_list(args.balance_values)
-responsive_values = parse_list(args.responsive_values)
-percent_place_cells_values = parse_list(args.percent_place_cells)
-holdovers = parse_list(args.holdovers)
+#balance_values = utils.parse_list(args.balance_values)
+responsive_values = utils.parse_list(args.responsive_values)
+percent_place_cells_values = utils.parse_list(args.percent_place_cells)
+holdovers = utils.parse_list(args.holdovers)
 optional_param = args.optional_param
 num_iters = args.num_iters
 
@@ -139,16 +138,16 @@ position_data_envB = data['envB314_524']  # Adjust variable name as needed
 
 # Set parameters
 num_neurons = 80
-#balance_values = parse_list(args.balance_values) if args.balance_values else [0.5]
-responsive_values = parse_list(args.responsive_values) if args.responsive_values else [0.5]
-percent_place_cells = parse_list(args.percent_place_cells) if args.percent_place_cells else [0.7]
-holdovers = parse_list(args.holdovers) if args.holdovers else [1]
+#balance_values = utils.parse_list(args.balance_values) if args.balance_values else [0.5]
+responsive_values = utils.parse_list(args.responsive_values) if args.responsive_values else [0.5]
+percent_place_cells = utils.parse_list(args.percent_place_cells) if args.percent_place_cells else [0.7]
+holdovers = utils.parse_list(args.holdovers) if args.holdovers else [1]
 responsive_zero_done = False
 
 
 # Interpolate position data to uniform time steps
-position_data_envA, desired_time_stepsA, interpolated_positions_envA = interpolate_position_data(position_data_envA)
-position_data_envB, desired_time_stepsB, interpolated_positions_envB = interpolate_position_data(position_data_envB)
+position_data_envA, desired_time_stepsA, interpolated_positions_envA = utils.interpolate_position_data(position_data_envA)
+position_data_envB, desired_time_stepsB, interpolated_positions_envB = utils.interpolate_position_data(position_data_envB)
 
 envA = build_rectangular_environment(position_data_envA[1:3].T)
 envB = build_rectangular_environment(position_data_envB[1:3].T)
@@ -199,8 +198,8 @@ with open(results_filepath, "w") as results_file:
         for i in range(num_iters):
 
 
-            #balance_distribution = get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons)
-            responsive_distribution = get_distribution_values(args.responsive_type, [responsive_val], num_neurons)
+            #balance_distribution = utils.get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons)
+            responsive_distribution = utils.get_distribution_values(args.responsive_type, [responsive_val], num_neurons)
 
             #Simulate in Environment A
             tebc_responsive_neurons = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
