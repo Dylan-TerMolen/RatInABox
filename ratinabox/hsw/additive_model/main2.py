@@ -26,8 +26,7 @@ from ratinabox.Environment import Environment
 from hannahs_cebras import cond_decoding_AvsB, pos_decoding_self, pos_decoding_AvsB
 from ratinabox.hsw import config
 from ratinabox.hsw.additive_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
-from ratinabox.hsw.additive_model.envA_rectangle2 import simulate_envA
-from ratinabox.hsw.additive_model.envB_oval2 import simulate_envB
+from ratinabox.hsw.additive_model.simulate_agent import simulate_agent
 
 from ratinabox.hsw import utils
 from ratinabox.hsw.environment_builder import build_rectangular_environment
@@ -114,7 +113,7 @@ parser.add_argument('--balance_dist', choices=['fixed', 'gaussian', 'additive'],
 parser.add_argument('--balance_std', type=float, default=0.1, help='Standard deviation for Gaussian balance distribution')
 parser.add_argument('--responsive_values', type=str, default=0.5, help='List of responsive rates or probabilities for distributions')
 parser.add_argument('--responsive_type', choices=['fixed', 'binomial', 'normal', 'poisson'], default='fixed', help='Type of distribution for responsive rate')
-parser.add_argument('--percent_place_cells', type=str, required=True, help='Percentage of place cells (single value or comma-separated list)')
+parser.add_argument('--percent_place_cells', type=str, default=0.7, help='Percentage of place cells (single value or comma-separated list)')
 parser.add_argument('--num_iters', type=int, default=1, help='optional parameter for number of iterations')
 parser.add_argument('--optional_param', type=str, help='Optional parameter for additional functionality')
 
@@ -123,7 +122,7 @@ args = parser.parse_args()
 # Process the arguments
 balance_values = utils.parse_list(args.balance_values)
 responsive_values = utils.parse_list(args.responsive_values)
-percent_place_cells_values = utils.parse_list(args.percent_place_cells)
+percent_place_cells = utils.parse_list(args.percent_place_cells)
 optional_param = args.optional_param
 num_iters = args.num_iters
 
@@ -146,9 +145,7 @@ position_data_envB = data['envB314_524']  # Adjust variable name as needed
 
 # Set parameters
 num_neurons = 80
-balance_values = utils.parse_list(args.balance_values) if args.balance_values else [0.5]
-responsive_values = utils.parse_list(args.responsive_values) if args.responsive_values else [0.5]
-percent_place_cells = utils.parse_list(args.percent_place_cells) if args.percent_place_cells else [0.7]
+
 balance_zero_done = False
 responsive_zero_done = False
 

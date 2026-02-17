@@ -99,10 +99,10 @@ parser = argparse.ArgumentParser(description='Simulation Script for Neuronal Fir
 #parser.add_argument('--balance_values', type=str, help='List of balance values or means for Gaussian distribution')
 #parser.add_argument('--balance_dist', choices=['fixed', 'gaussian', 'additive'], default='fixed', help='Distribution type for balance')
 #parser.add_argument('--balance_std', type=float, default=0.1, help='Standard deviation for Gaussian balance distribution')
-parser.add_argument('--responsive_values', type=str, help='List of responsive rates or probabilities for distributions')
+parser.add_argument('--responsive_values', type=str, default=0.5, help='List of responsive rates or probabilities for distributions')
 parser.add_argument('--responsive_type', choices=['fixed', 'binomial', 'normal', 'poisson'], default='fixed', help='Type of distribution for responsive rate')
-parser.add_argument('--percent_place_cells', type=str, required=True, help='Percentage of place cells (single value or comma-separated list)')
-parser.add_argument('--holdovers', type=str, required=True, help='if you want TEBC cells held over from env A')
+parser.add_argument('--percent_place_cells', type=str, default=0.7, help='Percentage of place cells (single value or comma-separated list)')
+parser.add_argument('--holdovers', type=str, default=1, help='if you want TEBC cells held over from env A')
 parser.add_argument('--num_iters', type=int, default=1, help='optional parameter for number of iterations')
 parser.add_argument('--optional_param', type=str, help='Optional parameter for additional functionality')
 args = parser.parse_args()
@@ -110,7 +110,7 @@ args = parser.parse_args()
 # Process the arguments
 #balance_values = utils.parse_list(args.balance_values)
 responsive_values = utils.parse_list(args.responsive_values)
-percent_place_cells_values = utils.parse_list(args.percent_place_cells)
+percent_place_cells = utils.parse_list(args.percent_place_cells)
 holdovers = utils.parse_list(args.holdovers)
 optional_param = args.optional_param
 num_iters = args.num_iters
@@ -136,10 +136,7 @@ position_data_envB = data['envB314_524']  # Adjust variable name as needed
 
 # Set parameters
 num_neurons = 80
-#balance_values = utils.parse_list(args.balance_values) if args.balance_values else [0.5]
-responsive_values = utils.parse_list(args.responsive_values) if args.responsive_values else [0.5]
-percent_place_cells = utils.parse_list(args.percent_place_cells) if args.percent_place_cells else [0.7]
-holdovers = utils.parse_list(args.holdovers) if args.holdovers else [1]
+
 responsive_zero_done = False
 
 
@@ -208,7 +205,7 @@ with open(results_filepath, "w") as results_file:
             #p.sort_stats('cumulative').print_stats(10)
 
             # Now run the function normally to capture its output
-            spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_envA(agentA, position_data_envA, responsive_distribution, tebc_responsive_neurons, percent_place_cells_values)
+            spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_envA(agentA, position_data_envA, responsive_distribution, tebc_responsive_neurons, percent_place_cells)
             # also want a percent of place cells metric
 
             if holdover == 1:
@@ -217,7 +214,7 @@ with open(results_filepath, "w") as results_file:
                 tebc_responsive_neurons = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
 
             # Simulate in Environment B using the parameters from Environment A
-            spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_envB(agentB, position_data_envB, responsive_distribution, tebc_responsive_neurons, percent_place_cells_values)
+            spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_envB(agentB, position_data_envB, responsive_distribution, tebc_responsive_neurons, percent_place_cells)
 
 
 

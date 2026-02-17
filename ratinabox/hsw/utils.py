@@ -3,7 +3,10 @@ from scipy import stats
 from scipy.interpolate import interp1d
 
 def parse_list(arg_value):
-    if isinstance(arg_value, list) or isinstance(arg_value, float):
+    if isinstance(arg_value, list):
+        return [float(val) for val in arg_value]
+
+    if isinstance(arg_value, float):
         return [arg_value]
 
     if ',' in arg_value:
