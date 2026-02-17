@@ -25,8 +25,7 @@ from ratinabox.Environment import Environment
 from hannahs_cebras import cond_decoding_AvsB, pos_decoding_self, pos_decoding_AvsB
 from ratinabox.hsw import config
 from ratinabox.hsw.dependent_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
-from ratinabox.hsw.dependent_model.envA_rectangle2 import simulate_envA
-from ratinabox.hsw.dependent_model.envB_oval2 import simulate_envB
+from ratinabox.hsw.dependent_model.simulate_agent import simulate_agent
 
 from ratinabox.hsw import utils
 from ratinabox.hsw.environment_builder import build_rectangular_environment
@@ -196,12 +195,12 @@ with open(results_filepath, "w") as results_file:
             tebc_responsive_neurons, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
 
             # Profile the function
-            #cProfile.runctx('simulate_envA(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, cell_types)', globals(), locals(), 'profile_stats.prof')
+            #cProfile.runctx('simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, cell_types)', globals(), locals(), 'profile_stats.prof')
             #p = pstats.Stats('profile_stats.prof')
             #p.sort_stats('cumulative').print_stats(10)
 
             # Now run the function normally to capture its output
-            spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_envA(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types)
+            spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types)
             # also want a percent of place cells metric
 
 
@@ -209,7 +208,7 @@ with open(results_filepath, "w") as results_file:
             tebc_responsive_rates_envA = eyeblink_neuronsA.tebc_responsive_neurons
 
             # Simulate in Environment B using the parameters from Environment A
-            spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_envB(agentB, position_data_envB, balance_distribution_envA, tebc_responsive_rates_envA, tebc_responsive_neurons, percent_place_cells, cell_types)
+            spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, balance_distribution_envA, tebc_responsive_rates_envA, tebc_responsive_neurons, percent_place_cells, cell_types)
 
 
 

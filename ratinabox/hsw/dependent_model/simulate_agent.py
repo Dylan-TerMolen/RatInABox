@@ -1,18 +1,11 @@
 import numpy as np
-from ratinabox.Environment import Environment
-from ratinabox.Agent import Agent
 from ratinabox.hsw import utils
 from TEBCcells import TEBC
-import cProfile
-import pstats
 import random
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
 from ratinabox.hsw.cell_builder import CellBuilder
 
 
-def simulate_envA(agent, position_data, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types):
+def simulate_agent(agent, position_data, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types):
     PCs = CellBuilder.build_place_cells(agent)
 
     if isinstance(percent_place_cells, list):
@@ -52,11 +45,10 @@ def simulate_envA(agent, position_data, balance_distribution, responsive_distrib
             FR = np.array(PCs.history['firingrate'][-1])
             FR_mod = firing_rate_function(vel*100) #getting to cm/s
             place_firing = FR*(FR_mod/30) #converting per time stamp
-            place_firing[indices_to_zero_out] =  0.02 / 30
+            place_firing[indices_to_zero_out] = 0.02 / 30
             if eyeblink_neurons.balance_distribution[0] != 100:
                 place_firing = (1 - eyeblink_neurons.balance_distribution) * place_firing
             baseline = place_firing
-
 
 
         #figuring out TEBC firing
@@ -70,7 +62,7 @@ def simulate_envA(agent, position_data, balance_distribution, responsive_distrib
 
 
         #combine
-        firing_rates[:, index] = tebc_firing + place_firing + np.random.normal(-0.02/30, 0.02/30) #this is per 1/7.5 seconds
+        firing_rates[:, index] = tebc_firing + place_firing + np.random.normal(-0.02/30, 0.02/30)
 
 
 
