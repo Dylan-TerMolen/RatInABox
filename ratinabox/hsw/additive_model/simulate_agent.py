@@ -1,17 +1,11 @@
 import numpy as np
-from ratinabox.Environment import Environment
-from ratinabox.Agent import Agent
 from ratinabox.hsw import utils
 from TEBCcells import TEBC
-import cProfile
-import pstats
 import random
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
 from ratinabox.hsw.cell_builder import CellBuilder
 
-def simulate_envA(agent, position_data, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types):
+
+def simulate_agent(agent, position_data, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types):
     PCs = CellBuilder.build_place_cells(agent)
 
     if isinstance(percent_place_cells, list):
@@ -31,7 +25,6 @@ def simulate_envA(agent, position_data, balance_distribution, responsive_distrib
     last_CS_time = None
     last_US_time = None
 
-
     times = position_data[0, :]
     trial_markers = position_data[3, :]
 
@@ -41,16 +34,11 @@ def simulate_envA(agent, position_data, balance_distribution, responsive_distrib
     for index, (current_time, trial_marker) in enumerate(zip(times, trial_markers)):
         agent.update()
 
-
         #figuring out place cell firing
         PCs.update()
 
-        #velocity contribution modeled from:    #Spatial and Behavioral Correlates of Hippocampal Neuronal Activity
-                                                #Sustained activation of hippocampal pyramidal cells by ‘space clamping’ in a running wheel
-
         vel = eyeblink_neurons.smoothed_velocity[index];
         if vel < 0.02:
-            #place_firing = 0.0027
             place_firing = [0] * PCs.n
         else:
             FR = np.array(PCs.history['firingrate'][-1])
@@ -80,4 +68,3 @@ def simulate_envA(agent, position_data, balance_distribution, responsive_distrib
     cell_spikes = np.random.uniform(FR_MIN, FR_MAX, size=(firing_rates.shape)) < firing_rates
     spikes = cell_spikes.astype(int)
     return spikes, eyeblink_neurons, firing_rates, agent
-

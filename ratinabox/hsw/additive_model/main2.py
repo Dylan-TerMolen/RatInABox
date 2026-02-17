@@ -203,12 +203,12 @@ with open(results_filepath, "w") as results_file:
             tebc_responsive_neurons, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
 
             # Profile the function
-    #        cProfile.runctx('simulate_envA(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells_values, cell_types)', globals(), locals(), 'profile_stats.prof')
+    #        cProfile.runctx('simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types)', globals(), locals(), 'profile_stats.prof')
     #        p = pstats.Stats('profile_stats.prof')
     #        p.sort_stats('cumulative').print_stats(10)
 
             # Now run the function normally to capture its output
-            spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_envA(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells_values, cell_types)
+            spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types)
             # also want a percent of place cells metric
 
 
@@ -216,7 +216,7 @@ with open(results_filepath, "w") as results_file:
             tebc_responsive_rates_envA = eyeblink_neuronsA.tebc_responsive_neurons
 
             # Simulate in Environment B using the parameters from Environment A
-            spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_envB(agentB, position_data_envB, balance_distribution_envA, tebc_responsive_rates_envA, tebc_responsive_neurons, percent_place_cells_values, cell_types)
+            spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, balance_distribution_envA, tebc_responsive_rates_envA, tebc_responsive_neurons, percent_place_cells, cell_types)
 
 
 
