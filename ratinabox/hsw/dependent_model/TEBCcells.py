@@ -57,11 +57,7 @@ class TEBC(PlaceCells):
         self.firing_rates = np.zeros(N)
         self.history = {'t': [], 'firingrate': [], 'spikes': []}
 
-    def update_my_state(self, time_since_CS, current_index, baseline):
-        # Check the current smoothed velocity
-        current_velocity = self.smoothed_velocity[current_index] if current_index < len(self.smoothed_velocity) else 0
-
-
+    def update_my_state(self, time_since_CS, baseline):
         for i in range(self.num_neurons):
             tebc_response = 0
             if self.tebc_responsive_neurons[i]:

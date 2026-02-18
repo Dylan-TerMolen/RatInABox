@@ -50,9 +50,8 @@ class TEBC(PlaceCells):
         self.responsive_distribution = responsive_distribution
         self.history = {'t': [], 'firingrate': [], 'spikes': []}
 
-    def update_my_state(self, time_since_CS, current_index, baseline, in_field):
-        # Check the current smoothed velocity
-        current_velocity = self.smoothed_velocity[current_index] if current_index < len(self.smoothed_velocity) else 0
+    def update_my_state(self, time_since_CS, baseline, in_field):
+        current_velocity = self.agent.smoothed_velocity
 
         for i in range(self.num_neurons):
             if self.tebc_responsive_neurons[i]:

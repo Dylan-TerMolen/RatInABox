@@ -22,3 +22,10 @@ def calculate_firing_rate(neuron_obj, agent_position, time_since_CS, time_since_
         firing_rates[i] = (1 - neuron_obj.balance_distribution[i]) * place_response + neuron_obj.balance_distribution[i] * tebc_response
         firing_rates[i] = neuron_obj.add_jitter_percentage(firing_rates[i])
     return firing_rates
+
+
+
+def add_jitter_percentage(self, value, jitter_percentage=10):
+    jitter_amount = value * (jitter_percentage / 100)
+    jitter = random.uniform(-jitter_amount, jitter_amount)
+    return value + jitter

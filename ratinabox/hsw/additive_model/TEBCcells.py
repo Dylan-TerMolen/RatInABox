@@ -59,12 +59,11 @@ class TEBC(PlaceCells):
         self.history = {'t': [], 'firingrate': [], 'spikes': []}
 
     # Slightly different baseline calc's than dependent_model
-    def update_my_state(self, time_since_CS, current_index):
-        # Check the current smoothed velocity
-        current_velocity = self.smoothed_velocity[current_index] if current_index < len(self.smoothed_velocity) else 0
-
+    def update_my_state(self, time_since_CS):
         for i in range(self.num_neurons):
             tebc_response = 0
+
+            baseline = 0
 
             if self.tebc_responsive_neurons[i]:
                 cell_type = self.cell_types[i]
@@ -88,7 +87,3 @@ class TEBC(PlaceCells):
         # Return the current firing rates of all neurons
         return self.firing_rates
 
-    def add_jitter_percentage(self, value, jitter_percentage=10):
-        jitter_amount = value * (jitter_percentage / 100)
-        jitter = random.uniform(-jitter_amount, jitter_amount)
-        return value + jitter

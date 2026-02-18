@@ -20,8 +20,6 @@ def simulate_agent(agent, position_data, balance_distribution, responsive_distri
     firing_rates = np.zeros((PCs.n, position_data.shape[1]))
     spikes = np.zeros((PCs.n, position_data.shape[1]))
 
-    eyeblink_neurons.calculate_smoothed_velocity(position_data)
-
     last_CS_time = None
     last_US_time = None
 
@@ -36,6 +34,7 @@ def simulate_agent(agent, position_data, balance_distribution, responsive_distri
 
         #figuring out place cell firing
         PCs.update()
+        breakpoint()
 
         vel = eyeblink_neurons.smoothed_velocity[index];
         if vel < 0.02:
@@ -55,7 +54,7 @@ def simulate_agent(agent, position_data, balance_distribution, responsive_distri
         if cs_present:
             last_CS_time = current_time if last_CS_time is None else max(last_CS_time, current_time)
         time_since_CS = current_time - last_CS_time if last_CS_time is not None else -1
-        tebc_firing = eyeblink_neurons.update_my_state(time_since_CS, index)
+        tebc_firing = eyeblink_neurons.update_my_state(time_since_CS)
 
 
         #combine
