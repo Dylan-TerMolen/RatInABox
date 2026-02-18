@@ -17,8 +17,6 @@ tebc_responsive_rate = 0.6  # Example: 60% of neurons are tEBC-responsive
 combined_neurons = CombinedPlaceTebcNeurons(num_neurons, place_cells, balance, tebc_responsive_rate)
 
 '''
-
-
 class CombinedPlaceTebcNeurons(PlaceCells):
     default_params = dict()
     def __init__(self, agent, N, balance_distribution, responsive_distribution):
@@ -45,7 +43,6 @@ class CombinedPlaceTebcNeurons(PlaceCells):
         self.tebc_responsive_neurons, self.cell_types = self.assign_tebc_responsiveness_and_types()
         self.firing_rates = np.zeros(N)
         self.history = {'t': [], 'firingrate': [], 'spikes': []}
-
 
     def assign_tebc_responsiveness_and_types(self):
         # Check if responsive_distribution is a single value or an array
@@ -80,7 +77,6 @@ class CombinedPlaceTebcNeurons(PlaceCells):
         window_size = 15
         self.smoothed_velocity = pd.Series(vel_vector).rolling(window=window_size, min_periods=1, center=True).mean().tolist()
 
-
     def update_state(self, agent_position, time_since_CS, time_since_US, current_index):
         # Check the current smoothed velocity
         current_velocity = self.smoothed_velocity[current_index] if current_index < len(self.smoothed_velocity) else 0
@@ -105,18 +101,6 @@ class CombinedPlaceTebcNeurons(PlaceCells):
             self.firing_rates[i] = (1 - self.balance_distribution[i]) * place_response + self.balance_distribution[i] * tebc_response
 
         self.save_to_history()  # Save current state to history
-
-    def calculate_firing_rate(self, agent_position, time_since_CS, time_since_US):
-        firing_rates = np.zeros(self.num_neurons)
-        for i in range(self.num_neurons):
-            place_response = self.firing_rates[i]  # Directly use the updated firing rates
-            tebc_response = 0
-            if self.tebc_responsive_neurons[i]:
-                cell_type = self.cell_types[i]
-                response_func = response_profiles[cell_type]['response_func']
-                tebc_response = response_func(time_since_CS, time_since_US)
-            firing_rates[i] = (1 - self.balance_distribution[i]) * place_response + self.balance_distribution[i] * tebc_response
-        return firing_rates
 
     def get_firing_rates(self):
         # Return the current firing rates of all neurons

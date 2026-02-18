@@ -20,7 +20,7 @@ import ratinabox
 import scipy.io
 import scipy.stats as stats
 from cebra import CEBRA
-from ratinabox.Agent import Agent
+from ratinabox.hsw.agent import VelocitySmoothedAgent
 from ratinabox.Environment import Environment
 
 from hannahs_cebras import cond_decoding_AvsB, pos_decoding_self, pos_decoding_AvsB
@@ -147,10 +147,10 @@ envA = build_rectangular_environment(position_data_envA[1:3].T)
 envB = build_rectangular_environment(position_data_envB[1:3].T)
 
 #boot up the agents
-agentA = Agent(envA)
+agentA = VelocitySmoothedAgent(envA, position_data_envA)
 agentA.import_trajectory(times=desired_time_stepsA, positions=interpolated_positions_envA, interpolate=False)
 
-agentB = Agent(envB)
+agentB = VelocitySmoothedAgent(envB, position_data_envB)
 agentB.import_trajectory(times=desired_time_stepsB, positions=interpolated_positions_envB, interpolate=False)
 
 # Calculate the total number of runs
@@ -190,8 +190,6 @@ with open(results_filepath, "w") as results_file:
             args.holdover_type = "off"
 
         for i in range(num_iters):
-
-
             #balance_distribution = utils.get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons)
             responsive_distribution = utils.get_distribution_values(args.responsive_type, [responsive_val], num_neurons)
 
@@ -199,7 +197,7 @@ with open(results_filepath, "w") as results_file:
             tebc_responsive_neurons = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
 
             # Profile the function
-            #cProfile.runctx('simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, cell_types)', globals(), locals(), 'profile_stats.prof')
+            #cProfile.runctx('simulate_agent(agentA, position_data_envA, responsive_distribution, tebc_responsive_neurons, percent_place_cells)', globals(), locals(), 'profile_stats.prof')
             #p = pstats.Stats('profile_stats.prof')
             #p.sort_stats('cumulative').print_stats(10)
 

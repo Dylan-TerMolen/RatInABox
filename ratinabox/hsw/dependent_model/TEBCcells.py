@@ -57,28 +57,6 @@ class TEBC(PlaceCells):
         self.firing_rates = np.zeros(N)
         self.history = {'t': [], 'firingrate': [], 'spikes': []}
 
-
-    def calculate_smoothed_velocity(self, position_data):
-        times = position_data[0, :]   # Timestamps
-        xpos = position_data[1, :]    # X positions
-        ypos = position_data[2, :]    # Y positions
-
-        vel_vector = [0]
-        s = len(times)
-
-        for i in range(1, s - 1):
-            if times[i] != times[i - 1]:
-                hypo = np.hypot(xpos[i - 1] - xpos[i + 1], ypos[i - 1] - ypos[i + 1])
-                vel = hypo / (times[i + 1] - times[i - 1])
-                vel_vector.append(vel)
-
-        vel_vector[0] = vel_vector[1]
-        vel_vector.append(vel_vector[-1])
-        # Smooth the velocity data
-        window_size = 30
-        self.smoothed_velocity = pd.Series(vel_vector).rolling(window=window_size, min_periods=1, center=True).mean().tolist()
-
-
     def update_my_state(self, time_since_CS, current_index, baseline):
         # Check the current smoothed velocity
         current_velocity = self.smoothed_velocity[current_index] if current_index < len(self.smoothed_velocity) else 0
@@ -100,19 +78,6 @@ class TEBC(PlaceCells):
 
         self.save_to_history()
         return self.firing_rates
-
-    def calculate_firing_rate(self, agent_position, time_since_CS, time_since_US):
-        firing_rates = np.zeros(self.num_neurons)
-        for i in range(self.num_neurons):
-            place_response = self.firing_rates[i]  # Directly use the updated firing rates
-            tebc_response = 0
-            if self.tebc_responsive_neurons[i]:
-                cell_type = self.cell_types[i]
-                response_func = response_profiles[cell_type]['response_func']
-                tebc_response = response_func(time_since_CS, time_since_US)
-            firing_rates[i] = (1 - self.balance_distribution[i]) * place_response + self.balance_distribution[i] * tebc_response
-            firing_rates[i] = self.add_jitter_percentage(firing_rates[i])
-        return firing_rates
 
 
     def get_firing_rates(self):
