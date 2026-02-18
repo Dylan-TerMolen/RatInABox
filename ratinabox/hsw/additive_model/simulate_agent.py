@@ -36,7 +36,7 @@ def simulate_agent(agent, position_data, balance_distribution, responsive_distri
         PCs.update()
         breakpoint()
 
-        vel = eyeblink_neurons.smoothed_velocity[index];
+        vel = agent.smoothed_velocity
         if vel < 0.02:
             place_firing = [0] * PCs.n
         else:
