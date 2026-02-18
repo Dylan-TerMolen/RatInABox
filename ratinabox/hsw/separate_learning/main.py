@@ -9,8 +9,7 @@ import scipy.stats as stats
 
 from ratinabox.hsw import config, utils
 from ratinabox.hsw.separate_learning.CombinedPlaceTebcNeurons import CombinedPlaceTebcNeurons
-from ratinabox.hsw.separate_learning.envA_rectangle import simulate_envA
-from ratinabox.hsw.separate_learning.envB_oval import simulate_envB
+from ratinabox.hsw.separate_learning.simulate_agent import simulate_envA, simulate_envB
 
 """
 Simulation Script for Neuronal Firing Rate Analysis

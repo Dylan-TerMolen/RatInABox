@@ -6,7 +6,7 @@ def parse_list(arg_value):
     if isinstance(arg_value, list):
         return [float(val) for val in arg_value]
 
-    if isinstance(arg_value, float):
+    if isinstance(arg_value, float) or isinstance(arg_value, int):
         return [arg_value]
 
     if ',' in arg_value:
