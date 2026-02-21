@@ -2,11 +2,14 @@ import numpy as np
 import pandas as pd
 from ratinabox.Agent import Agent
 
-class VelocitySmoothedAgent(Agent):
+class TebcAgent(Agent):
     def __init__(self, environment, position_data, window_size=30, **kwargs):
         super().__init__(environment, **kwargs)
-        self._velocity_index = 0
+        self._step_index = 0
         self._smoothed_velocities = self._calculate_smoothed_velocity(position_data, window_size)
+        self._trial_markers = position_data[3, :]
+        self._times = position_data[0, :]
+        self._last_cs_time = None
 
     def _calculate_smoothed_velocity(self, position_data, window_size=30):
         times = position_data[0, :]
@@ -27,10 +30,41 @@ class VelocitySmoothedAgent(Agent):
 
         return pd.Series(vel_vector).rolling(window=window_size, min_periods=1, center=True).mean().tolist()
 
+    # Might need to call this on agent init / account for that case
     def update(self, dt=None, **kwargs):
         super().update(dt=dt, **kwargs)
-        self._velocity_index += 1
+        self._step_index += 1
+
+        if self._step_index < len(self._times) and self.cs_present:
+            self._last_cs_time = self.current_time
+
+    def follow_trajectory(self):
+        for _ in range(len(self._times) - 1):
+            yield self
+            self.update()
 
     @property
     def smoothed_velocity(self):
-        return self._smoothed_velocities[self._velocity_index]
+        return self._smoothed_velocities[self._step_index]
+    
+    @property
+    def trial_marker(self):
+        return self._trial_markers[self._step_index]
+
+    @property
+    def cs_present(self):
+        return 1 <= self.trial_marker <= 5
+
+    @property
+    def us_present(self):
+        return 6 <= self.trial_marker <= 10
+
+    @property
+    def time_since_cs(self):
+        if self._last_cs_time is None: return -1
+
+        return self.current_time - self._last_cs_time
+
+    @property
+    def current_time(self):
+        return self._times[self._step_index]

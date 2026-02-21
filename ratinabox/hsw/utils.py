@@ -83,6 +83,7 @@ def interpolate_position_data(position_data, step=1/30):
     return position_data_interp, desired_time_steps, interpolated_positions
 
 
+# TODO: remove once the agent is fully migrated to TebcAgent - moved to TebcAgent.cs_present / TebcAgent.us_present
 def determine_cs_us(trial_marker):
     """
     Determines if the conditioned stimulus (CS) or unconditioned stimulus (US) should be presented.

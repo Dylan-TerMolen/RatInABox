@@ -19,7 +19,7 @@ import pandas as pd
 import ratinabox
 import scipy.io
 import scipy.stats as stats
-from ratinabox.hsw.agent import VelocitySmoothedAgent
+from ratinabox.hsw.agent import TebcAgent
 from ratinabox.Environment import Environment
 
 from hannahs_cebras import cond_decoding_AvsB, pos_decoding_self, pos_decoding_AvsB
@@ -152,10 +152,10 @@ envA = build_rectangular_environment(position_data_envA[1:3].T)
 envB = build_rectangular_environment(position_data_envB[1:3].T)
 
 #boot up the agents
-agentA = VelocitySmoothedAgent(envA, position_data_envA)
+agentA = TebcAgent(envA, position_data_envA)
 agentA.import_trajectory(times=desired_time_stepsA, positions=interpolated_positions_envA, interpolate=False)
 
-agentB = VelocitySmoothedAgent(envB, position_data_envB)
+agentB = TebcAgent(envB, position_data_envB)
 agentB.import_trajectory(times=desired_time_stepsB, positions=interpolated_positions_envB, interpolate=False)
 
 # Calculate the total number of runs
