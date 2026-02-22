@@ -46,7 +46,7 @@ class TebcAgent(Agent):
     @property
     def smoothed_velocity(self):
         return self._smoothed_velocities[self._step_index]
-    
+
     @property
     def trial_marker(self):
         return self._trial_markers[self._step_index]
