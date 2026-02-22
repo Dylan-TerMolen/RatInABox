@@ -19,7 +19,7 @@ import pandas as pd
 import ratinabox
 import scipy.io
 import scipy.stats as stats
-from ratinabox.hsw.agent import TebcAgent
+from ratinabox.hsw.tebc_agent import TebcAgent
 from ratinabox.Environment import Environment
 
 from hannahs_cebras import cond_decoding_AvsB, pos_decoding_self, pos_decoding_AvsB

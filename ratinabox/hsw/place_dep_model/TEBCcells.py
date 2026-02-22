@@ -78,12 +78,3 @@ class TEBC(PlaceCells):
 
         self.save_to_history()
         return self.firing_rates
-
-    def get_firing_rates(self):
-        # Return the current firing rates of all neurons
-        return self.firing_rates
-
-    def add_jitter_percentage(self, value, jitter_percentage=10):
-        jitter_amount = value * (jitter_percentage / 100)
-        jitter = random.uniform(-jitter_amount, jitter_amount)
-        return value + jitter

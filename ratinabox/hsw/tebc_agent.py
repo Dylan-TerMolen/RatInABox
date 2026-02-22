@@ -39,7 +39,7 @@ class TebcAgent(Agent):
             self._last_cs_time = self.current_time
 
     def follow_trajectory(self):
-        for _ in range(len(self._times) - 1):
+        for _ in range(len(self._times)):
             yield self
             self.update()
 

@@ -4,7 +4,7 @@ Kept for reference but not actively called anywhere.
 """
 
 import numpy as np
-
+import random
 
 def calculate_firing_rate(neuron_obj, agent_position, time_since_CS, time_since_US, response_profiles):
     """

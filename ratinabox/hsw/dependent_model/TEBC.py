@@ -3,7 +3,6 @@ import pandas as pd
 import random
 from ratinabox.Neurons import Neurons, PlaceCells
 from tebc_response2 import response_profiles
-from tebc_response2 import linear_decay_response
 
 '''
 Python class template for CombinedPlaceTebcNeurons that integrates both place cell and tEBC
@@ -23,10 +22,7 @@ combined_neurons = CombinedPlaceTebcNeurons(num_neurons, place_cells, balance, t
 
 class TEBC(PlaceCells):
     default_params = dict()  # Add this line to define the default_params attribute
-    def __init__(self, agent, N, balance_distribution, responsive_distribution, place_cells_params, tebc_responsive_neurons=None, cell_types=None):
-        super().__init__(agent, place_cells_params)
-
-        # Define parameters for PlaceCells
+    def __init__(self, agent, N, balance_distribution, responsive_distribution, percent_place_cells, tebc_responsive_neurons=None, cell_types=None):
         place_cells_params = {
             "n": N,  # Number of place cells
             "description": "gaussian",  # Example parameter, adjust as needed
@@ -37,6 +33,8 @@ class TEBC(PlaceCells):
             "max_fr": 12,  # Adjust as needed
             "save_history": False  # Save history for plotting -- dont think this done anything
         }
+
+        super().__init__(agent, place_cells_params)
 
         # Initialize tebc_responsive_neurons with a default value if not provided
         if tebc_responsive_neurons is not None:
@@ -52,38 +50,64 @@ class TEBC(PlaceCells):
             self.cell_types = np.full(N, False)  # Default value: all False
 
         self.agent = agent
-        self.num_neurons = N
         self.balance_distribution = balance_distribution
         self.responsive_distribution = responsive_distribution
         self.firing_rates = np.zeros(N)
-        self.history = {'t': [], 'firingrate': [], 'spikes': []}
 
-    # Slightly different baseline calc's than dependent_model
-    def update_my_state(self, time_since_CS):
-        for i in range(self.num_neurons):
+        # Calculate indices to zero out based on percent place cells
+        if isinstance(percent_place_cells, list):
+            percent_place_cells = float(percent_place_cells[0])
+
+        percent_to_zero_out = (1 - percent_place_cells)
+        num_elements_to_zero_out = int(self.n * percent_to_zero_out)
+
+        # Randomly select indices to zero out
+        self.indices_to_zero_out = random.sample(range(self.n), num_elements_to_zero_out)
+
+    def _modulate_firing_rates_for_velocity(self):
+        coefficients = [-3.26092478e-04, 1.74074978e-02, 8.36619150e-02, 1.16059441]
+        firing_rate_function = np.poly1d(coefficients)
+
+        vel = self.agent.smoothed_velocity
+
+        if vel < 0.02:
+            self.firingrate *= [0.02/30] # In additive model we just 0 it out
+        else:
+            FR_mod = firing_rate_function(vel * 100)
+
+            self.firingrate *= (FR_mod / 30)
+            self.firingrate[self.indices_to_zero_out] = 0.02 / 30
+
+
+    def update(self):
+        super().update()
+        self._modulate_firing_rates_for_velocity()
+
+        # I think we proportionally scale place firing here
+        # Previously, we passed the balance scaled place firing rate in here. Currently, it passes in the raw value and then scales both by the balance
+        task_firing_rates = self.calculate_task_firing_rates()
+
+        self.firingrate = (self.balance_distribution * task_firing_rates) + (self.firingrate * (1 - self.balance_distribution))
+        self.firingrate += np.random.normal(-0.02/30, 0.02/30)
+        
+        self.save_to_history()
+    
+    def calculate_task_firing_rates(self):
+        task_firing_rates = np.zeros(self.n)
+
+        for i in range(self.n):
             tebc_response = 0
-
-            baseline = 0
-
             if self.tebc_responsive_neurons[i]:
                 cell_type = self.cell_types[i]
                 response_func = response_profiles[cell_type]['response_func']
-                baseline = response_profiles[cell_type]['baseline']
-                tebc_response = response_func(time_since_CS)
+                tebc_response = response_func(self.agent.time_since_cs, self.firingrate[i])
 
 
-            # Apply the balance distribution if it's meant to be a factor
-            if self.balance_distribution[0] != 100:
-                self.firing_rates[i] = baseline + (self.balance_distribution[i] / 100) * (tebc_response - baseline)
-            else:
+            if self.balance_distribution[0] == 100:
                 self.firing_rates[i] = tebc_response
+            else:
+                self.firing_rates[i] = (self.balance_distribution[i] * tebc_response)
 
 
-        self.save_to_history()
-        return self.firing_rates
-
-
-    def get_firing_rates(self):
-        # Return the current firing rates of all neurons
-        return self.firing_rates
+        return task_firing_rates
 

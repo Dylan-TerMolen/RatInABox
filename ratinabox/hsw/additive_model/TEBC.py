@@ -41,7 +41,6 @@ class TEBC(PlaceCells):
         self.agent = agent
         self.balance_distribution = balance_distribution
         self.responsive_distribution = responsive_distribution
-        self.history = {'t': [], 'firingrate': [], 'spikes': []}
 
         # Calculate indices to zero out based on percent place cells
         if isinstance(percent_place_cells, list):
@@ -61,7 +60,7 @@ class TEBC(PlaceCells):
         # Update based on task state / response function
         task_firing_rates = self._calculate_task_firing_rates(self.agent.time_since_cs)
 
-        self.firingrate = (self.balance_distribution * task_firing_rates) + (self.firingrate * (1 - task_firing_rates))
+        self.firingrate = (self.balance_distribution * task_firing_rates) + (self.firingrate * (1 - self.balance_distribution))
         self.firingrate += np.random.normal(-0.02/30, 0.02/30)
         
         self.save_to_history()

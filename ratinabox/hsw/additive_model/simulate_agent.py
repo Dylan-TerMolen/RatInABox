@@ -8,12 +8,10 @@ from ratinabox.hsw.cell_builder import CellBuilder
 def simulate_agent(agent, position_data, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types):
     tebc = TEBC(agent, 80, balance_distribution, responsive_distribution, percent_place_cells, tebc_responsive_neurons, cell_types)
 
-    firing_rates = np.zeros((tebc.n, position_data.shape[1]))
-    spikes = np.zeros((tebc.n, position_data.shape[1]))
-
     for _ in agent.follow_trajectory():
         tebc.update()
 
+    firing_rates = np.array(tebc.history('firingrate')).T
     FR_MAX = utils.max_excluding_outliers(firing_rates)
     FR_MIN = 0
     cell_spikes = np.random.uniform(FR_MIN, FR_MAX, size=(firing_rates.shape)) < firing_rates
