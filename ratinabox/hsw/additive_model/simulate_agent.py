@@ -11,7 +11,7 @@ def simulate_agent(agent, position_data, balance_distribution, responsive_distri
     for _ in agent.follow_trajectory():
         tebc.update()
 
-    firing_rates = np.array(tebc.history('firingrate')).T
+    firing_rates = np.array(tebc.history['firingrate']).T
     FR_MAX = utils.max_excluding_outliers(firing_rates)
     FR_MIN = 0
     cell_spikes = np.random.uniform(FR_MIN, FR_MAX, size=(firing_rates.shape)) < firing_rates
