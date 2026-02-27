@@ -115,11 +115,6 @@ def type8decay(time_since_CS, baseline):
         return baseline
 
 
-.065/24
-
-
-
-# Response profiles for each cell type
 response_profiles = {
     1: {'response_func': lambda t, baseline=.07/24: bimodal_response(t, [.15/24, .4/24], [0.3, .85], [0.1, 0.1], baseline, CS_duration, US_duration), 'baseline': .07/24},
     2: {'response_func': lambda t, baseline=.07/24: gaussian_peak2(t, .22/24, US_start_time, 0.15, US_duration, baseline), 'baseline': .07/24},
@@ -128,9 +123,32 @@ response_profiles = {
     5: {'response_func': lambda t, baseline=.035/24: cell_type_5_response(t, baseline=baseline, us_peak=0.11/24, us_duration=US_duration), 'baseline': 0.035/24},
     6: {'response_func': lambda t, baseline=.04/24: noisy_uniform_response(t, baseline), 'baseline': .04/24},
     7: {'response_func': lambda t, baseline=.042/24: bimodal_response2(t, [.07/24, .09/24], [0.3, US_start_time+.05], [0.08, 0.15], baseline, cs_duration=.25, us_duration=.1), 'baseline': .042/24},
-    8: {'response_func': lambda t, baseline=.065/24: type8decay(t, baseline), 'baseline': .065/24}
+    8: {'response_func': lambda t, baseline=.065/24: type8decay(t, baseline), 'baseline': .065/24},
 }
 
 
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
 
-#python main2.py --balance_values 1 --balance_dist additive --responsive_values 1 --responsive_type fixed --percent_place_cells 0
+    time = np.linspace(-0.1, 2.0, 1000)
+    fig, axes = plt.subplots(2, 4, figsize=(16, 8))
+    axes = axes.flatten()
+
+    for cell_type, ax in zip(sorted(response_profiles.keys()), axes):
+        profile = response_profiles[cell_type]
+        func = profile['response_func']
+        baseline = profile['baseline']
+        responses = [func(t) for t in time]
+
+        ax.plot(time, responses)
+        ax.axhline(y=baseline, color='r', linestyle='--', alpha=0.5, label='baseline')
+        ax.axvline(x=0, color='g', linestyle=':', alpha=0.5, label='CS')
+        ax.axvline(x=US_start_time, color='orange', linestyle=':', alpha=0.5, label='US')
+        ax.set_title(f'Type {cell_type}')
+        ax.set_xlabel('Time since CS (s)')
+        ax.set_ylabel('Firing rate')
+        ax.legend(fontsize=7)
+
+    plt.suptitle('TEBC Response Profiles (Baseline Input)')
+    plt.tight_layout()
+    plt.show()
