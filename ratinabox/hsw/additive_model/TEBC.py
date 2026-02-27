@@ -1,9 +1,7 @@
 import random
 import numpy as np
 
-from ratinabox.Neurons import Neurons, PlaceCells
-from ratinabox.hsw.cell_builder import CellBuilder
-from ratinabox.hsw import utils
+from ratinabox.Neurons import PlaceCells
 from tebc_response2 import response_profiles
 
 

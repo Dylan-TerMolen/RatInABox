@@ -104,7 +104,10 @@ with open(results_filepath, "w") as results_file:
     #        p.sort_stats('cumulative').print_stats(10)
 
             # Now run the function normally to capture its output
-            spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types)
+            agentA = build_agent(position_data_envA)
+            agentB = build_agent(position_data_envB)
+
+            spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cell, cell_types)
             # also want a percent of place cells metric
 
 
@@ -112,7 +115,7 @@ with open(results_filepath, "w") as results_file:
             tebc_responsive_rates_envA = eyeblink_neuronsA.tebc_responsive_neurons
 
             # Simulate in Environment B using the parameters from Environment A
-            spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, balance_distribution_envA, tebc_responsive_rates_envA, tebc_responsive_neurons, percent_place_cells, cell_types)
+            spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, balance_distribution_envA, tebc_responsive_rates_envA, tebc_responsive_neurons, percent_place_cell, cell_types)
 
 
 
@@ -186,8 +189,8 @@ with open(results_filepath, "w") as results_file:
             #run cebra decoding
             fract_control_all, fract_test_all = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
 
-            posA, response_envA = filter_by_velocity(agentA.position_data, response_envA, eyeblink_neuronsA)
-            posB, response_envB = filter_by_velocity(agentB.position_data, response_envB, eyeblink_neuronsB)
+            posA, response_envA = filter_by_velocity(agentA, response_envA)
+            posB, response_envB = filter_by_velocity(agentB, response_envB)
             #pos_test_scoreB, pos_test_errB, dis_meanB, dis_medianB, pos_test_score_shuffB, pos_test_err_shuffB, dis_mean_shuffB, dis_median_shuffB = pos_decoding_self(response_envB, posB, .70)
 
 

@@ -8,7 +8,7 @@ class TebcAgent(Agent):
     def __init__(self, environment, position_data, window_size=30, **kwargs):
         super().__init__(environment, **kwargs)
         self._step_index = 0
-        self._smoothed_velocities = self._calculate_smoothed_velocity(position_data, window_size)
+        self.smoothed_velocities = self._calculate_smoothed_velocity(position_data, window_size)
         self._trial_markers = position_data[3, :]
         self._times = position_data[0, :]
         self._last_cs_time = None
@@ -48,7 +48,7 @@ class TebcAgent(Agent):
 
     @property
     def smoothed_velocity(self):
-        return self._smoothed_velocities[self._step_index]
+        return self.smoothed_velocities[self._step_index]
 
     @property
     def trial_marker(self):

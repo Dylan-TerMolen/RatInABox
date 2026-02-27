@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import random
-from ratinabox.Neurons import Neurons, PlaceCells
+from ratinabox.Neurons import PlaceCells
 from tebc_response2 import *
 
 class TEBC(PlaceCells):

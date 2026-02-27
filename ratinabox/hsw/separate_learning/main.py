@@ -2,6 +2,7 @@ import argparse
 import itertools
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 import ratinabox
 import scipy.io
@@ -46,7 +47,10 @@ for balance_value, responsive_val in itertools.product(balance_values, responsiv
     response_envB, agentB, combined_neuronsB = simulate_envB(position_data_envB, balance_distribution, responsive_distribution)
 
     ratinabox.autosave_plots = True
-    agentA.plot_trajectory(t_end=120)
+    extent = agentA.Environment.extent
+    aspect = (extent[1] - extent[0]) / (extent[3] - extent[2])
+    fig, ax = plt.subplots(figsize=(6 * aspect, 6))
+    agentA.plot_trajectory(t_end=120, fig=fig, ax=ax)
     ratinabox.stylize_plots()
 
 

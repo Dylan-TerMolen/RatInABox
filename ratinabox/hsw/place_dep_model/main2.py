@@ -108,7 +108,10 @@ with open(results_filepath, "w") as results_file:
             #p.sort_stats('cumulative').print_stats(10)
 
             # Now run the function normally to capture its output
-            spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, responsive_distribution, tebc_responsive_neurons, percent_place_cells)
+            agentA = build_agent(position_data_envA)
+            agentB = build_agent(position_data_envB)
+
+            spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, responsive_distribution, tebc_responsive_neurons, percent_place_cell)
             # also want a percent of place cells metric
 
             if holdover == 1:
@@ -117,7 +120,7 @@ with open(results_filepath, "w") as results_file:
                 tebc_responsive_neurons = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
 
             # Simulate in Environment B using the parameters from Environment A
-            spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, responsive_distribution, tebc_responsive_neurons, percent_place_cells)
+            spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, responsive_distribution, tebc_responsive_neurons, percent_place_cell)
 
 
 
@@ -173,8 +176,8 @@ with open(results_filepath, "w") as results_file:
             #run cebra decoding
             fract_control_all, fract_test_all = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
 
-            posA, response_envA = filter_by_velocity(agentA.position_data, response_envA, eyeblink_neuronsA)
-            posB, response_envB = filter_by_velocity(agentB.position_data, response_envB, eyeblink_neuronsB)
+            posA, response_envA = filter_by_velocity(agentA, response_envA)
+            posB, response_envB = filter_by_velocity(agentB, response_envB)
 
 
             #POS DECODE

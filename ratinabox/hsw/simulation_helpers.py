@@ -33,10 +33,10 @@ def filter_eyeblink_trials(position_data, response):
     return response_test, eyeblink_labels
 
 
-def filter_by_velocity(position_data, response, tebc, threshold=0.02):
+def filter_by_velocity(agent, response, threshold=0.02):
     """Keep only time steps where the agent was moving above *threshold* m/s."""
-    pos = position_data[1:3].T
-    vel = np.array(tebc.smoothed_velocity)
+    pos = agent.position_data[1:3].T
+    vel = np.array(agent.smoothed_velocities)
     moving = np.where(vel > threshold)[0]
     return pos[moving], response[moving]
 
