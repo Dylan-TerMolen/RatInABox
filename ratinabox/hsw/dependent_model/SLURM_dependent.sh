@@ -8,7 +8,7 @@
 #SBATCH --mem=220GB
 #SBATCH --time=24:00:00
 #SBATCH --job-name="DM_job_${SLURM_ARRAY_TASK_ID}"
-#SBATCH --output=DM_SLURM_out.%A_%a.out
+#SBATCH --output=slurm_out/DM_SLURM_out.%A_%a.out
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=dptermolen@gmail.com
 
@@ -20,4 +20,4 @@ module purge
 "${PYTHON}" "${BASE_DIR}/ratinabox/hsw/dependent_model/main2.py" \
     --balance_values 1 --balance_dist additive \
     --responsive_values 0,.10,.20,.30,.40 --responsive_type fixed \
-    --percent_place_cells 0,.10,.20,.30,.40 --num_iters 5 --optional_param work
+    --percent_place_cells 0,.10,.20,.30,.40 --num_iters 5

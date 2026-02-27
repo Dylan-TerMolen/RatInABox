@@ -9,7 +9,7 @@
 #SBATCH --mem=220GB
 #SBATCH --time=24:00:00
 #SBATCH --job-name="SL_job_${SLURM_ARRAY_TASK_ID}"
-#SBATCH --output=SL_SLURM_out.%A_%a.out
+#SBATCH --output=slurm_out/SL_SLURM_out.%A_%a.out
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=dptermolen@gmail.com
 
