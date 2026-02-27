@@ -30,7 +30,7 @@ def get_distribution_values(dist_type, params, size):
         lam = params[0]
         return np.clip(stats.poisson(lam).rvs(size=size), 0, 1)
     elif dist_type == 'additive':
-        return np.full(size, 100)
+        return np.full(size, 1.0)
 
 def _map_trial_markers_to_interpolated_times(original_times, trial_markers, interpolated_times):
     """

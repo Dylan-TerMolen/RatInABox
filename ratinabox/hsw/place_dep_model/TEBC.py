@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import random
 from ratinabox.Neurons import PlaceCells
 from tebc_response2 import *
@@ -80,21 +79,23 @@ class TEBC(PlaceCells):
 
         task_firing_rates = np.zeros(self.n)
 
+        running = current_velocity > 0.02
+
         for i in range(self.n):
             if not self.tebc_responsive_neurons[i]:
                 continue
 
-            ##for testing
-            #in_field[i] = .4 #
-            #baseline[i] = .2 #
-            if (unmodulated_baseline[i] >= 0.2) and (current_velocity > 0.02): #in field running
-                tebc_response = type_one_response(time_since_CS, self.firingrate[i])
-            if (unmodulated_baseline[i] < 0.2) and (current_velocity > 0.02): #out of field running
-                tebc_response = type_two_response(time_since_CS, self.firingrate[i])
-            if (unmodulated_baseline[i] >= 0.2) and (current_velocity <= 0.02): #in field still
-                tebc_response = type_three_response(time_since_CS, self.firingrate[i])
-            if (unmodulated_baseline[i] < 0.2) and (current_velocity <= 0.02): #out of field still
-                tebc_response = type_four_response(time_since_CS, self.firingrate[i])
+            in_field = unmodulated_baseline[i] >= 0.2
+
+            match (in_field, running):
+                case (True, True):
+                    tebc_response = type_one_response(time_since_CS, self.firingrate[i])
+                case (False, True):
+                    tebc_response = type_two_response(time_since_CS, self.firingrate[i])
+                case (True, False):
+                    tebc_response = type_three_response(time_since_CS, self.firingrate[i])
+                case (False, False):
+                    tebc_response = type_four_response(time_since_CS, self.firingrate[i])
 
             task_firing_rates[i] = tebc_response
 

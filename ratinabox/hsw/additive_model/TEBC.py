@@ -101,20 +101,13 @@ class TEBC(PlaceCells):
         for i in range(self.n):
             tebc_response = 0
 
-            baseline = 0
-
             # [DT] I have not validated how this works
             if self.tebc_responsive_neurons[i]:
                 cell_type = self.cell_types[i]
                 response_func = response_profiles[cell_type]['response_func']
-                baseline = response_profiles[cell_type]['baseline']
                 tebc_response = response_func(time_since_CS)
 
-            # Apply the balance distribution if it's meant to be a factor
-            if self.balance_distribution[0] != 100:
-                task_firing_rates[i] = baseline + (self.balance_distribution[i] / 100) * (tebc_response - baseline)
-            else:
-                task_firing_rates[i] = tebc_response
+            task_firing_rates[i] = tebc_response
 
         return task_firing_rates
 

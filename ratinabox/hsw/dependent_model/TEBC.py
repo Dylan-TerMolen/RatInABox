@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import random
 from ratinabox.Neurons import PlaceCells
 from tebc_response2 import response_profiles
@@ -52,7 +51,6 @@ class TEBC(PlaceCells):
         self.agent = agent
         self.balance_distribution = balance_distribution
         self.responsive_distribution = responsive_distribution
-        self.firing_rates = np.zeros(N)
 
         # Calculate indices to zero out based on percent place cells
         if isinstance(percent_place_cells, list):
@@ -103,11 +101,7 @@ class TEBC(PlaceCells):
                 tebc_response = response_func(self.agent.time_since_cs, self.firingrate[i])
 
 
-            if self.balance_distribution[0] == 100:
-                self.firing_rates[i] = tebc_response
-            else:
-                self.firing_rates[i] = (self.balance_distribution[i] * tebc_response)
-
+            task_firing_rates[i] = tebc_response
 
         return task_firing_rates
 
