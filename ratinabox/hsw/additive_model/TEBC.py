@@ -7,6 +7,22 @@ from ratinabox.hsw import utils
 from tebc_response2 import response_profiles
 
 
+'''
+Python class template for CombinedPlaceTebcNeurons that integrates both place cell and tEBC
+cell functionalities. This class is designed to be used with the RatInABox framework.
+- It includes a balance parameter to adjust the contribution of place cell activity versus
+tEBC cell activity for each neuron.
+- also includes tebc_responsive_rate that specifies the percentage of neurons that are responsive to tEBC signals.
+
+# Example usage
+num_neurons = 100
+balance = 0.5  # Example balance factor
+tebc_responsive_rate = 0.6  # Example: 60% of neurons are tEBC-responsive
+combined_neurons = TEBC(num_neurons, place_cells, balance, tebc_responsive_rate)
+
+'''
+
+
 class TEBC(PlaceCells):
     default_params = dict()  # Add this line to define the default_params attribute
 
