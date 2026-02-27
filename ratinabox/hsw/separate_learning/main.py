@@ -11,67 +11,9 @@ from ratinabox.hsw import config, utils
 from ratinabox.hsw.separate_learning.CombinedPlaceTebcNeurons import CombinedPlaceTebcNeurons
 from ratinabox.hsw.separate_learning.simulate_agent import simulate_envA, simulate_envB
 
-"""
-Simulation Script for Neuronal Firing Rate Analysis
-Note: advise using a conda environment:
-    conda create -n ratinabox python=3.9
-    conda activate ratinabox
-    conda install numpy
-    conda install scipy
-    conda install matplotlib
-    export PYTHONPATH="${PYTHONPATH}:/Users/Hannah/Programming/RatInABox"
-    pip install shapely
-
-For cebra in env:
-    conda install pytorch::pytorch torchvision torchaudio -c pytorch <-- or other, look at https://pytorch.org/
-    pip install cebra
-
-
-
-
-Usage:
-    python main.py [--balance_values BALANCE_VALUES] [--balance_dist BALANCE_DIST] [--balance_std BALANCE_STD]
-                   [--responsive_values RESPONSIVE_VALUES] [--responsive_type RESPONSIVE_TYPE]
-
-Arguments:
-    --balance_values  : Comma-separated list of balance values or means for Gaussian distribution.
-                        Example: --balance_values 0.3,0.5,0.7
-                        If not provided, a default value of 0.5 is used.
-    --balance_dist    : Specifies the type of distribution for the balance factor.
-                        Options are 'fixed' and 'gaussian'.
-                        Default is 'fixed'.
-    --balance_std     : Standard deviation for the Gaussian distribution of the balance factor.
-                        Only used if --balance_dist is set to 'gaussian'.
-                        Default value is 0.1.
-    --responsive_values: Comma-separated list of responsive rates or probabilities for distributions.
-                         Example: --responsive_values 0.4,0.6,0.8
-                         If not provided, a default value of 0.5 is used.
-    --responsive_type : Type of distribution for the responsive rate.
-                        Options are 'fixed', 'binomial', 'normal', 'poisson'.
-                        Default is 'fixed'.
-
-Examples:
-    python main.py --balance_values 0.3,0.5,0.7 --balance_dist gaussian --balance_std 0.1 --responsive_values 0.4,0.6,0.8 --responsive_type binomial
-
-    python main.py --balance_values 0.3,0.5 --balance_dist gaussian --balance_std 0.5 --responsive_values 0.4,0.6 --responsive_type binomial
-
-    python main.py --balance_values 0.3 --balance_dist gaussian --balance_std 0.1 --responsive_values 0.4 --responsive_type binomial
-
-    python main.py --balance_values 0.5 --balance_dist fixed --responsive_values 0.5 --responsive_type fixed
-
-Description:
-    The script conducts simulations to evaluate how different configurations of balance factors and responsive rates affect neuronal firing patterns. Balance can be set as a fixed value or as a mean for a Gaussian distribution. The responsive rate determines the proportion of neurons responsive to tEBC signals and can be set as a fixed value or sampled from specified distributions.
-
-    The script loads position data from a MATLAB file, performs simulations in two environments, and assesses learning transfer and spatial coding accuracy. The script supports a grid search over multiple balance and responsive rate values, allowing a comprehensive analysis of various parameter combinations. Results are printed to the console.
-
-Requirements:
-    - Ensure all necessary modules and custom classes are correctly imported and configured.
-    - Replace 'path_to_your_matlab_file.mat' with the actual path to your MATLAB file.
-    - Adjust environment settings and neuron parameters as needed in the script.
-"""
 
 # Set up save directory using config
-save_directory = config.get_save_directory(model_name='separate_learning', is_work=False)
+save_directory = config.get_save_directory(model_name='separate_learning')
 config.setup_ratinabox_figure_directory(save_directory)
 
 # Parse command-line arguments

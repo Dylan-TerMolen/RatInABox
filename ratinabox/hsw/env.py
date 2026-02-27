@@ -9,7 +9,7 @@ Usage:
 
     # Access paths
     matlab_path = config.MATLAB_FILE_PATH
-    save_dir = config.get_save_directory(model_name='additive', is_work=False)
+    save_dir = config.get_save_directory(model_name='additive')
 """
 
 import os
@@ -80,57 +80,26 @@ class EnvConfig:
                 f"Please set these in your .env file."
             )
 
-        # Load optional work environment variables
-        self.MATLAB_FILE_PATH_WORK = os.environ.get('MATLAB_FILE_PATH_WORK')
-        self.SAVE_DIRECTORY_WORK = os.environ.get('SAVE_DIRECTORY_WORK')
-        self.TRAINING_DATA_DIR_WORK = os.environ.get('TRAINING_DATA_DIR_WORK')
-
-    def get_matlab_file_path(self, is_work: bool = False) -> str:
-        """
-        Get the MATLAB file path based on environment.
-
-        Args:
-            is_work: If True, return work/HPC path if available.
-
-        Returns:
-            Path to the MATLAB position data file.
-        """
-        if is_work and self.MATLAB_FILE_PATH_WORK:
-            return self.MATLAB_FILE_PATH_WORK
+    def get_matlab_file_path(self) -> str:
+        """Get the MATLAB file path from the environment configuration."""
         return self.MATLAB_FILE_PATH
 
-    def get_save_directory(self, model_name: str = None, is_work: bool = False) -> str:
+    def get_save_directory(self, model_name: str = None) -> str:
         """
-        Get the save directory, optionally with model-specific subdirectory.
+        Get the save directory, optionally with a model-specific subdirectory.
 
         Args:
             model_name: Optional model name for subdirectory (e.g., 'additive', 'dependent').
-            is_work: If True, use work/HPC path if available.
 
         Returns:
             Path to the save directory.
         """
-        if is_work and self.SAVE_DIRECTORY_WORK:
-            base_dir = self.SAVE_DIRECTORY_WORK
-        else:
-            base_dir = self.SAVE_DIRECTORY
-
         if model_name:
-            return os.path.join(base_dir, f"{model_name}_results")
-        return base_dir
+            return os.path.join(self.SAVE_DIRECTORY, f"{model_name}_results")
+        return self.SAVE_DIRECTORY
 
-    def get_training_data_dir(self, is_work: bool = False) -> str:
-        """
-        Get the training data directory.
-
-        Args:
-            is_work: If True, return work/HPC path if available.
-
-        Returns:
-            Path to the training data directory.
-        """
-        if is_work and self.TRAINING_DATA_DIR_WORK:
-            return self.TRAINING_DATA_DIR_WORK
+    def get_training_data_dir(self) -> str:
+        """Get the training data directory from the environment configuration."""
         return self.TRAINING_DATA_DIR
 
     def setup_ratinabox_figure_directory(self, save_directory: str = None) -> None:

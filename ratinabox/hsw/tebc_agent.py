@@ -3,6 +3,8 @@ import pandas as pd
 from ratinabox.Agent import Agent
 
 class TebcAgent(Agent):
+    default_params = dict()
+
     def __init__(self, environment, position_data, window_size=30, **kwargs):
         super().__init__(environment, **kwargs)
         self._step_index = 0
@@ -10,6 +12,7 @@ class TebcAgent(Agent):
         self._trial_markers = position_data[3, :]
         self._times = position_data[0, :]
         self._last_cs_time = None
+        self.position_data = position_data
 
     def _calculate_smoothed_velocity(self, position_data, window_size=30):
         times = position_data[0, :]
