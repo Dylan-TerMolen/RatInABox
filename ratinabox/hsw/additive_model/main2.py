@@ -80,7 +80,6 @@ headers = [
 run_count = 0
 
 
-
 # Perform grid search over balance and responsive rates
 with open(results_filepath, "w") as results_file:
     for balance_value, responsive_val, percent_place_cell in itertools.product(balance_values, responsive_values, percent_place_cells):

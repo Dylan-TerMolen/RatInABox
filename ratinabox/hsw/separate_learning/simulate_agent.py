@@ -5,7 +5,7 @@ from ratinabox.hsw import utils
 from ratinabox.hsw.environment_builder import build_rectangular_environment
 from ratinabox.hsw.tebc_agent import TebcAgent
 
-def simulate_agent(agent, position_data, balance_distribution, responsive_distribution):
+def simulate_agent(agent, position_data, balance_value):
     N = 80
     firing_rates = np.zeros((N, position_data.shape[1]))
 
@@ -16,7 +16,7 @@ def simulate_agent(agent, position_data, balance_distribution, responsive_distri
 
     agent.import_trajectory(times=unique_times, positions=unique_positions, interpolate=False)
 
-    combined_neurons = CombinedPlaceTebcNeurons(agent, N, balance_distribution, responsive_distribution)
+    combined_neurons = CombinedPlaceTebcNeurons(agent, N, balance_value)
 
     for i, _ in enumerate(agent.follow_trajectory()):
         combined_neurons.update_state()
@@ -26,7 +26,7 @@ def simulate_agent(agent, position_data, balance_distribution, responsive_distri
     return firing_rates, agent, combined_neurons
 
 
-def simulate_envA(position_data, balance_distribution, responsive_distribution):
+def simulate_envA(position_data, balance_value):
     # env_params = {
     #     'boundary': [[0, 0], [0, .6], [1.3, .6], [1.3, 0]],
     #     'boundary_conditions': 'solid'
@@ -34,10 +34,10 @@ def simulate_envA(position_data, balance_distribution, responsive_distribution):
     # env = Environment(params=env_params)
     envA = build_rectangular_environment(position_data[1:3].T)
     agent = TebcAgent(envA, position_data)
-    return simulate_agent(agent, position_data, balance_distribution, responsive_distribution)
+    return simulate_agent(agent, position_data, balance_value)
 
 
-def simulate_envB(position_data, balance_distribution, responsive_distribution):
+def simulate_envB(position_data, balance_value):
     # Parameters for oval shape
     # height_in_meters = 18 * 0.0254
     # width_in_meters = 26 * 0.0254
@@ -53,4 +53,4 @@ def simulate_envB(position_data, balance_distribution, responsive_distribution):
     # env = Environment(params=env_params)
     envB = build_rectangular_environment(position_data[1:3].T)
     agent = TebcAgent(envB, position_data)
-    return simulate_agent(agent, position_data, balance_distribution, responsive_distribution)
+    return simulate_agent(agent, position_data, balance_value)

@@ -19,8 +19,10 @@ combined_neurons = CombinedPlaceTebcNeurons(num_neurons, place_cells, balance, t
 '''
 class CombinedPlaceTebcNeurons(PlaceCells):
     default_params = dict()
-    def __init__(self, agent, N, balance_distribution, responsive_distribution):
+    def __init__(self, agent, N, balance_value):
         # Define parameters for PlaceCells
+        self.place_cells_N = N // 2 
+        self.task_cells_N = N // 2
         place_cells_params = {
             "n": N,  # Number of place cells
             "description": "gaussian",  # Example parameter, adjust as needed
@@ -37,46 +39,35 @@ class CombinedPlaceTebcNeurons(PlaceCells):
 
         # Initialize additional properties for CombinedPlaceTebcNeurons
         self.agent = agent
-        self.num_neurons = N
-        self.balance_distribution = balance_distribution
-        self.responsive_distribution = responsive_distribution
-        self.tebc_responsive_neurons, self.cell_types = self.assign_tebc_responsiveness_and_types()
-        self.firing_rates = np.zeros(N)
+        self.cell_types = self.build_cell_types()
 
     def assign_tebc_responsiveness_and_types(self):
-        # Check if responsive_distribution is a single value or an array
-        if isinstance(self.responsive_distribution, (float, int)):
-            responsive_probs = np.full(self.num_neurons, self.responsive_distribution)
-        else:
-            responsive_probs = np.array(self.responsive_distribution)
-            if responsive_probs.ndim != 1 or len(responsive_probs) != self.num_neurons:
-                raise ValueError("responsive_distribution must be a 1D array of length num_neurons")
-        responsive_probs = np.clip(responsive_probs, 0, 1)
-        responsive_neurons = np.random.rand(self.num_neurons) < responsive_probs
-
         cell_type_probs = [0.051, 0.032, 0.373, 0.155, 0.199, 0.050, 0.093, 0.047]
-        cell_types = np.random.choice(range(1, 9), size=self.num_neurons, p=cell_type_probs)
-        return responsive_neurons, cell_types
+        cell_types = np.random.choice(range(1, 9), size=self.task_cells_N, p=cell_type_probs)
+        return cell_types
 
-    def update_state(self):
-        self.update()  # This updates the PlaceCells part of this class
+    def update(self):
+        # Ignore velocity modulation for now
+        # place_response = 0  # Default value if velocity is below threshold or history not populated
+        # tebc_response = 0
 
-        for i in range(self.num_neurons):
-            place_response = 0  # Default value if velocity is below threshold or history not populated
-            tebc_response = 0
+        # if self.agent.smoothed_velocity > 0.02:  # Velocity threshold is 2 cm/s
+        #     place_response = self.firingrate[-1]
 
-            if self.agent.smoothed_velocity > 0.02:  # Velocity threshold is 2 cm/s
-                place_response = self.firingrate[-1]
+        super().update()
 
-            if self.tebc_responsive_neurons[i]:
-                cell_type = self.cell_types[i]
-                response_func = response_profiles[cell_type]['response_func']
-                tebc_response = response_func(self.agent.time_since_cs)
+        task_firing_rates = np.zeros(self.task_cells_N)
 
-            # Retrieve firing rates from Agent.history
-            self.firing_rates[i] = (1 - self.balance_distribution[i]) * place_response + self.balance_distribution[i] * tebc_response
+        for i in range(self.task_cells_N):
+            cell_type = self.cell_types[i]
+            response_func = response_profiles[cell_type]['response_func']
+            tebc_response = response_func(self.agent.time_since_cs)
 
-        self.save_to_history()  # Save current state to history
+            task_firing_rates = tebc_response
+
+
+        
+        self.save_to_history()
 
     def get_firing_rates(self):
         # Return the current firing rates of all neurons

@@ -61,6 +61,10 @@ class TebcAgent(Agent):
     @property
     def us_present(self):
         return 6 <= self.trial_marker <= 10
+    
+    @property
+    def in_trial(self):
+        return self.cs_present or self.us_present
 
     @property
     def time_since_cs(self):
