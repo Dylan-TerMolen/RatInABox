@@ -13,12 +13,19 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=dptermolen@gmail.com
 
-BASE_DIR=/home/tfl2886/projects/RatInABox
+# BASE_DIR=/home/tfl2886/projects/RatInABox
+BASE_DIR=/Users/dylantermolen/Projects/RatInABox
+
 PYTHON=${HOME}/miniconda3/envs/ratinabox/bin/python
 
 module purge
 
+# "${PYTHON}" "${BASE_DIR}/ratinabox/hsw/additive_model/main2.py" \
+#     --balance_values 0.0,0.25,0.50,0.75,1.0 --balance_dist fixed \
+#     --responsive_values 0,.10,.20,.30,.40 --responsive_type fixed \
+#     --percent_place_cells 0,.10,.20,.30,.40 --num_iters 1
+
 "${PYTHON}" "${BASE_DIR}/ratinabox/hsw/additive_model/main2.py" \
-    --balance_values 0.25,0.50,0.75 --balance_dist fixed \
-    --responsive_values 0,.10,.20,.30,.40 --responsive_type fixed \
-    --percent_place_cells 0,.10,.20,.30,.40 --num_iters 5
+    --balance_values 0.25,0.75 --balance_dist fixed \
+    --responsive_values 0.40 --responsive_type fixed \
+    --percent_place_cells 0.40 --num_iters 1

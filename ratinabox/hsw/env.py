@@ -30,6 +30,7 @@ class EnvConfig:
         'MATLAB_FILE_PATH',
         'SAVE_DIRECTORY',
         'TRAINING_DATA_DIR',
+        'ENVIRONMENT'
     ]
 
 

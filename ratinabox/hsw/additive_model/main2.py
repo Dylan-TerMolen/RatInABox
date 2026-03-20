@@ -18,7 +18,7 @@ from ratinabox.hsw.additive_model.assign_tebc_types_and_responsiveness import as
 from ratinabox.hsw.additive_model.simulate_agent import simulate_agent
 
 from ratinabox.hsw import utils
-from ratinabox.hsw.simulation_helpers import build_agent, filter_eyeblink_trials, filter_by_velocity, write_iteration_results, unwrap_scalar, save_simulation_data
+from ratinabox.hsw.simulation_helpers import build_agent, filter_eyeblink_trials, filter_by_velocity, write_iteration_results, append_results_row, unwrap_scalar, save_simulation_data
 
 
 # Parse command-line arguments
@@ -44,8 +44,10 @@ save_directory = config.get_save_directory(model_name='additive')
 config.setup_ratinabox_figure_directory(save_directory)
 
 # Construct the filename
-results_filename = f"AM_grid_search_results-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}.txt"
-results_filepath = os.path.join(save_directory, results_filename)
+current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+results_file_base = os.path.join(save_directory, f"{current_date}:AM_results-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}")
+results_filepath = f"{results_file_base}.txt"
+csv_filepath = f"{results_file_base}.csv"
 
 # Load MATLAB file and extract position data
 matlab_file_path = config.get_matlab_file_path()
@@ -60,11 +62,6 @@ agentA = build_agent(position_data_envA)
 position_data_envB = data['envB314_524']
 agentB = build_agent(position_data_envB)
 
-# Calculate the total number of runs
-total_runs = len(balance_values) * len(responsive_values) * len(percent_place_cells) * num_iters
-num_columns = 25  # Adjust this based on the number of parameters and metrics
-results_matrix = np.zeros((total_runs, num_columns))
-
 # Column headers
 headers = [
     "balance_value", "responsive_val",
@@ -77,193 +74,156 @@ headers = [
 ]
 
 
-run_count = 0
 
 
 # Perform grid search over balance and responsive rates
-with open(results_filepath, "w") as results_file:
-    for balance_value, responsive_val, percent_place_cell in itertools.product(balance_values, responsive_values, percent_place_cells):
-        print(balance_value)
-        print(responsive_val)
-        print(percent_place_cell)
-        for i in range(num_iters):
-            # Use balance_value, responsive_val, and percent_place_cell in your simulation
-            # Skip redundant zero value iterations
+for balance_value, responsive_val, percent_place_cell in itertools.product(balance_values, responsive_values, percent_place_cells):
+    print(balance_value)
+    print(responsive_val)
+    print(percent_place_cell)
+    for i in range(num_iters):
+        # Use balance_value, responsive_val, and percent_place_cell in your simulation
+        # Skip redundant zero value iterations
 
-            # [TODO] Is each neuron in each 
-            balance_distribution = utils.get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons)
-            responsive_distribution = utils.get_distribution_values(args.responsive_type, [responsive_val], num_neurons)
+        # [TODO] Is each neuron in each 
+        balance_distribution = utils.get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons)
+        responsive_distribution = utils.get_distribution_values(args.responsive_type, [responsive_val], num_neurons)
 
-            # Simulate in Environment A
-            tebc_responsive_neurons, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
+        # Simulate in Environment A
+        tebc_responsive_neurons, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
 
-            # Profile the function
-    #        cProfile.runctx('simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types)', globals(), locals(), 'profile_stats.prof')
-    #        p = pstats.Stats('profile_stats.prof')
-    #        p.sort_stats('cumulative').print_stats(10)
+        # Profile the function
+#        cProfile.runctx('simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types)', globals(), locals(), 'profile_stats.prof')
+#        p = pstats.Stats('profile_stats.prof')
+#        p.sort_stats('cumulative').print_stats(10)
 
-            # Now run the function normally to capture its output
-            agentA = build_agent(position_data_envA)
-            agentB = build_agent(position_data_envB)
+        # Now run the function normally to capture its output
+        agentA = build_agent(position_data_envA)
+        agentB = build_agent(position_data_envB)
 
-            spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cell, cell_types)
-            # also want a percent of place cells metric
-
-
-            balance_distribution_envA = eyeblink_neuronsA.balance_distribution
-            tebc_responsive_rates_envA = eyeblink_neuronsA.tebc_responsive_neurons
-
-            # Simulate in Environment B using the parameters from Environment A
-            spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, balance_distribution_envA, tebc_responsive_rates_envA, tebc_responsive_neurons, percent_place_cell, cell_types)
+        spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cell, cell_types)
+        # also want a percent of place cells metric
 
 
+        balance_distribution_envA = eyeblink_neuronsA.balance_distribution
+        tebc_responsive_rates_envA = eyeblink_neuronsA.tebc_responsive_neurons
 
-            ###PLOTTING
-            '''
-            ratinabox.autosave_plots = True
-            ratinabox.stylize_plots()
-            plt.show()
-            agentA.plot_trajectory()
-            plt.show()
-            agentA.plot_position_heatmap()
-            plt.show()
-            agentA.plot_histogram_of_speeds()
-            plt.show()
-            agentB.plot_histogram_of_speeds()
-            plt.show()
-            combined_neuronsA.plot_rate_timeseries()
-            plt.show()
-            combined_neuronsA.plot_rate_map()
-            plt.show()
-            combined_neuronsA.plot_place_cell_locations()
-            plt.show()
-            '''
+        # Simulate in Environment B using the parameters from Environment A
+        spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, balance_distribution_envA, tebc_responsive_rates_envA, tebc_responsive_neurons, percent_place_cell, cell_types)
 
 
-            #####save
-            '''
-            # Construct the full file paths
-            filename_envA = f"AM_response_envA_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
-            filename_envB = f"AM_response_envB_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
-            full_path_envA = os.path.join(save_directory, filename_envA)
-            full_path_envB = os.path.join(save_directory, filename_envB)
-            # Save the response arrays to files
+
+        ###PLOTTING
+        '''
+        ratinabox.autosave_plots = True
+        ratinabox.stylize_plots()
+        plt.show()
+        agentA.plot_trajectory()
+        plt.show()
+        agentA.plot_position_heatmap()
+        plt.show()
+        agentA.plot_histogram_of_speeds()
+        plt.show()
+        agentB.plot_histogram_of_speeds()
+        plt.show()
+        combined_neuronsA.plot_rate_timeseries()
+        plt.show()
+        combined_neuronsA.plot_rate_map()
+        plt.show()
+        combined_neuronsA.plot_place_cell_locations()
+        plt.show()
+        '''
 
 
-            #np.save(full_path_envA, spikesA)
-            #np.save(full_path_envB, spikesB)
-            np.save(full_path_envA, firingrate_envA)
-            np.save(full_path_envB, firingrate_envB)
-            '''
-
-            ######
-
-            # Assess learning transfer and other metrics
-            #organize to run in cebra
-            response_envA = np.transpose(spikesA)
-            response_envB = np.transpose(spikesB)
+        #####save
+        '''
+        # Construct the full file paths
+        filename_envA = f"AM_response_envA_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
+        filename_envB = f"AM_response_envB_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
+        full_path_envA = os.path.join(save_directory, filename_envA)
+        full_path_envB = os.path.join(save_directory, filename_envB)
+        # Save the response arrays to files
 
 
-            response_envA_test, envA_eyeblink = filter_eyeblink_trials(agentA.position_data, response_envA)
-            response_envB_test, envB_eyeblink = filter_eyeblink_trials(agentB.position_data, response_envB)
+        #np.save(full_path_envA, spikesA)
+        #np.save(full_path_envB, spikesB)
+        np.save(full_path_envA, firingrate_envA)
+        np.save(full_path_envB, firingrate_envB)
+        '''
+
+        ######
+
+        # Assess learning transfer and other metrics
+        #organize to run in cebra
+        response_envA = np.transpose(spikesA)
+        response_envB = np.transpose(spikesB)
 
 
-            '''
-            filename_envA = f"ratinabox_pos"
-            if work:
-                full_path_envA = os.path.join('/home/hsw967/Programming/data_eyeblink/rat314/trainingdata', filename_envA)
-            else:
-                full_path_envA = os.path.join('/Users/Hannah/Programming/data_eyeblink/rat314/trainingdata', filename_envA)
-            np.save(full_path_envA, posA)
-
-            filename_envA = f"ratinabox_spikes"
-            if work:
-                full_path_envA = os.path.join('/home/hsw967/Programming/data_eyeblink/rat314/trainingdata', filename_envA)
-            else:
-                full_path_envA = os.path.join('/Users/Hannah/Programming/data_eyeblink/rat314/trainingdata', filename_envA)
-            np.save(full_path_envA, response_envA)
-            '''
+        response_envA_test, envA_eyeblink = filter_eyeblink_trials(agentA.position_data, response_envA)
+        response_envB_test, envB_eyeblink = filter_eyeblink_trials(agentB.position_data, response_envB)
 
 
-            #run cebra decoding
-            fract_control_all, fract_test_all = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
+        '''
+        filename_envA = f"ratinabox_pos"
+        if work:
+            full_path_envA = os.path.join('/home/hsw967/Programming/data_eyeblink/rat314/trainingdata', filename_envA)
+        else:
+            full_path_envA = os.path.join('/Users/Hannah/Programming/data_eyeblink/rat314/trainingdata', filename_envA)
+        np.save(full_path_envA, posA)
 
-            posA, response_envA = filter_by_velocity(agentA, response_envA)
-            posB, response_envB = filter_by_velocity(agentB, response_envB)
-            #pos_test_scoreB, pos_test_errB, dis_meanB, dis_medianB, pos_test_score_shuffB, pos_test_err_shuffB, dis_mean_shuffB, dis_median_shuffB = pos_decoding_self(response_envB, posB, .70)
-
-
-            #POS DECODE
-            err_allA, err_allB_usingA, err_all_shuffA, err_all_shuffB_usingA, err_allB_usingB = pos_decoding_AvsB(response_envA, posA, response_envB, posB, .7)
-
-            # Construct the identifier for this iteration
-            identifier = f"{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_PCs_{args.percent_place_cells}.npy"
-
-
-            percent_place_cell = unwrap_scalar(percent_place_cell)
-            fract_control_all = unwrap_scalar(fract_control_all)
-            fract_test_all = unwrap_scalar(fract_test_all)
+        filename_envA = f"ratinabox_spikes"
+        if work:
+            full_path_envA = os.path.join('/home/hsw967/Programming/data_eyeblink/rat314/trainingdata', filename_envA)
+        else:
+            full_path_envA = os.path.join('/Users/Hannah/Programming/data_eyeblink/rat314/trainingdata', filename_envA)
+        np.save(full_path_envA, response_envA)
+        '''
 
 
-            write_iteration_results(
-                results_file, identifier, fract_control_all, fract_test_all,
-                err_allA, err_all_shuffA, err_allB_usingA, err_all_shuffB_usingA, err_allB_usingB,
-            )
+        #run cebra decoding
+        fract_control_all, fract_test_all = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
 
-            # Right before the problematic line
-
-            try:
-                results_matrix[run_count] = [
-                    balance_value, responsive_val, percent_place_cell,
-                    fract_control_all, fract_test_all,
-                    *err_allA, *err_allB_usingA, *err_all_shuffA, *err_all_shuffB_usingA, *err_allB_usingB
-                ]
-
-            #try:
-            #    results_matrix[run_count] = [
-            #        balance_value, responsive_val, percent_place_cell,
-            #        fract_control_all, fract_test_all,
-            #        *err_allA, *err_allB_usingA, *err_all_shuffA, *err_all_shuffB_usingA, *err_allB_usingB
-            #    ]
-
-            except ValueError as e:
-                print("Error occurred:", e)
-                print([
-                    balance_value, responsive_val, percent_place_cell,
-                    fract_control_all, fract_test_all,
-                    *err_allA, *err_allB_usingA, *err_all_shuffA, *err_all_shuffB_usingA, *err_allB_usingB
-                ])
-
-            current_date = datetime.datetime.now().strftime("%Y%m%d")
-            save_simulation_data(save_directory, spikesA, spikesB, firingrate_envA, firingrate_envB,
-                                 f"balance_{balance_value}_responsive_{responsive_val}_PC_{percent_place_cell}", i, current_date)
+        posA, response_envA = filter_by_velocity(agentA, response_envA)
+        posB, response_envB = filter_by_velocity(agentB, response_envB)
+        #pos_test_scoreB, pos_test_errB, dis_meanB, dis_medianB, pos_test_score_shuffB, pos_test_err_shuffB, dis_mean_shuffB, dis_median_shuffB = pos_decoding_self(response_envB, posB, .70)
 
 
-            del spikesA, spikesB, firingrate_envA, firingrate_envB
-            del response_envA, response_envB
-            del envA_eyeblink, envB_eyeblink
+        #POS DECODE
+        err_allA, err_allB_usingA, err_all_shuffA, err_all_shuffB_usingA, err_allB_usingB = pos_decoding_AvsB(response_envA, posA, response_envB, posB, .7)
 
-            # Call garbage collector
-            gc.collect()
-            run_count += 1
+        # Construct the identifier for this iteration
+        identifier = f"{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_PCs_{args.percent_place_cells}.npy"
 
-            # Print confirmation
 
-            #print(f"Saved results to {full_path_envA} and {full_path_envB}")
+        percent_place_cell = unwrap_scalar(percent_place_cell)
+        fract_control_all = unwrap_scalar(fract_control_all)
+        fract_test_all = unwrap_scalar(fract_test_all)
 
-# Get the current date
-current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-# Construct filenames with the date and directory
-results_filename = f"AM_results_matrix-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}"
+        write_iteration_results(
+            results_filepath, identifier, fract_control_all, fract_test_all,
+            err_allA, err_all_shuffA, err_allB_usingA, err_all_shuffB_usingA, err_allB_usingB,
+        )
 
-csv_filename = os.path.join(save_directory, f"{results_filename}_{current_date}.csv")
-npy_filename = os.path.join(save_directory, f"{results_filename}_{current_date}.npy")
+        append_results_row(
+            csv_filepath, headers,
+            [balance_value, responsive_val, percent_place_cell,
+             fract_control_all, fract_test_all,
+             *err_allA, *err_allB_usingA, *err_all_shuffA, *err_all_shuffB_usingA, *err_allB_usingB]
+        )
 
-# Saving the results matrix
-np.savetxt(csv_filename, results_matrix, delimiter=",", header=",".join(headers), comments="")
+        current_date = datetime.datetime.now().strftime("%Y%m%d")
+        save_simulation_data(save_directory, spikesA, spikesB, firingrate_envA, firingrate_envB,
+                                f"balance_{balance_value}_responsive_{responsive_val}_PC_{percent_place_cell}", i, current_date)
 
-# If you want to save in binary format (without headers)
-np.save(npy_filename, results_matrix)
+
+        del spikesA, spikesB, firingrate_envA, firingrate_envB
+        del response_envA, response_envB
+        del envA_eyeblink, envB_eyeblink
+
+        # Call garbage collector
+        gc.collect()
+
+        #print(f"Saved results to {full_path_envA} and {full_path_envB}")
 
 print(f"Saved results to {save_directory}")

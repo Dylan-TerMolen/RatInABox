@@ -1,3 +1,4 @@
+import csv
 import os
 
 import numpy as np
@@ -41,23 +42,38 @@ def filter_by_velocity(agent, response, threshold=0.02):
     return pos[moving], response[moving]
 
 
-def write_iteration_results(results_file, identifier, fract_control_all, fract_test_all,
+def write_iteration_results(results_filepath, identifier, fract_control_all, fract_test_all,
                             err_allA, err_all_shuffA, err_allB_usingA,
                             err_all_shuffB_usingA, err_allB_usingB):
-    """Write per-iteration decoding metrics to the open results text file."""
-    results_file.write(f"Parameters: {identifier}\n")
-    results_file.write(f"fract_control_all: {fract_control_all}\n")
-    results_file.write(f"fract_test_all: {fract_test_all}\n")
-    results_file.write(f"pos decoding A: {err_allA}\n")
-    results_file.write(f"pos decoding A shuffled: {err_all_shuffA}\n")
-    results_file.write(f"pos decoding B using A: {err_allB_usingA}\n")
-    results_file.write(f"pos decoding B shuffled: {err_all_shuffB_usingA}\n")
-    results_file.write(f"pos decoding B: {err_allB_usingB}\n")
-    results_file.write("\n")
+    """Write per-iteration decoding metrics to the results text file."""
+    with open(results_filepath, "a") as results_file:
+        results_file.write(f"Parameters: {identifier}\n")
+        results_file.write(f"fract_control_all: {fract_control_all}\n")
+        results_file.write(f"fract_test_all: {fract_test_all}\n")
+        results_file.write(f"pos decoding A: {err_allA}\n")
+        results_file.write(f"pos decoding A shuffled: {err_all_shuffA}\n")
+        results_file.write(f"pos decoding B using A: {err_allB_usingA}\n")
+        results_file.write(f"pos decoding B shuffled: {err_all_shuffB_usingA}\n")
+        results_file.write(f"pos decoding B: {err_allB_usingB}\n")
+        results_file.write("\n")
+
+
+def append_results_row(csv_filepath, headers, row):
+    """Append a single result row to a CSV file, writing headers if the file is new."""
+    write_header = not os.path.exists(csv_filepath)
+    with open(csv_filepath, "a", newline="") as f:
+        writer = csv.writer(f)
+        if write_header:
+            writer.writerow(headers)
+        writer.writerow(row)
 
 
 def save_simulation_data(save_dir, spikes_A, spikes_B, fr_A, fr_B,
                          label, iteration, date):
+    print("here")
+    if config.ENVIRONMENT == 'Slurm':
+        return
+
     """Save spike and firing-rate arrays for both environments as CSV files.
 
     label: model-specific parameter string embedded in the filename, e.g.

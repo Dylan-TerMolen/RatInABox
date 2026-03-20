@@ -69,95 +69,94 @@ run_count = 0
 balance_distribution = np.array([0.0] * place_N + [1.0] * tebc_N)
 responsive_distribution = np.array([0.0] * place_N + [1.0] * tebc_N)
 
-with open(results_filepath, "w") as results_file:
-    for i in range(num_iters):
-        tebc_responsive_neurons, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
+for i in range(num_iters):
+    tebc_responsive_neurons, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
 
-        agentA = build_agent(position_data_envA)
-        agentB = build_agent(position_data_envB)
+    agentA = build_agent(position_data_envA)
+    agentB = build_agent(position_data_envB)
 
-        spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cell, cell_types)
+    spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cell, cell_types)
 
-        balance_distribution_envA = eyeblink_neuronsA.balance_distribution
-        tebc_responsive_rates_envA = eyeblink_neuronsA.tebc_responsive_neurons
+    balance_distribution_envA = eyeblink_neuronsA.balance_distribution
+    tebc_responsive_rates_envA = eyeblink_neuronsA.tebc_responsive_neurons
 
-        # Simulate in Environment B using the parameters from Environment A
-        spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, balance_distribution_envA, tebc_responsive_rates_envA, tebc_responsive_neurons, percent_place_cell, cell_types)
+    # Simulate in Environment B using the parameters from Environment A
+    spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, balance_distribution_envA, tebc_responsive_rates_envA, tebc_responsive_neurons, percent_place_cell, cell_types)
 
-        ###PLOTTING
-        '''
-        ratinabox.autosave_plots = True
-        ratinabox.stylize_plots()
-        plt.show()
-        agentA.plot_trajectory()
-        plt.show()
-        agentA.plot_position_heatmap()
-        plt.show()
-        agentA.plot_histogram_of_speeds()
-        plt.show()
-        agentB.plot_histogram_of_speeds()
-        plt.show()
-        combined_neuronsA.plot_rate_timeseries()
-        plt.show()
-        combined_neuronsA.plot_rate_map()
-        plt.show()
-        combined_neuronsA.plot_place_cell_locations()
-        plt.show()
-        '''
+    ###PLOTTING
+    '''
+    ratinabox.autosave_plots = True
+    ratinabox.stylize_plots()
+    plt.show()
+    agentA.plot_trajectory()
+    plt.show()
+    agentA.plot_position_heatmap()
+    plt.show()
+    agentA.plot_histogram_of_speeds()
+    plt.show()
+    agentB.plot_histogram_of_speeds()
+    plt.show()
+    combined_neuronsA.plot_rate_timeseries()
+    plt.show()
+    combined_neuronsA.plot_rate_map()
+    plt.show()
+    combined_neuronsA.plot_place_cell_locations()
+    plt.show()
+    '''
 
-        # Assess learning transfer and other metrics
-        response_envA = np.transpose(spikesA)
-        response_envB = np.transpose(spikesB)
+    # Assess learning transfer and other metrics
+    response_envA = np.transpose(spikesA)
+    response_envB = np.transpose(spikesB)
 
-        response_envA_test, envA_eyeblink = filter_eyeblink_trials(agentA.position_data, response_envA)
-        response_envB_test, envB_eyeblink = filter_eyeblink_trials(agentB.position_data, response_envB)
+    response_envA_test, envA_eyeblink = filter_eyeblink_trials(agentA.position_data, response_envA)
+    response_envB_test, envB_eyeblink = filter_eyeblink_trials(agentB.position_data, response_envB)
 
-        #run cebra decoding
-        fract_control_all, fract_test_all = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
+    #run cebra decoding
+    fract_control_all, fract_test_all = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
 
-        posA, response_envA = filter_by_velocity(agentA, response_envA)
-        posB, response_envB = filter_by_velocity(agentB, response_envB)
+    posA, response_envA = filter_by_velocity(agentA, response_envA)
+    posB, response_envB = filter_by_velocity(agentB, response_envB)
 
-        #POS DECODE
-        err_allA, err_allB_usingA, err_all_shuffA, err_all_shuffB_usingA, err_allB_usingB = pos_decoding_AvsB(response_envA, posA, response_envB, posB, .7)
+    #POS DECODE
+    err_allA, err_allB_usingA, err_all_shuffA, err_all_shuffB_usingA, err_allB_usingB = pos_decoding_AvsB(response_envA, posA, response_envB, posB, .7)
 
-        # Construct the identifier for this iteration
-        identifier = f"half_half_PCs_{percent_place_cell}.npy"
+    # Construct the identifier for this iteration
+    identifier = f"half_half_PCs_{percent_place_cell}.npy"
 
-        fract_control_all = unwrap_scalar(fract_control_all)
-        fract_test_all = unwrap_scalar(fract_test_all)
+    fract_control_all = unwrap_scalar(fract_control_all)
+    fract_test_all = unwrap_scalar(fract_test_all)
 
-        write_iteration_results(
-            results_file, identifier, fract_control_all, fract_test_all,
-            err_allA, err_all_shuffA, err_allB_usingA, err_all_shuffB_usingA, err_allB_usingB,
-        )
+    write_iteration_results(
+        results_filepath, identifier, fract_control_all, fract_test_all,
+        err_allA, err_all_shuffA, err_allB_usingA, err_all_shuffB_usingA, err_allB_usingB,
+    )
 
-        try:
-            results_matrix[run_count] = [
-                0.5, 0.5, percent_place_cell,
-                fract_control_all, fract_test_all,
-                *err_allA, *err_allB_usingA, *err_all_shuffA, *err_all_shuffB_usingA, *err_allB_usingB
-            ]
+    try:
+        results_matrix[run_count] = [
+            0.5, 0.5, percent_place_cell,
+            fract_control_all, fract_test_all,
+            *err_allA, *err_allB_usingA, *err_all_shuffA, *err_all_shuffB_usingA, *err_allB_usingB
+        ]
 
-        except ValueError as e:
-            print("Error occurred:", e)
-            print([
-                0.5, 0.5, percent_place_cell,
-                fract_control_all, fract_test_all,
-                *err_allA, *err_allB_usingA, *err_all_shuffA, *err_all_shuffB_usingA, *err_allB_usingB
-            ])
+    except ValueError as e:
+        print("Error occurred:", e)
+        print([
+            0.5, 0.5, percent_place_cell,
+            fract_control_all, fract_test_all,
+            *err_allA, *err_allB_usingA, *err_all_shuffA, *err_all_shuffB_usingA, *err_allB_usingB
+        ])
 
-        current_date = datetime.datetime.now().strftime("%Y%m%d")
-        save_simulation_data(save_directory, spikesA, spikesB, firingrate_envA, firingrate_envB,
-                             f"half_half_PC_{percent_place_cell}", i, current_date)
+    current_date = datetime.datetime.now().strftime("%Y%m%d")
+    save_simulation_data(save_directory, spikesA, spikesB, firingrate_envA, firingrate_envB,
+                            f"half_half_PC_{percent_place_cell}", i, current_date)
 
-        del spikesA, spikesB, firingrate_envA, firingrate_envB
-        del response_envA, response_envB
-        del envA_eyeblink, envB_eyeblink
+    del spikesA, spikesB, firingrate_envA, firingrate_envB
+    del response_envA, response_envB
+    del envA_eyeblink, envB_eyeblink
 
-        # Call garbage collector
-        gc.collect()
-        run_count += 1
+    # Call garbage collector
+    gc.collect()
+    run_count += 1
 
 # Get the current date
 current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
