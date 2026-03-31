@@ -89,15 +89,14 @@ class TEBC(PlaceCells):
 
             in_field = bool(unmodulated_baseline[i] >= 0.2)
 
-            match (in_field, running):
-                case (True, True):
-                    tebc_response = type_one_response(time_since_CS, self.firingrate[i])
-                case (False, True):
-                    tebc_response = type_two_response(time_since_CS, self.firingrate[i])
-                case (True, False):
-                    tebc_response = type_three_response(time_since_CS, self.firingrate[i])
-                case (False, False):
-                    tebc_response = type_four_response(time_since_CS, self.firingrate[i])
+            if in_field and running:
+                tebc_response = type_one_response(time_since_CS, self.firingrate[i])
+            elif not in_field and running:
+                tebc_response = type_two_response(time_since_CS, self.firingrate[i])
+            elif in_field and not running:
+                tebc_response = type_three_response(time_since_CS, self.firingrate[i])
+            else:
+                tebc_response = type_four_response(time_since_CS, self.firingrate[i])
 
             task_firing_rates[i] = tebc_response
 

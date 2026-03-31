@@ -6,8 +6,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --array=0-19 ## number of jobs to run "in parallel"
-#SBATCH --mem=220GB
-#SBATCH --time=24:00:00
+#SBATCH --mem=8GB
+#SBATCH --time=2:00:00
 #SBATCH --job-name="PDM_job_${SLURM_ARRAY_TASK_ID}"
 #SBATCH --output=slurm_out/PDM_SLURM_out.%A_%a.out
 #SBATCH --mail-type=ALL
