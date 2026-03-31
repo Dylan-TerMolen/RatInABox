@@ -18,9 +18,10 @@ PYTHON=${HOME}/miniconda3/envs/ratinabox/bin/python
 
 module purge
 
-"${PYTHON}" "${BASE_DIR}/ratinabox/hsw/place_dep_model/main2.py" \
+"${PYTHON}" "${BASE_DIR}/ratinabox/hsw/main.py" \
+      --model place_dependent \
       --responsive_values 0.25,0.50,0.75 --responsive_type fixed \
-      --percent_place_cells 0.25,0.50,0.75 --holdover 1 --num_iters 1
+      --percent_place_cells 0.25,0.50,0.75 --holdovers 1 --num_iters 5
 
 
     

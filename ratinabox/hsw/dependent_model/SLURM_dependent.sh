@@ -17,7 +17,8 @@ PYTHON=${HOME}/miniconda3/envs/ratinabox/bin/python
 
 module purge
 
-"${PYTHON}" "${BASE_DIR}/ratinabox/hsw/dependent_model/main2.py" \
+"${PYTHON}" "${BASE_DIR}/ratinabox/hsw/main.py" \
+    --model dependent \
     --balance_values 0.25,0.50,0.75 --balance_dist fixed \
     --responsive_values 0.25,0.50,0.75 --responsive_type fixed \
     --percent_place_cells 0.25,0.50,0.75 --num_iters 5
