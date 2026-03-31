@@ -2,7 +2,7 @@ import random
 import numpy as np
 
 from ratinabox.Neurons import PlaceCells
-from tebc_response2 import response_profiles
+from ratinabox.hsw.additive_model.tebc_response2 import response_profiles
 
 
 '''

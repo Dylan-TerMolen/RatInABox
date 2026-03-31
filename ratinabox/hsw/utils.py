@@ -2,6 +2,7 @@ import numpy as np
 from scipy import stats
 from scipy.interpolate import interp1d
 
+# TODO: deprecate in favour of args_parser.parse_list once all callers use args_parser
 def parse_list(arg_value):
     if isinstance(arg_value, list):
         return [float(val) for val in arg_value]

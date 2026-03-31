@@ -1,9 +1,11 @@
 import numpy as np
 import random
 from ratinabox.Neurons import PlaceCells
-from tebc_response2 import *
+from ratinabox.hsw.place_dep_model.tebc_response2 import *
 
 class TEBC(PlaceCells):
+    default_params = dict()
+
     def __init__(self, agent, N, responsive_distribution, percent_place_cells, tebc_responsive_neurons=None, cell_types=None):
         place_cells_params = {
             "n": N, 
@@ -85,7 +87,7 @@ class TEBC(PlaceCells):
             if not self.tebc_responsive_neurons[i]:
                 continue
 
-            in_field = unmodulated_baseline[i] >= 0.2
+            in_field = bool(unmodulated_baseline[i] >= 0.2)
 
             match (in_field, running):
                 case (True, True):

@@ -1,7 +1,7 @@
 import numpy as np
 import random
 from ratinabox.Neurons import PlaceCells
-from tebc_response2 import response_profiles
+from ratinabox.hsw.dependent_model.tebc_response2 import response_profiles
 
 '''
 Python class template for CombinedPlaceTebcNeurons that integrates both place cell and tEBC

@@ -1,6 +1,6 @@
 import numpy as np
 from ratinabox.hsw import utils
-from TEBC import TEBC
+from ratinabox.hsw.additive_model.TEBC import TEBC
 import random
 from ratinabox.hsw.cell_builder import CellBuilder
 

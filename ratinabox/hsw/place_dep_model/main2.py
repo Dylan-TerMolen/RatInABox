@@ -118,30 +118,6 @@ for responsive_val, percent_place_cell, holdover in itertools.product(responsive
 
 
 
-        ###PLOTTING
-        '''
-        ratinabox.autosave_plots = True
-        ratinabox.stylize_plots()
-        plt.show()
-        agentA.plot_trajectory()
-        plt.show()
-        agentA.plot_position_heatmap()
-        plt.show()
-        agentA.plot_histogram_of_speeds()
-        plt.show()
-        agentB.plot_histogram_of_speeds()
-        plt.show()
-        combined_neuronsA.plot_rate_timeseries()
-        plt.show()
-        combined_neuronsA.plot_rate_map()
-        plt.show()
-        combined_neuronsA.plot_place_cell_locations()
-        plt.show()
-        '''
-
-
-
-
         #####save
         # Construct the full file paths
         filename_envA = f"PDM_response_envA_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}_holdovers_{args.holdover_type}.npy"

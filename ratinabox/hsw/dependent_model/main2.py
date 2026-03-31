@@ -106,57 +106,12 @@ for balance_value, responsive_val, percent_place_cell in itertools.product(balan
 
 
 
-        ###PLOTTING
-        '''
-        ratinabox.autosave_plots = True
-        ratinabox.stylize_plots()
-        plt.show()
-        agentA.plot_trajectory()
-        plt.show()
-        agentA.plot_position_heatmap()
-        plt.show()
-        agentA.plot_histogram_of_speeds()
-        plt.show()
-        agentB.plot_histogram_of_speeds()
-        plt.show()
-        combined_neuronsA.plot_rate_timeseries()
-        plt.show()
-        combined_neuronsA.plot_rate_map()
-        plt.show()
-        combined_neuronsA.plot_place_cell_locations()
-        plt.show()
-        '''
-
-
-
-
-        #####save
-        '''
-        # Construct the full file paths
-        filename_envA = f"DM_response_envA_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
-        filename_envB = f"DM_response_envB_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
-        full_path_envA = os.path.join(save_directory, filename_envA)
-        full_path_envB = os.path.join(save_directory, filename_envB)
-
-        # Save the response arrays to files
-        #np.save(full_path_envA, spikesA)
-        #np.save(full_path_envB, spikesB)
-        np.save(full_path_envA, firingrate_envA)
-        np.save(full_path_envB, firingrate_envB)
-        ######
-        '''
-
         # Assess learning transfer and other metrics
-        #organize to run in cebra
-
         response_envA = np.transpose(spikesA)
         response_envB = np.transpose(spikesB)
 
-
         response_envA_test, envA_eyeblink = filter_eyeblink_trials(agentA.position_data, response_envA)
         response_envB_test, envB_eyeblink = filter_eyeblink_trials(agentB.position_data, response_envB)
-
-
 
         #run cebra decoding
         fract_control_all, fract_test_all = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
@@ -164,7 +119,6 @@ for balance_value, responsive_val, percent_place_cell in itertools.product(balan
 
         posA, response_envA = filter_by_velocity(agentA, response_envA)
         posB, response_envB = filter_by_velocity(agentB, response_envB)
-        #pos_test_scoreB, pos_test_errB, dis_meanB, dis_medianB, pos_test_score_shuffB, pos_test_err_shuffB, dis_mean_shuffB, dis_median_shuffB = pos_decoding_self(response_envB, posB, .70)
 
 
         #POS DECODE

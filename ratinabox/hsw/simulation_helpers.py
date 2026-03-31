@@ -70,8 +70,7 @@ def append_results_row(csv_filepath, headers, row):
 
 def save_simulation_data(save_dir, spikes_A, spikes_B, fr_A, fr_B,
                          label, iteration, date):
-    print("here")
-    if config.ENVIRONMENT == 'Slurm':
+    if config.ENVIRONMENT != 'Home':
         return
 
     """Save spike and firing-rate arrays for both environments as CSV files.

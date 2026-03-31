@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from ratinabox.Neurons import Neurons, PlaceCells
-from tebc_response2 import response_profiles
+from ratinabox.hsw.additive_model.tebc_response2 import response_profiles
 
 
 def assign_tebc_types_and_responsiveness(N, responsive_distribution):
