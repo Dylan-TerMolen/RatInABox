@@ -69,8 +69,8 @@ csv_filepath = f"{results_file_base}.csv"
 matlab_file_path = config.get_matlab_file_path()
 data = scipy.io.loadmat(matlab_file_path)
 
-position_data_envA = data['envA313_531']
-position_data_envB = data['envB313_602']
+position_data_envA = data['envA314_522']
+position_data_envB = data['envB314_524']
 
 # Column headers
 headers = [
