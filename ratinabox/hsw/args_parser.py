@@ -1,6 +1,6 @@
 import argparse
 
-UNIVERSAL_PARAMS = ['model_type', 'num_iters', 'responsive_values', 'responsive_type', 'percent_place_cells', 'holdovers']
+UNIVERSAL_PARAMS = ['model_type', 'num_iters', 'responsive_values', 'responsive_type', 'percent_place_cells', 'holdovers', 'decode_position', 'decode_task']
 
 MODEL_REQUIRED_PARAMS = {
     'additive': ['balance_values', 'balance_dist', 'balance_std'],
@@ -46,6 +46,10 @@ def _add_arguments(parser):
                         help='Percentage of place cells (single value or comma-separated list)')
     parser.add_argument('--holdovers', type=str, default=DEFAULTS['holdovers'],
                         help='Whether to hold TEBC cells over from env A')
+    parser.add_argument('--decode_position', type=lambda x: x.lower() != 'false', default=True,
+                        help='Run position decoding (default: True)')
+    parser.add_argument('--decode_task', type=lambda x: x.lower() != 'false', default=True,
+                        help='Run task/condition decoding (default: True)')
 
     # Balance params (additive, dependent only) — default=None so explicit passing is detectable
     parser.add_argument('--balance_values', type=str, default=None,

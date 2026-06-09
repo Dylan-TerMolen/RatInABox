@@ -12,6 +12,7 @@ def gaussian_peak(time_since_CS, magnitude, peak_time, sd, baseline):
     # Apply Gaussian response only near the peak time
     response = np.where(time_since_CS, response + baseline, baseline)
     return response
+
 def bimodal_response(time_since_CS, magnitudes, peak_times, sds, baseline, cs_duration, us_duration):
     peak1 = gaussian_peak(time_since_CS, magnitudes[0], peak_times[0], sds[0], baseline)
     peak2 = gaussian_peak(time_since_CS, magnitudes[1], peak_times[1], sds[1], baseline)

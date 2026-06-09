@@ -39,7 +39,6 @@ MODEL_GRID_PARAMS = {
     'place_dependent': _UNIVERSAL_GRID_PARAMS,
 }
 
-
 def build_model(model_type, agent, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types):
     tebc_cls = _TEBC_CLASS[model_type]
     if model_type == 'place_dependent':
@@ -70,8 +69,8 @@ csv_filepath = f"{results_file_base}.csv"
 matlab_file_path = config.get_matlab_file_path()
 data = scipy.io.loadmat(matlab_file_path)
 
-position_data_envA = data['envA314_522']
-position_data_envB = data['envB314_524']
+position_data_envA = data['envA313_531']
+position_data_envB = data['envB313_602']
 
 # Column headers
 headers = [
@@ -83,7 +82,6 @@ headers = [
     "err_all_shuffB_usingA_score", "err_all_shuffB_usingA_err", "err_all_shuffB_usingA_mean", "err_all_shuffB_usingA_median",
     "err_allB_usingB_score", "err_allB_usingB_err", "err_allB_usingB_mean", "err_allB_usingB_median"
 ]
-
 
 num_neurons = 80
 
@@ -119,8 +117,6 @@ for combo in itertools.product(*grid_values):
         modelB = build_model(args.model_type, agentB, balance_distribution_B, responsive_distribution, tebc_responsive_neurons_B, percent_place_cell, cell_types)
         spikesB, firingrate_envB, agentB = simulate_agent(modelB, agentB)
 
-
-
         # Assess learning transfer and other metrics
         response_envA = np.transpose(spikesA)
         response_envB = np.transpose(spikesB)
@@ -129,14 +125,19 @@ for combo in itertools.product(*grid_values):
         response_envB_test, envB_eyeblink = filter_eyeblink_trials(agentB.position_data, response_envB)
 
         #run cebra decoding
-        fract_control_all, fract_test_all = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
+        if args.decode_task:
+            fract_control_all, fract_test_all = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
+        else:
+            fract_control_all, fract_test_all = None, None
 
         posA, response_envA = filter_by_velocity(agentA, response_envA)
         posB, response_envB = filter_by_velocity(agentB, response_envB)
 
-
         #POS DECODE
-        err_allA, err_allB_usingA, err_all_shuffA, err_all_shuffB_usingA, err_allB_usingB = pos_decoding_AvsB(response_envA, posA, response_envB, posB, .7)
+        if args.decode_position:
+            err_allA, err_allB_usingA, err_all_shuffA, err_all_shuffB_usingA, err_allB_usingB = pos_decoding_AvsB(response_envA, posA, response_envB, posB, .7)
+        else:
+            err_allA = err_allB_usingA = err_all_shuffA = err_all_shuffB_usingA = err_allB_usingB = (None, None, None, None)
 
         # Construct the identifier for this iteration
         _balance_id = f"{balance_value}_{args.balance_dist}_" if balance_value is not None else ""
