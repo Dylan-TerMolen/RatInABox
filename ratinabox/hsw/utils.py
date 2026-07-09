@@ -15,6 +15,19 @@ def parse_list(arg_value):
     else:
         return [float(arg_value)]
 
+def log_duplicate_timestamps(times):
+    _, counts = np.unique(times, return_counts=True)
+    duplicates = times[np.isin(times, np.unique(times)[counts > 1])]
+    unique_dups = np.unique(duplicates)
+    if len(unique_dups) == 0:
+        print("No duplicate timestamps found.")
+    else:
+        print(f"Found {len(unique_dups)} duplicate timestamp value(s) ({duplicates.shape[0]} total occurrences):")
+        for t in unique_dups:
+            n = (times == t).sum()
+            print(f"  t={t:.6f}  x{n}")
+
+
 def get_distribution_values(dist_type, params, size):
     if dist_type == 'fixed':
         return np.full(size, params[0])

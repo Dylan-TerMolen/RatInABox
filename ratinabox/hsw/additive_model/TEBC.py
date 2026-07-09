@@ -32,7 +32,7 @@ class TEBC(PlaceCells):
             "place_cell_centres": None,
             "wall_geometry": "geodesic",
             "min_fr": 0,
-            "max_fr": 1,
+            "max_fr": 12,
             "save_history": False
         }
 
@@ -105,7 +105,7 @@ class TEBC(PlaceCells):
             if self.tebc_responsive_neurons[i]:
                 cell_type = self.cell_types[i]
                 response_func = response_profiles[cell_type]['response_func']
-                tebc_response = response_func(time_since_CS)
+                tebc_response = response_func(time_since_CS, self.max_fr)
 
             task_firing_rates[i] = tebc_response
 

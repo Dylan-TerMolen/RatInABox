@@ -118,13 +118,21 @@ def type8decay(time_since_CS, baseline):
 
 
 
+_t_ref = np.linspace(-0.1, 2.0, 1000)
+
+def _normalized(shape_func_at_unit_baseline):
+    vals = np.array([shape_func_at_unit_baseline(t) for t in _t_ref])
+    f_min, f_max = vals.min(), vals.max()
+    return lambda t, baseline: (shape_func_at_unit_baseline(t) - f_min) / (f_max - f_min) * baseline
+
+
 response_profiles = {
-    1: {'response_func': lambda t, baseline: bimodal_response(t, [baseline * 2.14, baseline * 5.71], [0.3, .85], [0.1, 0.1], baseline, CS_duration, US_duration),},
-    2: {'response_func': lambda t, baseline: gaussian_peak2(t, baseline * 3.14, US_start_time, 0.15, US_duration, baseline),},
-    3: {'response_func': lambda t, baseline: linear_decay_response(t, baseline=baseline, peak_time=0, mid_time=.2, end_time=.85, first_magnitude=baseline*.33, second_magnitude=baseline*.17),},
-    4: {'response_func': lambda t, baseline: cell_type_4_response(t, baseline, baseline * .4, baseline * 1.1, cs_sd=0.1, us_sd=0.2, cs_decay_start=.25, us_peak_time=.75, us_duration=0.1 ),},
-    5: {'response_func': lambda t, baseline: cell_type_5_function(t, baseline, baseline * 3.14, US_duration),},
-    6: {'response_func': lambda t, baseline: noisy_uniform_response(t, baseline),},
-    7: {'response_func': lambda t, baseline: bimodal_response2(t, [baseline * 1.67, baseline * 2.14], [0.3, US_start_time + .05], [0.08, 0.15], baseline, cs_duration=.25, us_duration=.1),},
-    8: {'response_func': lambda t, baseline: type8decay(t, baseline),}
+    1: {'response_func': _normalized(lambda t: bimodal_response(t, [2.14, 5.71], [0.3, .85], [0.1, 0.1], 1.0, CS_duration, US_duration))},
+    2: {'response_func': _normalized(lambda t: gaussian_peak2(t, 3.14, US_start_time, 0.15, US_duration, 1.0))},
+    3: {'response_func': _normalized(lambda t: linear_decay_response(t, baseline=1.0, peak_time=0, mid_time=.2, end_time=.85, first_magnitude=0.33, second_magnitude=0.17))},
+    4: {'response_func': _normalized(lambda t: cell_type_4_response(t, 1.0, 0.4, 1.1, cs_sd=0.1, us_sd=0.2, cs_decay_start=.25, us_peak_time=.75, us_duration=0.1))},
+    5: {'response_func': _normalized(lambda t: cell_type_5_function(t, 1.0, 3.14, US_duration))},
+    6: {'response_func': lambda t, baseline: noisy_uniform_response(t, baseline * 0.5)},
+    7: {'response_func': _normalized(lambda t: bimodal_response2(t, [1.67, 2.14], [0.3, US_start_time + .05], [0.08, 0.15], 1.0, cs_duration=.25, us_duration=.1))},
+    8: {'response_func': _normalized(lambda t: type8decay(t, 1.0))},
 }
