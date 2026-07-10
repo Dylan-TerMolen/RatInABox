@@ -20,7 +20,7 @@ from ratinabox.hsw.dependent_model.TEBC import TEBC as DependentTEBC
 from ratinabox.hsw.place_dep_model.TEBC import TEBC as PlaceDependentTEBC
 
 from ratinabox.hsw import utils
-from ratinabox.hsw.simulation_helpers import build_agent, filter_eyeblink_trials, filter_by_velocity, write_iteration_results, append_results_row, unwrap_scalar, save_simulation_data
+from ratinabox.hsw.simulation_helpers import build_agent, filter_eyeblink_trials, filter_by_velocity, write_iteration_summary, unwrap_scalar, save_simulation_data
 
 import args_parser
 
@@ -63,25 +63,13 @@ config.setup_ratinabox_figure_directory(save_directory)
 current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 _balance_tag = f"-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}" if args.balance_values is not None else ""
 results_file_base = os.path.join(save_directory, f"{current_date}:{args.model_type}_results{_balance_tag}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}")
-results_filepath = f"{results_file_base}.txt"
-csv_filepath = f"{results_file_base}.csv"
+summary_filepath = f"{results_file_base}.log"
 
 matlab_file_path = config.get_matlab_file_path()
 data = scipy.io.loadmat(matlab_file_path)
 
 position_data_envA = data['envA314_522']
 position_data_envB = data['envB314_524']
-
-# Column headers
-headers = [
-    "balance_value", "responsive_val",
-    "percent_place_cells", "fract_control_all", "fract_test_all",
-    "err_allA_score", "err_allA_err", "err_allA_mean", "err_allA_median",
-    "err_allB_usingA_score", "err_allB_usingA_err", "err_allB_usingA_mean", "err_allB_usingA_median",
-    "err_all_shuffA_score", "err_all_shuffA_err", "err_all_shuffA_mean", "err_all_shuffA_median",
-    "err_all_shuffB_usingA_score", "err_all_shuffB_usingA_err", "err_all_shuffB_usingA_mean", "err_all_shuffB_usingA_median",
-    "err_allB_usingB_score", "err_allB_usingB_err", "err_allB_usingB_mean", "err_allB_usingB_median"
-]
 
 num_neurons = 80
 
@@ -126,38 +114,35 @@ for combo in itertools.product(*grid_values):
 
         #run cebra decoding
         if args.decode_task:
-            fract_control_all, fract_test_all = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
+            task_a_to_a, task_a_to_b, task_shuffled_a_to_a, task_shuffled_a_to_b = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
         else:
-            fract_control_all, fract_test_all = None, None
+            task_a_to_a = task_a_to_b = task_shuffled_a_to_a = task_shuffled_a_to_b = None
 
         posA, response_envA = filter_by_velocity(agentA, response_envA)
         posB, response_envB = filter_by_velocity(agentB, response_envB)
 
         #POS DECODE
         if args.decode_position:
-            err_allA, err_allB_usingA, err_all_shuffA, err_all_shuffB_usingA, err_allB_usingB = pos_decoding_AvsB(response_envA, posA, response_envB, posB, .7)
+            place_a_to_a, place_a_to_b, place_shuffled_a_to_a, place_shuffled_a_to_b, place_b_to_b = pos_decoding_AvsB(response_envA, posA, response_envB, posB, .7)
         else:
-            err_allA = err_allB_usingA = err_all_shuffA = err_all_shuffB_usingA = err_allB_usingB = (None, None, None, None)
+            place_a_to_a = place_a_to_b = place_shuffled_a_to_a = place_shuffled_a_to_b = place_b_to_b = (None, None, None, None)
 
         # Construct the identifier for this iteration
         _balance_id = f"{balance_value}_{args.balance_dist}_" if balance_value is not None else ""
         identifier = f"{_balance_id}responsive_{responsive_val}_{args.responsive_type}_PCs_{percent_place_cell}.npy"
 
         percent_place_cell = unwrap_scalar(percent_place_cell)
-        fract_control_all = unwrap_scalar(fract_control_all)
-        fract_test_all = unwrap_scalar(fract_test_all)
+        task_a_to_a = unwrap_scalar(task_a_to_a)
+        task_a_to_b = unwrap_scalar(task_a_to_b)
+        task_shuffled_a_to_a = unwrap_scalar(task_shuffled_a_to_a)
+        task_shuffled_a_to_b = unwrap_scalar(task_shuffled_a_to_b)
 
 
-        write_iteration_results(
-            results_filepath, identifier, fract_control_all, fract_test_all,
-            err_allA, err_all_shuffA, err_allB_usingA, err_all_shuffB_usingA, err_allB_usingB,
-        )
-
-        append_results_row(
-            csv_filepath, headers,
-            [balance_value, responsive_val, percent_place_cell,
-             fract_control_all, fract_test_all,
-             *err_allA, *err_allB_usingA, *err_all_shuffA, *err_all_shuffB_usingA, *err_allB_usingB]
+        write_iteration_summary(
+            summary_filepath, identifier,
+            place_a_to_a, place_b_to_b, place_a_to_b,
+            place_shuffled_a_to_a, place_shuffled_a_to_b,
+            task_a_to_a, task_a_to_b, task_shuffled_a_to_a, task_shuffled_a_to_b,
         )
 
         current_date = datetime.datetime.now().strftime("%Y%m%d")

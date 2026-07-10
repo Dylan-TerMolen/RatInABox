@@ -58,6 +58,48 @@ def write_iteration_results(results_filepath, identifier, fract_control_all, fra
         results_file.write("\n")
 
 
+def _metric_score(metric):
+    """Return the headline score of a decoding metric (first element of a tuple, or the scalar itself)."""
+    if metric is None:
+        return None
+    if isinstance(metric, (list, tuple)):
+        return metric[0]
+    return metric
+
+
+def _format_score(value):
+    return f"{value:.4f}" if isinstance(value, (int, float)) else "n/a"
+
+
+def write_iteration_summary(summary_filepath, identifier,
+                            place_a_to_a, place_b_to_b, place_a_to_b,
+                            place_shuffled_a_to_a, place_shuffled_a_to_b,
+                            task_a_to_a, task_a_to_b, task_shuffled_a_to_a, task_shuffled_a_to_b):
+    """Append a compact, score-only summary of one iteration's decoding metrics.
+
+    Place decoding reports A->A, B->B, and cross-env A->B plus their shuffled floors;
+    task decoding reports A->A, cross-env A->B, and their shuffled floors.
+    """
+    place_scores = {
+        "A->A":      _metric_score(place_a_to_a),
+        "B->B":      _metric_score(place_b_to_b),
+        "A->B":      _metric_score(place_a_to_b),
+        "shuffA->A": _metric_score(place_shuffled_a_to_a),
+        "shuffA->B": _metric_score(place_shuffled_a_to_b),
+    }
+    task_scores = {
+        "A->A":      _metric_score(task_a_to_a),
+        "A->B":      _metric_score(task_a_to_b),
+        "shuffA->A": _metric_score(task_shuffled_a_to_a),
+        "shuffA->B": _metric_score(task_shuffled_a_to_b),
+    }
+    with open(summary_filepath, "a") as f:
+        f.write(f"Parameters: {identifier}\n")
+        f.write("place  " + "  ".join(f"{k}: {_format_score(v)}" for k, v in place_scores.items()) + "\n")
+        f.write("task   " + "  ".join(f"{k}: {_format_score(v)}" for k, v in task_scores.items()) + "\n")
+        f.write("\n")
+
+
 def append_results_row(csv_filepath, headers, row):
     """Append a single result row to a CSV file, writing headers if the file is new."""
     write_header = not os.path.exists(csv_filepath)

@@ -144,7 +144,7 @@ for responsive_val, percent_place_cell, holdover in itertools.product(responsive
         response_envB_test, envB_eyeblink = filter_eyeblink_trials(agentB.position_data, response_envB)
 
         #run cebra decoding
-        fract_control_all, fract_test_all = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
+        fract_control_all, fract_test_all, _, _ = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
 
         posA, response_envA = filter_by_velocity(agentA, response_envA)
         posB, response_envB = filter_by_velocity(agentB, response_envB)
