@@ -87,7 +87,7 @@ for combo in itertools.product(*grid_values):
         balance_distribution = utils.get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons) if balance_value is not None else None
         responsive_distribution = utils.get_distribution_values(args.responsive_type, [responsive_val], num_neurons)
 
-        tebc_responsive_neurons, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
+        tebc_responsive_neurons, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution, args.task_types)
 
         agentA = build_agent(position_data_envA)
         modelA = build_model(args.model_type, agentA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cell, cell_types)
@@ -99,7 +99,7 @@ for combo in itertools.product(*grid_values):
             tebc_responsive_neurons_B = modelA.tebc_responsive_neurons
         else:
             balance_distribution_B = utils.get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons) if balance_value is not None else None
-            tebc_responsive_neurons_B, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
+            tebc_responsive_neurons_B, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution, args.task_types)
 
         agentB = build_agent(position_data_envB)
         modelB = build_model(args.model_type, agentB, balance_distribution_B, responsive_distribution, tebc_responsive_neurons_B, percent_place_cell, cell_types)

@@ -1,6 +1,6 @@
 import argparse
 
-UNIVERSAL_PARAMS = ['model_type', 'num_iters', 'responsive_values', 'responsive_type', 'percent_place_cells', 'holdovers', 'decode_position', 'decode_task']
+UNIVERSAL_PARAMS = ['model_type', 'num_iters', 'responsive_values', 'responsive_type', 'percent_place_cells', 'holdovers', 'decode_position', 'decode_task', 'task_types']
 
 MODEL_REQUIRED_PARAMS = {
     'additive': ['balance_values', 'balance_dist', 'balance_std'],
@@ -46,6 +46,9 @@ def _add_arguments(parser):
                         help='Percentage of place cells (single value or comma-separated list)')
     parser.add_argument('--holdovers', type=str, default=DEFAULTS['holdovers'],
                         help='Whether to hold TEBC cells over from env A')
+    parser.add_argument('--task_types', type=str, default=None,
+                        help='Comma-separated subset of tEBC response types to use, e.g. "1,2,7,8". '
+                             'Default: all types at their empirical prevalence.')
     parser.add_argument('--decode_position', type=lambda x: x.lower() != 'false', default=True,
                         help='Run position decoding (default: True)')
     parser.add_argument('--decode_task', type=lambda x: x.lower() != 'false', default=True,
@@ -75,6 +78,9 @@ def _set_defaults(args):
     for attr in ['balance_values', 'responsive_values', 'percent_place_cells', 'holdovers']:
         if getattr(args, attr) is not None:
             setattr(args, attr, parse_list(getattr(args, attr)))
+
+    if args.task_types is not None:
+        args.task_types = [int(t) for t in str(args.task_types).split(',')]
 
 
 def parse():
