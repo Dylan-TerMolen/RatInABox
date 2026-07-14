@@ -20,7 +20,7 @@ from ratinabox.hsw.dependent_model.TEBC import TEBC as DependentTEBC
 from ratinabox.hsw.place_dep_model.TEBC import TEBC as PlaceDependentTEBC
 
 from ratinabox.hsw import utils
-from ratinabox.hsw.simulation_helpers import build_agent, filter_eyeblink_trials, filter_by_velocity, write_iteration_summary, unwrap_scalar, save_simulation_data
+from ratinabox.hsw.simulation_helpers import build_agent, filter_eyeblink_trials, filter_by_velocity, write_iteration_summary, write_run_header, unwrap_scalar, save_simulation_data
 
 import args_parser
 
@@ -64,6 +64,7 @@ current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 _balance_tag = f"-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}" if args.balance_values is not None else ""
 results_file_base = os.path.join(save_directory, f"{current_date}:{args.model_type}_results{_balance_tag}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}")
 summary_filepath = f"{results_file_base}.log"
+write_run_header(summary_filepath, vars(args))
 
 matlab_file_path = config.get_matlab_file_path()
 data = scipy.io.loadmat(matlab_file_path)

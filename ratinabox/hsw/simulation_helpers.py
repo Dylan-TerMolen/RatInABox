@@ -58,6 +58,21 @@ def write_iteration_results(results_filepath, identifier, fract_control_all, fra
         results_file.write("\n")
 
 
+def write_run_header(summary_filepath, params):
+    """Write a one-time header listing every parameter passed to the job.
+
+    params: a mapping of parameter name to value (e.g. vars(args)). Parameters
+    left unset (None) are omitted so the header reflects only what applies to
+    this run.
+    """
+    with open(summary_filepath, "a") as f:
+        f.write("=== Run parameters ===\n")
+        for key, value in params.items():
+            if value is not None:
+                f.write(f"{key}: {value}\n")
+        f.write("======================\n\n")
+
+
 def _metric_score(metric):
     """Return the headline score of a decoding metric (first element of a tuple, or the scalar itself)."""
     if metric is None:
