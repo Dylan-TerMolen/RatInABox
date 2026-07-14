@@ -33,17 +33,22 @@ _TEBC_CLASS = {
 # Universal grid params apply to all models; model-specific params are added per model
 _UNIVERSAL_GRID_PARAMS = ['responsive_values', 'percent_place_cells', 'holdovers']
 
+# Gaussian place-field widths (metres), scaled per environment so env B's larger
+# arena keeps the same field-to-spacing tiling as env A (0.20 * sqrt(areaB/areaA)).
+PLACE_CELL_WIDTH_ENV_A = 0.20
+PLACE_CELL_WIDTH_ENV_B = 0.40
+
 MODEL_GRID_PARAMS = {
     'additive':        ['balance_values'] + _UNIVERSAL_GRID_PARAMS,
     'dependent':       ['balance_values'] + _UNIVERSAL_GRID_PARAMS,
     'place_dependent': _UNIVERSAL_GRID_PARAMS,
 }
 
-def build_model(model_type, agent, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types):
+def build_model(model_type, agent, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cells, cell_types, place_cell_width):
     tebc_cls = _TEBC_CLASS[model_type]
     if model_type == 'place_dependent':
-        return tebc_cls(agent, 80, responsive_distribution, percent_place_cells, tebc_responsive_neurons)
-    return tebc_cls(agent, 80, balance_distribution, responsive_distribution, percent_place_cells, tebc_responsive_neurons, cell_types)
+        return tebc_cls(agent, 80, responsive_distribution, percent_place_cells, tebc_responsive_neurons, place_cell_width=place_cell_width)
+    return tebc_cls(agent, 80, balance_distribution, responsive_distribution, percent_place_cells, tebc_responsive_neurons, cell_types, place_cell_width=place_cell_width)
 
 
 def simulate_agent(model, agent):
@@ -92,7 +97,7 @@ for combo in itertools.product(*grid_values):
         tebc_responsive_neurons, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution, args.task_types)
 
         agentA = build_agent(position_data_envA)
-        modelA = build_model(args.model_type, agentA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cell, cell_types)
+        modelA = build_model(args.model_type, agentA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cell, cell_types, PLACE_CELL_WIDTH_ENV_A)
         spikesA, firingrate_envA, agentA = simulate_agent(modelA, agentA)
 
         # Holdover: carry learned env A params into env B; otherwise re-assign fresh params
@@ -104,7 +109,7 @@ for combo in itertools.product(*grid_values):
             tebc_responsive_neurons_B, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution, args.task_types)
 
         agentB = build_agent(position_data_envB)
-        modelB = build_model(args.model_type, agentB, balance_distribution_B, responsive_distribution, tebc_responsive_neurons_B, percent_place_cell, cell_types)
+        modelB = build_model(args.model_type, agentB, balance_distribution_B, responsive_distribution, tebc_responsive_neurons_B, percent_place_cell, cell_types, PLACE_CELL_WIDTH_ENV_B)
         spikesB, firingrate_envB, agentB = simulate_agent(modelB, agentB)
 
         # Assess learning transfer and other metrics

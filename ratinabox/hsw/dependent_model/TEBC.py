@@ -21,11 +21,11 @@ combined_neurons = CombinedPlaceTebcNeurons(num_neurons, place_cells, balance, t
 
 class TEBC(PlaceCells):
     default_params = dict()  # Add this line to define the default_params attribute
-    def __init__(self, agent, N, balance_distribution, responsive_distribution, percent_place_cells, tebc_responsive_neurons=None, cell_types=None):
+    def __init__(self, agent, N, balance_distribution, responsive_distribution, percent_place_cells, tebc_responsive_neurons=None, cell_types=None, place_cell_width=0.20):
         place_cells_params = {
             "n": N,  # Number of place cells
             "description": "gaussian",  # Example parameter, adjust as needed
-            "widths": 0.20,  # Adjust as needed
+            "widths": place_cell_width,  # Adjust as needed
             "place_cell_centres": None,  # Adjust as needed
             "wall_geometry": "geodesic",  # Adjust as needed
             "min_fr": 0,  # Adjust as needed

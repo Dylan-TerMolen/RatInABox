@@ -6,11 +6,11 @@ from ratinabox.hsw.place_dep_model.tebc_response2 import *
 class TEBC(PlaceCells):
     default_params = dict()
 
-    def __init__(self, agent, N, responsive_distribution, percent_place_cells, tebc_responsive_neurons=None, cell_types=None):
+    def __init__(self, agent, N, responsive_distribution, percent_place_cells, tebc_responsive_neurons=None, cell_types=None, place_cell_width=0.20):
         place_cells_params = {
-            "n": N, 
+            "n": N,
             "description": "gaussian",
-            "widths": 0.20,
+            "widths": place_cell_width,
             "place_cell_centres": None,
             "wall_geometry": "geodesic",
             "min_fr": 0,
