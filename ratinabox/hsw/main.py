@@ -69,7 +69,8 @@ config.setup_ratinabox_figure_directory(save_directory)
 current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 _balance_tag = f"-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}" if args.balance_values is not None else ""
 _task_types_tag = f"-tasktypes-[{'-'.join(map(str, args.task_types))}]" if args.task_types is not None else ""
-results_file_base = os.path.join(save_directory, f"{current_date}:{args.model_type}_results{_balance_tag}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}{_task_types_tag}")
+_cebra_tag = args_parser.cebra_filename_tag(cebra_params)
+results_file_base = os.path.join(save_directory, f"{current_date}:{args.model_type}_results{_balance_tag}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}{_task_types_tag}{_cebra_tag}")
 summary_filepath = f"{results_file_base}.log"
 write_run_header(summary_filepath, vars(args))
 
@@ -129,9 +130,9 @@ for combo in itertools.product(*grid_values):
 
         #run cebra decoding
         if args.decode_task:
-            task_a_to_a, task_a_to_b, task_shuffled_a_to_a, task_shuffled_a_to_b = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink, cebra_params=cebra_params)
+            task_a_to_a, task_a_to_b, task_shuffled_a_to_a, task_shuffled_a_to_b, task_b_to_b = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink, cebra_params=cebra_params)
         else:
-            task_a_to_a = task_a_to_b = task_shuffled_a_to_a = task_shuffled_a_to_b = None
+            task_a_to_a = task_a_to_b = task_shuffled_a_to_a = task_shuffled_a_to_b = task_b_to_b = None
 
         posA, response_envA = filter_by_velocity(agentA, response_envA)
         posB, response_envB = filter_by_velocity(agentB, response_envB)
@@ -151,13 +152,14 @@ for combo in itertools.product(*grid_values):
         task_a_to_b = unwrap_scalar(task_a_to_b)
         task_shuffled_a_to_a = unwrap_scalar(task_shuffled_a_to_a)
         task_shuffled_a_to_b = unwrap_scalar(task_shuffled_a_to_b)
+        task_b_to_b = unwrap_scalar(task_b_to_b)
 
 
         write_iteration_summary(
             summary_filepath, identifier,
             place_a_to_a, place_b_to_b, place_a_to_b,
             place_shuffled_a_to_a, place_shuffled_a_to_b,
-            task_a_to_a, task_a_to_b, task_shuffled_a_to_a, task_shuffled_a_to_b,
+            task_a_to_a, task_b_to_b, task_a_to_b, task_shuffled_a_to_a, task_shuffled_a_to_b,
         )
 
         current_date = datetime.datetime.now().strftime("%Y%m%d")

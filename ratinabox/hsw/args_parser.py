@@ -120,6 +120,36 @@ def cebra_overrides(args):
     }
 
 
+# Short filename abbreviations for the CEBRA overrides, keyed by the prefix-stripped
+# parameter name returned by cebra_overrides.
+_CEBRA_TAG_ABBREV = {
+    'learning_rate': 'lr',
+    'max_iterations': 'iters',
+    'output_dimension': 'dim',
+    'min_temperature': 'mintemp',
+    'temperature_mode': 'tmode',
+    'time_offsets': 'toff',
+    'num_hidden_units': 'hidden',
+    'batch_size': 'batch',
+    'model_architecture': 'arch',
+    'distance': 'dist',
+    'conditional': 'cond',
+}
+
+
+def cebra_filename_tag(cebra_params):
+    """Compress the passed CEBRA overrides into a compact filename tag.
+
+    Returns e.g. "-cebra-[lr0.0003_dim2]" so runs with different CEBRA configs
+    land in separate files. Empty string when no overrides were passed (all
+    decoders on their tuned defaults).
+    """
+    if not cebra_params:
+        return ""
+    parts = [f"{_CEBRA_TAG_ABBREV.get(name, name)}{value}" for name, value in cebra_params.items()]
+    return f"-cebra-[{'_'.join(parts)}]"
+
+
 def _validate_params(parser, args):
     supported = set(UNIVERSAL_PARAMS + MODEL_REQUIRED_PARAMS[args.model_type])
     unsupported = [p for p in vars(args) if p not in supported and getattr(args, p) is not None]

@@ -105,11 +105,11 @@ def _format_score(value):
 def write_iteration_summary(summary_filepath, identifier,
                             place_a_to_a, place_b_to_b, place_a_to_b,
                             place_shuffled_a_to_a, place_shuffled_a_to_b,
-                            task_a_to_a, task_a_to_b, task_shuffled_a_to_a, task_shuffled_a_to_b):
+                            task_a_to_a, task_b_to_b, task_a_to_b, task_shuffled_a_to_a, task_shuffled_a_to_b):
     """Append a compact, score-only summary of one iteration's decoding metrics.
 
     Place decoding reports A->A, B->B, and cross-env A->B plus their shuffled floors;
-    task decoding reports A->A, cross-env A->B, and their shuffled floors.
+    task decoding reports A->A, B->B, cross-env A->B, and their shuffled floors.
     """
     place_scores = {
         "A->A":      _metric_score(place_a_to_a),
@@ -120,6 +120,7 @@ def write_iteration_summary(summary_filepath, identifier,
     }
     task_scores = {
         "A->A":      _metric_score(task_a_to_a),
+        "B->B":      _metric_score(task_b_to_b),
         "A->B":      _metric_score(task_a_to_b),
         "shuffA->A": _metric_score(task_shuffled_a_to_a),
         "shuffA->B": _metric_score(task_shuffled_a_to_b),

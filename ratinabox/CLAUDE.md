@@ -35,8 +35,9 @@ detuning the other, isolate it with `--decode_task false` or `--decode_position 
 ## Grid searches (Slurm)
 
 Slurm experiment `.sh` files live in the repo-root `slurm/` directory — keep new ones there.
-We grid-search by SLURM array job: one array task per hyperparameter combination, mapped
-row-major from `SLURM_ARRAY_TASK_ID`. Keep simulation params (balance/responsive/PCs/holdovers)
+Every script queues its runs through the array sbatch arg — one array task per run — even a
+single run (use `#SBATCH --array=0-0`). We grid-search the same way: one array task per
+hyperparameter combination, mapped row-major from `SLURM_ARRAY_TASK_ID`. Keep simulation params (balance/responsive/PCs/holdovers)
 fixed so decoding differences are attributable to the CEBRA config, not the data.
 See `slurm/SLURM_cebra_search.sh` (grid) and `slurm/SLURM_cebra_test.sh` (single run) for the
 pattern. Scripts reference `main.py` by absolute `${BASE_DIR}` path and write to an absolute

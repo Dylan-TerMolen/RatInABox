@@ -4,10 +4,11 @@
 #SBATCH --gres=gpu:a100:1
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
+#SBATCH --array=0-0  # single run, still queued as one array task per convention
 #SBATCH --mem=8GB
-#SBATCH --time=2:00:00
-#SBATCH --job-name="CEBRA_test"
-#SBATCH --output=/home/tfl2886/projects/RatInABox/slurm_out/CEBRA_test.%j.out
+#SBATCH --time=0:30:00
+#SBATCH --job-name="CEBRA_test_${SLURM_ARRAY_TASK_ID}"
+#SBATCH --output=/home/tfl2886/projects/RatInABox/slurm_out/CEBRA_test.%A_%a.out
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=dptermolen@gmail.com
 
