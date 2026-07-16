@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io
 
-from hannahs_cebras import cond_decoding_AvsB, pos_decoding_AvsB
+from hannahs_cebras import cond_decoding_AvsB, pos_decoding_AvsB, COND_CEBRA_DEFAULTS, POS_CEBRA_DEFAULTS, merge_cebra_params
 from ratinabox.hsw import config
 from ratinabox.hsw.additive_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
 from ratinabox.hsw.additive_model.TEBC import TEBC as AdditiveTEBC
@@ -20,7 +20,7 @@ from ratinabox.hsw.dependent_model.TEBC import TEBC as DependentTEBC
 from ratinabox.hsw.place_dep_model.TEBC import TEBC as PlaceDependentTEBC
 
 from ratinabox.hsw import utils
-from ratinabox.hsw.simulation_helpers import build_agent, filter_eyeblink_trials, filter_by_velocity, write_iteration_summary, write_run_header, unwrap_scalar, save_simulation_data
+from ratinabox.hsw.simulation_helpers import build_agent, filter_eyeblink_trials, filter_by_velocity, write_iteration_summary, write_run_header, write_cebra_config, unwrap_scalar, save_simulation_data
 
 import args_parser
 
@@ -61,6 +61,7 @@ def simulate_agent(model, agent):
     return spikes, firing_rates, agent
 
 args = args_parser.parse()
+cebra_params = args_parser.cebra_overrides(args)
 
 save_directory = config.get_save_directory(model_name=args.model_type)
 config.setup_ratinabox_figure_directory(save_directory)
@@ -71,6 +72,13 @@ _task_types_tag = f"-tasktypes-[{'-'.join(map(str, args.task_types))}]" if args.
 results_file_base = os.path.join(save_directory, f"{current_date}:{args.model_type}_results{_balance_tag}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}{_task_types_tag}")
 summary_filepath = f"{results_file_base}.log"
 write_run_header(summary_filepath, vars(args))
+
+effective_cebra_config = {}
+if args.decode_task:
+    effective_cebra_config['task_decoder'] = merge_cebra_params(COND_CEBRA_DEFAULTS, cebra_params)
+if args.decode_position:
+    effective_cebra_config['position_decoder'] = merge_cebra_params(POS_CEBRA_DEFAULTS, cebra_params)
+write_cebra_config(summary_filepath, effective_cebra_config)
 
 matlab_file_path = config.get_matlab_file_path()
 data = scipy.io.loadmat(matlab_file_path)
@@ -121,7 +129,7 @@ for combo in itertools.product(*grid_values):
 
         #run cebra decoding
         if args.decode_task:
-            task_a_to_a, task_a_to_b, task_shuffled_a_to_a, task_shuffled_a_to_b = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
+            task_a_to_a, task_a_to_b, task_shuffled_a_to_a, task_shuffled_a_to_b = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink, cebra_params=cebra_params)
         else:
             task_a_to_a = task_a_to_b = task_shuffled_a_to_a = task_shuffled_a_to_b = None
 
@@ -130,7 +138,7 @@ for combo in itertools.product(*grid_values):
 
         #POS DECODE
         if args.decode_position:
-            place_a_to_a, place_a_to_b, place_shuffled_a_to_a, place_shuffled_a_to_b, place_b_to_b = pos_decoding_AvsB(response_envA, posA, response_envB, posB, .7)
+            place_a_to_a, place_a_to_b, place_shuffled_a_to_a, place_shuffled_a_to_b, place_b_to_b = pos_decoding_AvsB(response_envA, posA, response_envB, posB, .7, cebra_params=cebra_params)
         else:
             place_a_to_a = place_a_to_b = place_shuffled_a_to_a = place_shuffled_a_to_b = place_b_to_b = (None, None, None, None)
 

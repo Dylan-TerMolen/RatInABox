@@ -73,6 +73,22 @@ def write_run_header(summary_filepath, params):
         f.write("======================\n\n")
 
 
+def write_cebra_config(summary_filepath, cebra_configs):
+    """Append the fully-resolved CEBRA config (tuned defaults plus any CLI overrides).
+
+    cebra_configs: a mapping of decoder label to its resolved CEBRA kwargs, so the
+    log records every parameter each decoder actually ran with, not only the ones
+    passed on the command line.
+    """
+    with open(summary_filepath, "a") as f:
+        f.write("=== CEBRA config ===\n")
+        for label, config in cebra_configs.items():
+            f.write(f"[{label}]\n")
+            for key, value in config.items():
+                f.write(f"{key}: {value}\n")
+        f.write("======================\n\n")
+
+
 def _metric_score(metric):
     """Return the headline score of a decoding metric (first element of a tuple, or the scalar itself)."""
     if metric is None:

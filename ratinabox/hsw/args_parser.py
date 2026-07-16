@@ -1,6 +1,16 @@
 import argparse
 
-UNIVERSAL_PARAMS = ['model_type', 'num_iters', 'responsive_values', 'responsive_type', 'percent_place_cells', 'holdovers', 'decode_position', 'decode_task', 'task_types']
+# CEBRA hyperparameters exposed to the CLI. Each maps to a CEBRA constructor kwarg
+# (the 'cebra_' prefix stripped) and defaults to None so an unset value falls back
+# to the decoder's tuned default rather than overriding it.
+CEBRA_PARAMS = [
+    'cebra_learning_rate', 'cebra_max_iterations', 'cebra_output_dimension',
+    'cebra_min_temperature', 'cebra_temperature_mode', 'cebra_time_offsets',
+    'cebra_num_hidden_units', 'cebra_batch_size', 'cebra_model_architecture',
+    'cebra_distance', 'cebra_conditional',
+]
+
+UNIVERSAL_PARAMS = ['model_type', 'num_iters', 'responsive_values', 'responsive_type', 'percent_place_cells', 'holdovers', 'decode_position', 'decode_task', 'task_types'] + CEBRA_PARAMS
 
 MODEL_REQUIRED_PARAMS = {
     'additive': ['balance_values', 'balance_dist', 'balance_std'],
@@ -61,6 +71,53 @@ def _add_arguments(parser):
                         help='Distribution type for balance')
     parser.add_argument('--balance_std', type=float, default=None,
                         help='Standard deviation for Gaussian balance distribution')
+
+    _add_cebra_arguments(parser)
+
+
+def _add_cebra_arguments(parser):
+    """CEBRA hyperparameters for the decoding grid search.
+
+    All default to None: an unset flag leaves the position and task decoders on
+    their own tuned defaults, while a passed value overrides both.
+    """
+    parser.add_argument('--cebra_learning_rate', type=float, default=None,
+                        help='CEBRA learning rate')
+    parser.add_argument('--cebra_max_iterations', type=int, default=None,
+                        help='CEBRA training iterations')
+    parser.add_argument('--cebra_output_dimension', type=int, default=None,
+                        help='CEBRA embedding dimensionality')
+    parser.add_argument('--cebra_min_temperature', type=float, default=None,
+                        help='CEBRA minimum temperature (used with temperature_mode=auto)')
+    parser.add_argument('--cebra_temperature_mode', choices=['auto', 'constant'], default=None,
+                        help='CEBRA temperature mode')
+    parser.add_argument('--cebra_time_offsets', type=int, default=None,
+                        help='CEBRA time offsets')
+    parser.add_argument('--cebra_num_hidden_units', type=int, default=None,
+                        help='CEBRA hidden units per layer')
+    parser.add_argument('--cebra_batch_size', type=int, default=None,
+                        help='CEBRA batch size')
+    parser.add_argument('--cebra_model_architecture', type=str, default=None,
+                        help='CEBRA model architecture, e.g. offset10-model')
+    parser.add_argument('--cebra_distance', choices=['cosine', 'euclidean'], default=None,
+                        help='CEBRA distance metric')
+    parser.add_argument('--cebra_conditional', type=str, default=None,
+                        help='CEBRA conditional distribution, e.g. time_delta')
+
+
+def cebra_overrides(args):
+    """Map explicitly-set --cebra_* CLI args to CEBRA constructor kwargs.
+
+    Returns a dict keyed by CEBRA parameter name (the 'cebra_' prefix stripped),
+    containing only values the user actually passed so unset parameters keep each
+    decoder's tuned default.
+    """
+    prefix = 'cebra_'
+    return {
+        name[len(prefix):]: getattr(args, name)
+        for name in CEBRA_PARAMS
+        if getattr(args, name) is not None
+    }
 
 
 def _validate_params(parser, args):
