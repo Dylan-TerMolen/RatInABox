@@ -25,12 +25,25 @@ def build_agent(position_data):
     return agent
 
 
+CS_US_NUM_BINS = 5
+
+
+def bin_cs_us_time_ids(trial_markers):
+    """Map trial markers (1-10) into CS_US_NUM_BINS ordered bins spanning the CS->US timeline.
+
+    Markers 1-5 mark CS time ids and 6-10 mark US time ids; pairing consecutive
+    markers yields five equal-width bins (1-2 -> 1, 3-4 -> 2, ... 9-10 -> 5) that
+    preserve temporal order across the trial.
+    """
+    return np.ceil(trial_markers / 2).astype(int)
+
+
 def filter_eyeblink_trials(position_data, response):
-    """Return response rows and binarised labels for CS/US trials only (eyeblink > 0)."""
+    """Return response rows and CS/US time-id bin labels for trials only (eyeblink > 0)."""
     eyeblink = position_data[3].T
     mask = eyeblink > 0
     response_test = response[mask]
-    eyeblink_labels = np.where(eyeblink[mask] <= 5, 1, 2)
+    eyeblink_labels = bin_cs_us_time_ids(eyeblink[mask])
     return response_test, eyeblink_labels
 
 
