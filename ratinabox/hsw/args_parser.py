@@ -10,7 +10,7 @@ CEBRA_PARAMS = [
     'cebra_distance', 'cebra_conditional',
 ]
 
-UNIVERSAL_PARAMS = ['model_type', 'num_iters', 'responsive_values', 'responsive_type', 'percent_place_cells', 'holdovers', 'decode_position', 'decode_task', 'task_types'] + CEBRA_PARAMS
+UNIVERSAL_PARAMS = ['model_type', 'experiment', 'num_iters', 'responsive_values', 'responsive_type', 'percent_place_cells', 'holdovers', 'decode_position', 'decode_task', 'task_types'] + CEBRA_PARAMS
 
 MODEL_REQUIRED_PARAMS = {
     'additive': ['balance_values', 'balance_dist', 'balance_std'],
@@ -46,6 +46,9 @@ def _add_arguments(parser):
                         help='Which model to run')
 
     # Universal
+    parser.add_argument('--experiment', type=str, default=None,
+                        help='Experiment tag prepended to every output filename so all runs '
+                             'from the same experiment share a common prefix.')
     parser.add_argument('--num_iters', type=int, default=DEFAULTS['num_iters'],
                         help='Number of iterations')
     parser.add_argument('--responsive_values', type=str, default=DEFAULTS['responsive_values'],

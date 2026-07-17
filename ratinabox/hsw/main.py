@@ -67,10 +67,11 @@ save_directory = config.get_save_directory(model_name=args.model_type)
 config.setup_ratinabox_figure_directory(save_directory)
 
 current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+_experiment_prefix = f"{args.experiment}-" if args.experiment is not None else ""
 _balance_tag = f"-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}" if args.balance_values is not None else ""
 _task_types_tag = f"-tasktypes-[{'-'.join(map(str, args.task_types))}]" if args.task_types is not None else ""
 _cebra_tag = args_parser.cebra_filename_tag(cebra_params)
-results_file_base = os.path.join(save_directory, f"{current_date}:{args.model_type}_results{_balance_tag}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}{_task_types_tag}{_cebra_tag}")
+results_file_base = os.path.join(save_directory, f"{_experiment_prefix}{current_date}:{args.model_type}_results{_balance_tag}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}{_task_types_tag}{_cebra_tag}")
 summary_filepath = f"{results_file_base}.log"
 write_run_header(summary_filepath, vars(args))
 
