@@ -77,8 +77,8 @@ for i in range(num_iters):
 
     spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cell, cell_types)
 
-    balance_distribution_envA = eyeblink_neuronsA.balance_distribution
-    tebc_responsive_rates_envA = eyeblink_neuronsA.tebc_responsive_neurons
+    balance_distribution_envA = eyeblink_neuronsA.task_to_place_weight_distribution
+    tebc_responsive_rates_envA = eyeblink_neuronsA.task_responsive_indices
 
     # Simulate in Environment B using the parameters from Environment A
     spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, balance_distribution_envA, tebc_responsive_rates_envA, tebc_responsive_neurons, percent_place_cell, cell_types)

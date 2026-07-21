@@ -105,8 +105,8 @@ for balance_value, responsive_val, percent_place_cell in itertools.product(balan
         # also want a percent of place cells metric
 
 
-        balance_distribution_envA = eyeblink_neuronsA.balance_distribution
-        tebc_responsive_rates_envA = eyeblink_neuronsA.tebc_responsive_neurons
+        balance_distribution_envA = eyeblink_neuronsA.task_to_place_weight_distribution
+        tebc_responsive_rates_envA = eyeblink_neuronsA.task_responsive_indices
 
         # Simulate in Environment B using the parameters from Environment A
         spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, balance_distribution_envA, tebc_responsive_rates_envA, tebc_responsive_neurons, percent_place_cell, cell_types)

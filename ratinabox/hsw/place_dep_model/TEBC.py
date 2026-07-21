@@ -6,7 +6,7 @@ from ratinabox.hsw.place_dep_model.tebc_response2 import *
 class TEBC(PlaceCells):
     default_params = dict()
 
-    def __init__(self, agent, N, responsive_distribution, percent_place_cells, tebc_responsive_neurons=None, cell_types=None, place_cell_width=0.20):
+    def __init__(self, agent, N, responsive_distribution, percent_place_cells, task_responsive=None, cell_types=None, place_cell_width=0.20):
         place_cells_params = {
             "n": N,
             "description": "gaussian",
@@ -21,11 +21,11 @@ class TEBC(PlaceCells):
         super().__init__(agent, place_cells_params)
 
 
-        # Initialize tebc_responsive_neurons with a default value if not provided
-        if tebc_responsive_neurons is not None:
-            self.tebc_responsive_neurons = tebc_responsive_neurons
+        # Initialize task_responsive with a default value if not provided
+        if task_responsive is not None:
+            self.task_responsive = task_responsive
         else:
-            self.tebc_responsive_neurons = np.full(N, False)  # Default value: all False
+            self.task_responsive = np.full(N, False)  # Default value: all False
 
         # Initialize additional properties for CombinedPlaceTebcNeurons
 
@@ -84,7 +84,7 @@ class TEBC(PlaceCells):
         running = current_velocity > 0.02
 
         for i in range(self.n):
-            if not self.tebc_responsive_neurons[i]:
+            if not self.task_responsive[i]:
                 continue
 
             in_field = bool(unmodulated_baseline[i] >= 0.2)

@@ -15,7 +15,7 @@ def calculate_firing_rate(neuron_obj, agent_position, time_since_CS, time_since_
     for i in range(neuron_obj.num_neurons):
         place_response = neuron_obj.firing_rates[i]  # Directly use the updated firing rates
         tebc_response = 0
-        if neuron_obj.tebc_responsive_neurons[i]:
+        if neuron_obj.task_responsive[i]:
             cell_type = neuron_obj.cell_types[i]
             response_func = response_profiles[cell_type]['response_func']
             tebc_response = response_func(time_since_CS, time_since_US)
