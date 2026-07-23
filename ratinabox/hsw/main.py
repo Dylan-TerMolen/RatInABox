@@ -14,10 +14,10 @@ import scipy.io
 
 from hannahs_cebras import cond_decoding_AvsB, pos_decoding_AvsB, COND_CEBRA_DEFAULTS, POS_CEBRA_DEFAULTS, merge_cebra_params
 from ratinabox.hsw import config
-from ratinabox.hsw.additive_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
-from ratinabox.hsw.additive_model.TEBC import TEBC as AdditiveTEBC
-from ratinabox.hsw.dependent_model.TEBC import TEBC as DependentTEBC
-from ratinabox.hsw.place_dep_model.TEBC import TEBC as PlaceDependentTEBC
+from ratinabox.hsw.independent_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
+from ratinabox.hsw.independent_model.TEBC import TEBC as IndependentTEBC
+from ratinabox.hsw.place_dependent_model.TEBC import TEBC as PlaceDependentTEBC
+from ratinabox.hsw.arousal_mediated_model.TEBC import TEBC as ArousalMediatedTEBC
 
 from ratinabox.hsw import utils
 from ratinabox.hsw.simulation_helpers import build_agent, filter_eyeblink_trials, filter_by_velocity, write_iteration_summary, write_run_header, write_cebra_config, unwrap_scalar, save_simulation_data
@@ -25,9 +25,9 @@ from ratinabox.hsw.simulation_helpers import build_agent, filter_eyeblink_trials
 import args_parser
 
 _TEBC_CLASS = {
-    'additive': AdditiveTEBC,
-    'dependent': DependentTEBC,
+    'independent': IndependentTEBC,
     'place_dependent': PlaceDependentTEBC,
+    'arousal_mediated': ArousalMediatedTEBC,
 }
 
 # Universal grid params apply to all models; model-specific params are added per model
@@ -39,16 +39,16 @@ PLACE_CELL_WIDTH_ENV_A = 0.20
 PLACE_CELL_WIDTH_ENV_B = 0.40
 
 MODEL_GRID_PARAMS = {
-    'additive':        ['balance_values'] + _UNIVERSAL_GRID_PARAMS,
-    'dependent':       ['balance_values'] + _UNIVERSAL_GRID_PARAMS,
-    'place_dependent': _UNIVERSAL_GRID_PARAMS,
+    'independent':      ['balance_values'] + _UNIVERSAL_GRID_PARAMS,
+    'place_dependent':  ['balance_values'] + _UNIVERSAL_GRID_PARAMS,
+    'arousal_mediated': _UNIVERSAL_GRID_PARAMS,
 }
 
-def build_model(model_type, agent, balance_distribution, responsive_distribution, task_responsive, percent_place_cells, cell_types, place_cell_width):
+def build_model(model_type, agent, balance_distribution, responsive_distribution, task_responsive_indices, percent_place_cells, cell_types, place_cell_width):
     tebc_cls = _TEBC_CLASS[model_type]
-    if model_type == 'place_dependent':
-        return tebc_cls(agent, 80, responsive_distribution, percent_place_cells, task_responsive, place_cell_width=place_cell_width)
-    return tebc_cls(agent, 80, balance_distribution, responsive_distribution, percent_place_cells, task_responsive, cell_types, place_cell_width=place_cell_width)
+    if model_type == 'arousal_mediated':
+        return tebc_cls(agent, 80, responsive_distribution, percent_place_cells, task_responsive_indices, place_cell_width=place_cell_width)
+    return tebc_cls(agent, 80, balance_distribution, responsive_distribution, percent_place_cells, task_responsive_indices, cell_types, place_cell_width=place_cell_width)
 
 
 def simulate_agent(model, agent):
@@ -104,22 +104,22 @@ for combo in itertools.product(*grid_values):
         balance_distribution = utils.get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons) if balance_value is not None else None
         responsive_distribution = utils.get_distribution_values(args.responsive_type, [responsive_val], num_neurons)
 
-        task_responsive, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution, args.task_types)
+        task_responsive_indices, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution, args.task_types)
 
         agentA = build_agent(position_data_envA)
-        modelA = build_model(args.model_type, agentA, balance_distribution, responsive_distribution, task_responsive, percent_place_cell, cell_types, PLACE_CELL_WIDTH_ENV_A)
+        modelA = build_model(args.model_type, agentA, balance_distribution, responsive_distribution, task_responsive_indices, percent_place_cell, cell_types, PLACE_CELL_WIDTH_ENV_A)
         spikesA, firingrate_envA, agentA = simulate_agent(modelA, agentA)
 
         # Holdover: carry learned env A params into env B; otherwise re-assign fresh params
         if holdover:
             balance_distribution_B = getattr(modelA, 'balance_distribution', balance_distribution)
-            task_responsive_B = modelA.task_responsive
+            task_responsive_indices_B = modelA.task_responsive_indices
         else:
             balance_distribution_B = utils.get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons) if balance_value is not None else None
-            task_responsive_B, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution, args.task_types)
+            task_responsive_indices_B, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution, args.task_types)
 
         agentB = build_agent(position_data_envB, env_shape='elliptical')
-        modelB = build_model(args.model_type, agentB, balance_distribution_B, responsive_distribution, task_responsive_B, percent_place_cell, cell_types, PLACE_CELL_WIDTH_ENV_B)
+        modelB = build_model(args.model_type, agentB, balance_distribution_B, responsive_distribution, task_responsive_indices_B, percent_place_cell, cell_types, PLACE_CELL_WIDTH_ENV_B)
         spikesB, firingrate_envB, agentB = simulate_agent(modelB, agentB)
 
         # Assess learning transfer and other metrics

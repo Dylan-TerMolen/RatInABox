@@ -31,13 +31,13 @@ fully task-driven; $\beta_i = 0$ means it is a pure place cell.
     \hline
     Model & High-level equation & Description \\
     \hline
-    Additive &
+    Independent &
         $r_i = \beta_i\, r^{\mathrm{task}}_i(t) + (1-\beta_i)\tilde{r}^{\mathrm{place}}_i + \varepsilon$ &
         The task signal is independent of the animal's current location and determined strictly as a function of the time since the onset of the stimuli. Each task-influenced neuron is randomly assigned 1 of 8 response functions. The place and task responses are weighted according to the balance parameter. \\[8pt]
-    Dependent &
+    Place-Dependent &
         $r_i = \beta_i\, r^{\mathrm{task}}_i(t,\tilde{r}^{\mathrm{place}}_i) + (1-\beta_i)\tilde{r}^{\mathrm{place}}_i + \varepsilon$ &
         The task signal is dependent on the animal's current location and determined as a function of the time since the onset of the stimuli and the active response in the place field. Each task-influenced neuron is randomly assigned 1 of 8 response functions. The place and task responses are still weighted according to the balance parameter. \\[8pt]
-    Place-Dependent &
+    Arousal-Mediated &
         $r_i = \tilde{r}^{\mathrm{place}}_i + r^{\mathrm{task}}_i(t,\tilde{r}^{\mathrm{place}}_i) + \varepsilon$ &
         The task responses are selected from a subset of 4 functions based on whether the rat is running and whether the cell is in a place field. Each of these functions then depends solely on the time since the onset of the stimuli. \\
     \hline
@@ -47,9 +47,9 @@ fully task-driven; $\beta_i = 0$ means it is a pure place cell.
 \paragraph{Key symbols.}
 \begin{itemize}
     \item $\tilde{r}^{\mathrm{place}}_i$ --- velocity-modulated Gaussian place cell rate
-    \item $r^{\mathrm{task}}_i(t)$ --- TEBC task response for neuron $i$, drawn from type $k \in \{1,\dots,8\}$ (additive/dependent) or $k \in \{1,\dots,4\}$ (place-dependent)
+    \item $r^{\mathrm{task}}_i(t)$ --- TEBC task response for neuron $i$, drawn from type $k \in \{1,\dots,8\}$ (independent/place-dependent) or $k \in \{1,\dots,4\}$ (arousal-mediated)
     \item $\beta_i$ --- per-neuron balance parameter
-    \item $b_i \equiv \tilde{r}^{\mathrm{place}}_i(t)$ --- live place rate, used as baseline in dependent models
+    \item $b_i \equiv \tilde{r}^{\mathrm{place}}_i(t)$ --- live place rate, used as baseline in place-dependent and arousal-mediated models
     \item $\varepsilon \sim \mathcal{N}(-\tfrac{0.02}{30}, \tfrac{0.02}{30})$ --- additive noise term common to all models
 \end{itemize}
 
@@ -79,15 +79,15 @@ The values of $f_{\min}$ and $f_{\max}$ differ by model:
     \hline
     Model & $f_{\min}$ & $f_{\max}$ & Note \\
     \hline
-    Additive         & $0\,\text{Hz}$ & $1\,\text{Hz}$  & biologically low; task constants tuned to match \\
-    Dependent        & $0\,\text{Hz}$ & $12\,\text{Hz}$ & physiologically realistic \\
+    Independent      & $0\,\text{Hz}$ & $1\,\text{Hz}$  & biologically low; task constants tuned to match \\
     Place-Dependent  & $0\,\text{Hz}$ & $12\,\text{Hz}$ & physiologically realistic \\
+    Arousal-Mediated & $0\,\text{Hz}$ & $12\,\text{Hz}$ & physiologically realistic \\
     \hline
 \end{tabular}
 \end{center}
 
 % ---------------------------------------------------------------------------
-\section{Additive Model}
+\section{Independent Model}
 
 \textit{The task signal is independent of the animal's current location and determined
 strictly as a function of the time since the onset of the stimuli. Each task-influenced
@@ -146,7 +146,7 @@ Non-place-cell neurons have their velocity-modulated rate fixed at $\tfrac{0.02}
 
 \noindent
 where $c_i \in \{1,\dots,8\}$ is the cell type assigned to neuron $i$.
-% TODO: validate the units of the type 1--8 response functions in the additive model
+% TODO: validate the units of the type 1--8 response functions in the independent model
 The response profiles $R_k(t)$ map to the equations below as follows:
 
 \medskip
@@ -168,7 +168,7 @@ The response profiles $R_k(t)$ map to the equations below as follows:
 \end{center}
 
 % ---------------------------------------------------------------------------
-\section{Dependent Model}
+\section{Place-Dependent Model}
 
 \textit{The task signal is dependent on the animal's current location and determined as a
 function of the time since the onset of the stimuli and the active response in the place
@@ -198,7 +198,7 @@ where $b_i \equiv \tilde{r}^{\mathrm{place}}_i(t)$ is the velocity-modulated pla
 \end{equation}
 
 \noindent
-Each profile $R_k(t, b)$ has the same functional form as in the additive model
+Each profile $R_k(t, b)$ has the same functional form as in the independent model
 (Equations~\eqref{eq:type1}--\eqref{eq:type8}), but all magnitude parameters are
 expressed as multiples of the live baseline $b$:
 
@@ -235,10 +235,10 @@ scaled rather than zeroed:
 % ---------------------------------------------------------------------------
 \section{TEBC Response Profiles (Types 1--8)}
 
-The following profiles are shared by the additive and dependent models.
-In the additive model the magnitude parameters are fixed constants (given as defaults below).
-In the dependent model they are expressed as multiples of the live baseline
-$b_i = \tilde{r}^{\mathrm{place}}_i(t)$ (see the dependent model table above).
+The following profiles are shared by the independent and place-dependent models.
+In the independent model the magnitude parameters are fixed constants (given as defaults below).
+In the place-dependent model they are expressed as multiples of the live baseline
+$b_i = \tilde{r}^{\mathrm{place}}_i(t)$ (see the place-dependent model table above).
 
 % ---------------------------------------------------------------------------
 \subsection*{Type 1 --- Bimodal Gaussian}
@@ -371,7 +371,7 @@ $A_2 = \tfrac{0.09}{24}$, $\mu_2 = 0.80$, $\sigma_2 = 0.15$, $D_2 = 0.10$; $b = 
 Default parameters: $b = \tfrac{0.065}{24}$.
 
 % ---------------------------------------------------------------------------
-\section{Place-Dependent Model}
+\section{Arousal-Mediated Model}
 
 \textit{The task responses are selected from a subset of 4 functions based on whether
 the rat is running and whether the cell is in a place field. Each of these functions then depends solely on the time since the onset

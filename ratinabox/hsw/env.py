@@ -9,7 +9,7 @@ Usage:
 
     # Access paths
     matlab_path = config.MATLAB_FILE_PATH
-    save_dir = config.get_save_directory(model_name='additive')
+    save_dir = config.get_save_directory(model_name='independent')
 """
 
 import os
@@ -90,7 +90,7 @@ class EnvConfig:
         Get the save directory, optionally with a model-specific subdirectory.
 
         Args:
-            model_name: Optional model name for subdirectory (e.g., 'additive', 'dependent').
+            model_name: Optional model name for subdirectory (e.g., 'independent', 'place_dependent', 'arousal_mediated').
 
         Returns:
             Path to the save directory.

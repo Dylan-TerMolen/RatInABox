@@ -3,7 +3,7 @@
 
 
 # ── PLOTTING ──────────────────────────────────────────────────────────────────
-# Used in: additive_model/main2.py, dependent_model/main2.py, place_dep_model/main2.py
+# Used in: independent_model/main2.py, place_dependent_model/main2.py, arousal_mediated_model/main2.py
 
 # ratinabox.autosave_plots = True
 # ratinabox.stylize_plots()
@@ -24,8 +24,8 @@
 # plt.show()
 
 
-# ── SAVE: additive_model firing rates to .npy ─────────────────────────────────
-# Used in: additive_model/main2.py
+# ── SAVE: independent_model firing rates to .npy ─────────────────────────────────
+# Used in: independent_model/main2.py
 
 # filename_envA = f"AM_response_envA_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
 # filename_envB = f"AM_response_envB_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
@@ -37,8 +37,8 @@
 # np.save(full_path_envB, firingrate_envB)
 
 
-# ── SAVE: dependent_model firing rates to .npy ────────────────────────────────
-# Used in: dependent_model/main2.py
+# ── SAVE: place_dependent_model firing rates to .npy ────────────────────────────────
+# Used in: place_dependent_model/main2.py
 
 # filename_envA = f"DM_response_envA_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
 # filename_envB = f"DM_response_envB_balance_{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}.npy"
@@ -50,8 +50,8 @@
 # np.save(full_path_envB, firingrate_envB)
 
 
-# ── SAVE: raw position and spikes to hardcoded paths (additive_model) ─────────
-# Used in: additive_model/main2.py
+# ── SAVE: raw position and spikes to hardcoded paths (independent_model) ─────────
+# Used in: independent_model/main2.py
 
 # filename_envA = f"ratinabox_pos"
 # if work:

@@ -1,7 +1,7 @@
 import numpy as np
 
 from ratinabox.hsw.combined_place_tebc import CombinedPlaceTebc
-from ratinabox.hsw.dependent_model.tebc_response2 import response_profiles as RESPONSE_PROFILES
+from ratinabox.hsw.place_dependent_model.tebc_response2 import response_profiles as RESPONSE_PROFILES
 
 # Placeholder amplitude that drives the tEBC response of task-only cells, which
 # have no place field to scale off of. Deliberately low; tune experimentally.

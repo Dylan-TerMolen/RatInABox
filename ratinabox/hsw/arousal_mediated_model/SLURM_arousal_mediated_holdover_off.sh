@@ -8,8 +8,8 @@
 #SBATCH --array=0-19 ## number of jobs to run "in parallel"
 #SBATCH --mem=8GB
 #SBATCH --time=2:00:00
-#SBATCH --job-name="PDM_job_${SLURM_ARRAY_TASK_ID}"
-#SBATCH --output=slurm_out/PDM_SLURM_out.%A_%a.out
+#SBATCH --job-name="ARM_job_${SLURM_ARRAY_TASK_ID}"
+#SBATCH --output=slurm_out/ARM_SLURM_out.%A_%a.out
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=dptermolen@gmail.com
 
@@ -18,6 +18,6 @@ PYTHON=${HOME}/miniconda3/envs/ratinabox/bin/python
 
 module purge
 
-"${PYTHON}" "${BASE_DIR}/ratinabox/hsw/place_dep_model/main2.py" \
+"${PYTHON}" "${BASE_DIR}/ratinabox/hsw/arousal_mediated_model/main2.py" \
     --responsive_values 0,.10,.20,.30,.40 --responsive_type fixed \
     --percent_place_cells 0,.10,.20,.30,.40 --holdovers 5 --num_iters 5

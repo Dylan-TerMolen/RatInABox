@@ -23,7 +23,7 @@ class CombinedPlaceTebc(PlaceCells):
 
     Subclasses supply the model's `response_profiles` and define how the tEBC
     response amplitude is chosen per cell via `_task_amplitudes` — the one axis on
-    which the additive and place-dependent models differ.
+    which the independent and place-dependent models differ.
     """
 
     default_params = dict()

@@ -8,36 +8,32 @@ import datetime
 import gc
 import itertools
 import os
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io
-
-from hannahs_cebras import cond_decoding_AvsB, pos_decoding_self, pos_decoding_AvsB
+from hannahs_cebras import cond_decoding_AvsB, pos_decoding_AvsB
 from ratinabox.hsw import config
-from ratinabox.hsw.place_dep_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
-from ratinabox.hsw.place_dep_model.simulate_agent import simulate_agent
-from ratinabox.hsw.simulation_helpers import (
-    build_agent, filter_eyeblink_trials,
-    filter_by_velocity, write_iteration_results,
-    append_results_row, save_simulation_data, unwrap_scalar,
-)
+from ratinabox.hsw.place_dependent_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
+from ratinabox.hsw.place_dependent_model.simulate_agent import simulate_agent
 
 from ratinabox.hsw import utils
+from ratinabox.hsw.simulation_helpers import build_agent, filter_eyeblink_trials, filter_by_velocity, write_iteration_results, append_results_row, unwrap_scalar, save_simulation_data
 
 
-# Parse command-line arguments
+# Combine argument parsing for SLURM and script-specific arguments
 parser = argparse.ArgumentParser(description='Simulation Script for Neuronal Firing Rate Analysis')
-parser.add_argument('--responsive_values', type=str, default=0.5, help='List of responsive rates or probabilities for distributions')
+parser.add_argument('--balance_values', type=str, default=[0.5], help='List of balance values or means for Gaussian distribution')
+parser.add_argument('--balance_dist', choices=['fixed', 'gaussian', 'additive'], default='fixed', help='Distribution type for balance')
+parser.add_argument('--balance_std', type=float, default=0.1, help='Standard deviation for Gaussian balance distribution')
+parser.add_argument('--responsive_values', type=str, default=[0.5], help='List of responsive rates or probabilities for distributions')
 parser.add_argument('--responsive_type', choices=['fixed', 'binomial', 'normal', 'poisson'], default='fixed', help='Type of distribution for responsive rate')
-parser.add_argument('--percent_place_cells', type=str, default=0.7, help='Percentage of place cells (single value or comma-separated list)')
-parser.add_argument('--holdovers', type=str, default=1, help='if you want TEBC cells held over from env A')
-parser.add_argument('--num_iters', type=int, default=1, help='optional parameter for number of iterations')
+parser.add_argument('--percent_place_cells', type=str, default=[0.7], help='Percentage of place cells (single value or comma-separated list)')
+parser.add_argument('--num_iters', type=int, default=1, help='Number of iterations')
+
 args = parser.parse_args()
 
-# Process the arguments
+balance_values = utils.parse_list(args.balance_values)
 responsive_values = utils.parse_list(args.responsive_values)
 percent_place_cells = utils.parse_list(args.percent_place_cells)
-holdovers = utils.parse_list(args.holdovers)
 num_iters = args.num_iters
 
 # Set up save directory using config
@@ -46,25 +42,23 @@ config.setup_ratinabox_figure_directory(save_directory)
 
 # Construct the filename
 current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-results_file_base = os.path.join(save_directory, f"{current_date}:PDM_results-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}")
+results_file_base = os.path.join(save_directory, f"{current_date}:PDM_results-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}")
 results_filepath = f"{results_file_base}.txt"
 csv_filepath = f"{results_file_base}.csv"
 
 # Load MATLAB file and extract position data
 matlab_file_path = config.get_matlab_file_path()
 data = scipy.io.loadmat(matlab_file_path)
+
 # Set parameters
 num_neurons = 80
 
 position_data_envA = data['envA313_531']
-agentA = build_agent(position_data_envA)
-
 position_data_envB = data['envB313_602']
-agentB = build_agent(position_data_envB, env_shape='elliptical')
 
 # Column headers
 headers = [
-    "responsive_val",
+    "balance_value", "responsive_val",
     "percent_place_cells", "fract_control_all", "fract_test_all",
     "err_allA_score", "err_allA_err", "err_allA_mean", "err_allA_median",
     "err_allB_usingA_score", "err_allB_usingA_err", "err_allB_usingA_mean", "err_allB_usingA_median",
@@ -77,27 +71,22 @@ headers = [
 
 
 # Perform grid search over balance and responsive rates
-for responsive_val, percent_place_cell, holdover in itertools.product(responsive_values, percent_place_cells, holdovers):
+for balance_value, responsive_val, percent_place_cell in itertools.product(balance_values, responsive_values, percent_place_cells):
     # Use balance_value, responsive_val, and percent_place_cell in your simulation
     # Skip redundant zero value iterations
+    print(balance_value)
     print(responsive_val)
     print(percent_place_cell)
-    if holdover == 1:
-        print("holdovers on")
-        args.holdover_type = "on"
-    else:
-        print("holdovers off")
-        args.holdover_type = "off"
-
     for i in range(num_iters):
-        #balance_distribution = utils.get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons)
+
+        balance_distribution = utils.get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons)
         responsive_distribution = utils.get_distribution_values(args.responsive_type, [responsive_val], num_neurons)
 
-        #Simulate in Environment A
-        tebc_responsive_neurons = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
+        # Simulate in Environment A
+        tebc_responsive_neurons, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
 
         # Profile the function
-        #cProfile.runctx('simulate_agent(agentA, position_data_envA, responsive_distribution, tebc_responsive_neurons, percent_place_cells)', globals(), locals(), 'profile_stats.prof')
+        #cProfile.runctx('simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, cell_types)', globals(), locals(), 'profile_stats.prof')
         #p = pstats.Stats('profile_stats.prof')
         #p.sort_stats('cumulative').print_stats(10)
 
@@ -105,38 +94,19 @@ for responsive_val, percent_place_cell, holdover in itertools.product(responsive
         agentA = build_agent(position_data_envA)
         agentB = build_agent(position_data_envB, env_shape='elliptical')
 
-        spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, responsive_distribution, tebc_responsive_neurons, percent_place_cell)
+        spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cell, cell_types)
         # also want a percent of place cells metric
 
-        if holdover == 1:
-            tebc_responsive_neurons = eyeblink_neuronsA.responsive_distribution
-        else:
-            tebc_responsive_neurons = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
+
+        balance_distribution_envA = eyeblink_neuronsA.task_to_place_weight_distribution
+        tebc_responsive_rates_envA = eyeblink_neuronsA.task_responsive_indices
 
         # Simulate in Environment B using the parameters from Environment A
-        spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, responsive_distribution, tebc_responsive_neurons, percent_place_cell)
+        spikesB, eyeblink_neuronsB, firingrate_envB, agentB = simulate_agent(agentB, position_data_envB, balance_distribution_envA, tebc_responsive_rates_envA, tebc_responsive_neurons, percent_place_cell, cell_types)
 
 
-
-        #####save
-        # Construct the full file paths
-        filename_envA = f"PDM_response_envA_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}_holdovers_{args.holdover_type}.npy"
-        filename_envB = f"PDM_response_envB_responsive_{responsive_val}_{args.responsive_type}_perPCs_{percent_place_cell}_holdovers_{args.holdover_type}.npy"
-        full_path_envA = os.path.join(save_directory, filename_envA)
-        full_path_envB = os.path.join(save_directory, filename_envB)
-        # Save the response arrays to files
-
-
-        #np.save(full_path_envA, spikesA)
-        #np.save(full_path_envB, spikesB)
-
-        np.save(full_path_envA, firingrate_envA)
-        np.save(full_path_envB, firingrate_envB)
-
-        ######
 
         # Assess learning transfer and other metrics
-        #organize to run in cebra
         response_envA = np.transpose(spikesA)
         response_envB = np.transpose(spikesB)
 
@@ -146,6 +116,7 @@ for responsive_val, percent_place_cell, holdover in itertools.product(responsive
         #run cebra decoding
         fract_control_all, fract_test_all, _, _, _ = cond_decoding_AvsB(response_envA_test, response_envB_test, envA_eyeblink, envB_eyeblink)
 
+
         posA, response_envA = filter_by_velocity(agentA, response_envA)
         posB, response_envB = filter_by_velocity(agentB, response_envB)
 
@@ -154,7 +125,7 @@ for responsive_val, percent_place_cell, holdover in itertools.product(responsive
         err_allA, err_allB_usingA, err_all_shuffA, err_all_shuffB_usingA, err_allB_usingB = pos_decoding_AvsB(response_envA, posA, response_envB, posB, .7)
 
         # Construct the identifier for this iteration
-        identifier = f"responsive_{responsive_val}_{args.responsive_type}_PCs_{args.percent_place_cells}.npy"
+        identifier = f"{balance_value}_{args.balance_dist}_responsive_{responsive_val}_{args.responsive_type}_PCs_{args.percent_place_cells}.npy"
 
 
         percent_place_cell = unwrap_scalar(percent_place_cell)
@@ -169,19 +140,15 @@ for responsive_val, percent_place_cell, holdover in itertools.product(responsive
 
         append_results_row(
             csv_filepath, headers,
-            [responsive_val, percent_place_cell,
+            [balance_value, responsive_val, percent_place_cell,
              fract_control_all, fract_test_all,
              *err_allA, *err_allB_usingA, *err_all_shuffA, *err_all_shuffB_usingA, *err_allB_usingB]
         )
 
-
-
         current_date = datetime.datetime.now().strftime("%Y%m%d")
         save_simulation_data(save_directory, spikesA, spikesB, firingrate_envA, firingrate_envB,
-                                f"responsive_{responsive_val}_PC_{percent_place_cell}", i, current_date)
+                                f"balance_{balance_value}_responsive_{responsive_val}_PC_{percent_place_cell}", i, current_date)
 
-        # At the end of each iteration, explicitly delete large objects
-        # Example: if `spikesA` and `spikesB` are large, you can delete them
         del spikesA, spikesB, firingrate_envA, firingrate_envB
         del response_envA, response_envB
         del envA_eyeblink, envB_eyeblink
@@ -192,4 +159,3 @@ for responsive_val, percent_place_cell, holdover in itertools.product(responsive
         #print(f"Saved results to {full_path_envA} and {full_path_envB}")
 
 print(f"Saved results to {save_directory}")
- 

@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH --account=p32472
+#SBATCH --account=p32072
 #SBATCH --partition=gengpu
 #SBATCH --gres=gpu:a100:1
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --array=0-4  # one task per grid combination (5 balance_values x 1 responsive x 1 pcs)
+#SBATCH --array=0-15  # one task per grid combination (5 balance_values x 1 responsive x 1 pcs)
 #SBATCH --mem=8GB
 #SBATCH --time=2:00:00
-#SBATCH --job-name="DM_job_${SLURM_ARRAY_TASK_ID}"
-#SBATCH --output=slurm_out/DM_SLURM_out.%A_%a.out
+#SBATCH --job-name="PDM_job_${SLURM_ARRAY_TASK_ID}"
+#SBATCH --output=slurm_out/PDM_SLURM_out.%A_%a.out
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=dptermolen@gmail.com
 
@@ -20,7 +20,7 @@ module purge
 # Grid definition — add values here to expand the search
 BALANCE_VALUES=(0.0 0.25 0.50 0.75 1.0)
 RESPONSIVE_VALUES=(0.50)
-PERCENT_PLACE_CELLS=(0.50)
+PERCENT_PLACE_CELLS=(0.2 0.4 0.6)
 
 # Map task ID to one combination (row-major)
 N_BALANCE=${#BALANCE_VALUES[@]}
@@ -34,7 +34,7 @@ PCS=${PERCENT_PLACE_CELLS[$IDX]}
 echo "Task ${SLURM_ARRAY_TASK_ID}: balance=${BALANCE} responsive=${RESPONSIVE} pcs=${PCS}"
 
 "${PYTHON}" "${BASE_DIR}/ratinabox/hsw/main.py" \
-    --model dependent \
+    --model place_dependent \
     --balance_values "${BALANCE}" --balance_dist fixed \
     --responsive_values "${RESPONSIVE}" --responsive_type fixed \
     --percent_place_cells "${PCS}" --num_iters 5

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from ratinabox.Neurons import Neurons, PlaceCells
-from ratinabox.hsw.additive_model.tebc_response2 import response_profiles
+from ratinabox.hsw.independent_model.tebc_response2 import response_profiles
 
 # Empirical prevalence of each tEBC response type (types 1-8).
 BASE_CELL_TYPE_PROBS = [0.051, 0.032, 0.373, 0.155, 0.199, 0.050, 0.093, 0.047]

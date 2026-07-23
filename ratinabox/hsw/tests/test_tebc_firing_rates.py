@@ -1,5 +1,5 @@
 """High-level specs: for a 3-neuron population (one place-only, one task-only,
-one place+task), the additive and dependent TEBC models must compute the exact,
+one place+task), the independent and place-dependent TEBC models must compute the exact,
 hand-derivable firing rate at a moment during the CS and a moment during the US.
 
 Design:
@@ -24,8 +24,8 @@ import numpy as np
 import pytest
 
 from ratinabox.Neurons import PlaceCells
-from ratinabox.hsw.additive_model.TEBC import TEBC as AdditiveTEBC
-from ratinabox.hsw.dependent_model.TEBC import TEBC as DependentTEBC
+from ratinabox.hsw.independent_model.TEBC import TEBC as IndependentTEBC
+from ratinabox.hsw.place_dependent_model.TEBC import TEBC as PlaceDependentTEBC
 from ratinabox.hsw.tests.conftest import CS_CHECK_STEPS, STEPS_CS_TO_US
 
 N = 3
@@ -80,18 +80,18 @@ def _place_rate_at_us_checkpoint(model):
     return place_fr
 
 
-def test_additive_model_firing_rates_during_cs_and_us(fresh_agent, no_jitter):
+def test_independent_model_firing_rates_during_cs_and_us(fresh_agent, no_jitter):
     for _ in range(CS_CHECK_STEPS):
         fresh_agent.update()
     cs_position = fresh_agent.pos.copy()
 
-    model = _build_model(AdditiveTEBC, fresh_agent, cs_position)
+    model = _build_model(IndependentTEBC, fresh_agent, cs_position)
 
     # --- CS checkpoint (time_since_cs == 0.0) ---
     # Place rate: unmodulated rate is exactly max_fr (12), by construction of
     # the pinned centre; the velocity-modulation factor is a published constant.
     place_fr_cs = 12.0 * (VELOCITY_POLY(WALK_SPEED_CM_S) / 30)  # == 2.0926592107
-    # Additive model: tEBC amplitude is always max_fr (12), regardless of place firing.
+    # Independent model: tEBC amplitude is always max_fr (12), regardless of place firing.
     task_fr_cs = 12.0  # toy_response(0.0, amplitude=12) -> in the CS window -> 12
     balance = BALANCE[MIXED]  # 0.3
     expected_cs = np.array([
@@ -118,22 +118,22 @@ def test_additive_model_firing_rates_during_cs_and_us(fresh_agent, no_jitter):
     np.testing.assert_allclose(model.firingrate, expected_us, rtol=1e-8, atol=1e-10)
 
 
-def test_dependent_model_firing_rates_during_cs_and_us(fresh_agent, no_jitter):
+def test_place_dependent_model_firing_rates_during_cs_and_us(fresh_agent, no_jitter):
     for _ in range(CS_CHECK_STEPS):
         fresh_agent.update()
     cs_position = fresh_agent.pos.copy()
 
-    model = _build_model(DependentTEBC, fresh_agent, cs_position)
+    model = _build_model(PlaceDependentTEBC, fresh_agent, cs_position)
     assert model.task_only_baseline == 0.5  # default; the task-only cell's amplitude below relies on it
 
     # --- CS checkpoint (time_since_cs == 0.0) ---
-    place_fr_cs = 12.0 * (VELOCITY_POLY(WALK_SPEED_CM_S) / 30)  # == 2.0926592107, same derivation as additive
-    # Dependent model: task-only cell has no place field, so its amplitude
+    place_fr_cs = 12.0 * (VELOCITY_POLY(WALK_SPEED_CM_S) / 30)  # == 2.0926592107, same derivation as independent
+    # Place-dependent model: task-only cell has no place field, so its amplitude
     # falls back to the fixed task_only_baseline (0.5).
     task_only_amplitude = model.task_only_baseline
     task_fr_cs_task_only = task_only_amplitude  # toy_response(0.0, 0.5) -> CS window -> 0.5
     balance = BALANCE[MIXED]  # 0.3
-    # Dependent model: the mixed cell's amplitude is its own place rate, so at
+    # Place-dependent model: the mixed cell's amplitude is its own place rate, so at
     # the CS checkpoint amplitude == place_fr_cs, and blending two equal terms
     # collapses back to that same value regardless of balance -- this specific
     # assertion can't distinguish a correct blend from a `balance` typo bug in
@@ -165,20 +165,20 @@ def test_dependent_model_firing_rates_during_cs_and_us(fresh_agent, no_jitter):
     np.testing.assert_allclose(model.firingrate, expected_us, rtol=1e-8, atol=1e-10)
 
 
-def test_additive_amplitude_is_fixed_at_max_fr(fresh_agent):
-    """Defining property of the additive model: tEBC amplitude is a fixed
+def test_independent_amplitude_is_fixed_at_max_fr(fresh_agent):
+    """Defining property of the independent model: tEBC amplitude is a fixed
     constant, decoupled from the cell's own place firing rate."""
-    model = _build_model(AdditiveTEBC, fresh_agent, pinned_centre=np.array([0.5, 0.5]))
+    model = _build_model(IndependentTEBC, fresh_agent, pinned_centre=np.array([0.5, 0.5]))
 
     amplitudes = model._task_amplitudes(place_fr=np.array([1.0, 2.0, 3.0]))
 
     np.testing.assert_allclose(amplitudes, model.max_fr)
 
 
-def test_dependent_amplitude_tracks_place_rate_or_baseline(fresh_agent):
-    """Defining property of the dependent model: tEBC amplitude is the cell's
+def test_place_dependent_amplitude_tracks_place_rate_or_baseline(fresh_agent):
+    """Defining property of the place-dependent model: tEBC amplitude is the cell's
     own place firing rate if it has a field, else a fixed task-only baseline."""
-    model = _build_model(DependentTEBC, fresh_agent, pinned_centre=np.array([0.5, 0.5]))
+    model = _build_model(PlaceDependentTEBC, fresh_agent, pinned_centre=np.array([0.5, 0.5]))
     place_fr = np.array([1.0, 2.0, 3.0])
 
     amplitudes = model._task_amplitudes(place_fr)

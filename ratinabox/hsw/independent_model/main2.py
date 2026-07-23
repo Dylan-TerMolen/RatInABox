@@ -14,8 +14,8 @@ import scipy.io
 
 from hannahs_cebras import cond_decoding_AvsB, pos_decoding_AvsB
 from ratinabox.hsw import config
-from ratinabox.hsw.additive_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
-from ratinabox.hsw.additive_model.simulate_agent import simulate_agent
+from ratinabox.hsw.independent_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
+from ratinabox.hsw.independent_model.simulate_agent import simulate_agent
 
 from ratinabox.hsw import utils
 from ratinabox.hsw.simulation_helpers import build_agent, filter_eyeblink_trials, filter_by_velocity, write_iteration_results, append_results_row, unwrap_scalar, save_simulation_data
@@ -40,12 +40,12 @@ percent_place_cells = utils.parse_list(args.percent_place_cells)
 num_iters = args.num_iters
 
 # Set up save directory using config
-save_directory = config.get_save_directory(model_name='additive')
+save_directory = config.get_save_directory(model_name='independent')
 config.setup_ratinabox_figure_directory(save_directory)
 
 # Construct the filename
 current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-results_file_base = os.path.join(save_directory, f"{current_date}:AM_results-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}")
+results_file_base = os.path.join(save_directory, f"{current_date}:IM_results-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}")
 results_filepath = f"{results_file_base}.txt"
 csv_filepath = f"{results_file_base}.csv"
 

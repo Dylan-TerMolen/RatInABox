@@ -3,6 +3,15 @@
 How we run and extend the HSW place/tEBC decoding simulations. Read this before
 touching `main.py`, the model subdirectories, or the CEBRA decoding path.
 
+## Source paper
+
+The `hsw/` simulation is modeling Wirtshafter, Solla & Disterhoft (2025), "A universal
+hippocampal memory code across animals and environments" (bioRxiv 2024.10.24.620127). Rats
+learn trace eyeblink conditioning (tEBC) in environment A, transfer to environment B; place
+cells remap A→B but CS/US task coding decodes A→B about as well as within-A, and the task
+coding geometry is consistent across animals. See `ratinabox/hsw/docs/` for the PDF and a
+summary tying each finding to the model code (`wirtshafter-2025-universal-hippocampal-code.md`).
+
 ## Layout (spans two repos)
 
 - **This repo** (`ratinabox/hsw/`) generates simulated neural populations and drives decoding.
@@ -10,7 +19,7 @@ touching `main.py`, the model subdirectories, or the CEBRA decoding path.
     simulates firing, then calls the CEBRA decoders.
   - `args_parser.py` — all CLI args. `UNIVERSAL_PARAMS` apply to every model;
     `MODEL_REQUIRED_PARAMS` are per-model. Unsupported params for a model are rejected.
-  - Models: `additive_model/`, `dependent_model/`, `place_dep_model/`, `separate_learning/`.
+  - Models: `independent_model/`, `place_dependent_model/`, `arousal_mediated_model/`, `separate_learning/`.
   - Shared helpers: `simulation_helpers.py`, `utils.py`, `env.py`/`config`, `tebc_agent.py`.
 - **Hannahs-CEBRAs repo** (`/Users/dylantermolen/Projects/Hannahs-CEBRAs`) owns the CEBRA decoders,
   imported here as the `hannahs_cebras` package. Cross-environment decoding lives in
@@ -42,7 +51,7 @@ fixed so decoding differences are attributable to the CEBRA config, not the data
 See `slurm/cebra_search.sh` (grid) and `slurm/cebra_test.sh` (single run) for the
 pattern. Scripts reference `main.py` by absolute `${BASE_DIR}` path and write to an absolute
 `--output` path, so their location in `slurm/` is independent of where jobs are submitted.
-Cluster: account `p32072`, partition `gengpu`, `gpu:a100:1`, python at
+Cluster: account `p32472`, partition `gengpu`, `gpu:a100:1`, python at
 `${HOME}/miniconda3/envs/ratinabox/bin/python`, base dir `/home/tfl2886/projects/RatInABox`.
 
 **Rank inter-environment configs by the cross-env A->B score over its shuffled control**, not by

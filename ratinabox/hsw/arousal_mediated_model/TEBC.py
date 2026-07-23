@@ -1,12 +1,12 @@
 import numpy as np
 import random
 from ratinabox.Neurons import PlaceCells
-from ratinabox.hsw.place_dep_model.tebc_response2 import *
+from ratinabox.hsw.arousal_mediated_model.tebc_response2 import *
 
 class TEBC(PlaceCells):
     default_params = dict()
 
-    def __init__(self, agent, N, responsive_distribution, percent_place_cells, task_responsive=None, cell_types=None, place_cell_width=0.20):
+    def __init__(self, agent, N, responsive_distribution, percent_place_cells, task_responsive_indices=None, cell_types=None, place_cell_width=0.20):
         place_cells_params = {
             "n": N,
             "description": "gaussian",
@@ -21,11 +21,11 @@ class TEBC(PlaceCells):
         super().__init__(agent, place_cells_params)
 
 
-        # Initialize task_responsive with a default value if not provided
-        if task_responsive is not None:
-            self.task_responsive = task_responsive
+        # Initialize task_responsive_indices with a default value if not provided
+        if task_responsive_indices is not None:
+            self.task_responsive_indices = task_responsive_indices
         else:
-            self.task_responsive = np.full(N, False)  # Default value: all False
+            self.task_responsive_indices = np.full(N, False)  # Default value: all False
 
         # Initialize additional properties for CombinedPlaceTebcNeurons
 
@@ -84,7 +84,7 @@ class TEBC(PlaceCells):
         running = current_velocity > 0.02
 
         for i in range(self.n):
-            if not self.task_responsive[i]:
+            if not self.task_responsive_indices[i]:
                 continue
 
             in_field = bool(unmodulated_baseline[i] >= 0.2)

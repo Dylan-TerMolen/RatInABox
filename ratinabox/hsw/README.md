@@ -24,12 +24,12 @@ Configure paths by copying `.env.example` to `.env` in this directory and fillin
 
 ## Models
 
-### Place-Dependent Model (`place_dep_model/main2.py`)
+### Arousal-Mediated Model (`arousal_mediated_model/main2.py`)
 
 Simulates neurons whose tEBC responsiveness is assigned independently of place field structure. Responsive cells can optionally be held over from environment A to B.
 
 ```
-python place_dep_model/main2.py [--responsive_values ...] [--responsive_type ...]
+python arousal_mediated_model/main2.py [--responsive_values ...] [--responsive_type ...]
                                 [--percent_place_cells ...] [--holdovers ...] [--num_iters ...]
 ```
 
@@ -42,21 +42,21 @@ python place_dep_model/main2.py [--responsive_values ...] [--responsive_type ...
 | `--num_iters` | Number of iterations | `1` |
 
 ```bash
-python place_dep_model/main2.py --responsive_values 0.4,0.6,0.8 --responsive_type binomial --percent_place_cells .7 --holdovers 1 --num_iters 4
-python place_dep_model/main2.py --responsive_values 0.4,0.6 --responsive_type binomial --percent_place_cells .7 --holdovers 5 --num_iters 4
-python place_dep_model/main2.py --responsive_values 0.4 --responsive_type binomial --percent_place_cells .7 --holdovers 1 --num_iters 4
-python place_dep_model/main2.py --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --holdovers 1 --num_iters 4
-python place_dep_model/main2.py --responsive_values .25,.5,.75,1 --responsive_type fixed --percent_place_cells 1,.85,.7,.55 --holdovers 2 --num_iters 4
+python arousal_mediated_model/main2.py --responsive_values 0.4,0.6,0.8 --responsive_type binomial --percent_place_cells .7 --holdovers 1 --num_iters 4
+python arousal_mediated_model/main2.py --responsive_values 0.4,0.6 --responsive_type binomial --percent_place_cells .7 --holdovers 5 --num_iters 4
+python arousal_mediated_model/main2.py --responsive_values 0.4 --responsive_type binomial --percent_place_cells .7 --holdovers 1 --num_iters 4
+python arousal_mediated_model/main2.py --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --holdovers 1 --num_iters 4
+python arousal_mediated_model/main2.py --responsive_values .25,.5,.75,1 --responsive_type fixed --percent_place_cells 1,.85,.7,.55 --holdovers 2 --num_iters 4
 ```
 
 ---
 
-### Additive Model (`additive_model/main2.py`)
+### Independent Model (`independent_model/main2.py`)
 
 Place and tEBC signals are combined additively, weighted by a balance parameter that controls how much each cell incorporates spatial vs tEBC data.
 
 ```
-python additive_model/main2.py [--balance_values ...] [--balance_dist ...] [--balance_std ...]
+python independent_model/main2.py [--balance_values ...] [--balance_dist ...] [--balance_std ...]
                                [--responsive_values ...] [--responsive_type ...]
                                [--percent_place_cells ...] [--num_iters ...]
 ```
@@ -72,32 +72,32 @@ python additive_model/main2.py [--balance_values ...] [--balance_dist ...] [--ba
 | `--num_iters` | Number of iterations | `1` |
 
 ```bash
-python additive_model/main2.py --balance_values 0.3,0.5,0.7 --balance_dist gaussian --balance_std 0.1 --responsive_values 0.4,0.6,0.8 --responsive_type binomial --percent_place_cells .7 --num_iters 4
-python additive_model/main2.py --balance_values 0.3,0.5 --balance_dist gaussian --balance_std 0.5 --responsive_values 0.4,0.6 --responsive_type binomial --percent_place_cells .7 --num_iters 4
-python additive_model/main2.py --balance_values 0.5 --balance_dist fixed --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 4
-python additive_model/main2.py --balance_values 1 --balance_dist additive --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 4
-python additive_model/main2.py --balance_values 0,.25,.5,.75,1 --balance_dist fixed --responsive_values .25,.5,.75,1 --responsive_type fixed --percent_place_cells 1,.85,.7,.55 --num_iters 4
+python independent_model/main2.py --balance_values 0.3,0.5,0.7 --balance_dist gaussian --balance_std 0.1 --responsive_values 0.4,0.6,0.8 --responsive_type binomial --percent_place_cells .7 --num_iters 4
+python independent_model/main2.py --balance_values 0.3,0.5 --balance_dist gaussian --balance_std 0.5 --responsive_values 0.4,0.6 --responsive_type binomial --percent_place_cells .7 --num_iters 4
+python independent_model/main2.py --balance_values 0.5 --balance_dist fixed --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 4
+python independent_model/main2.py --balance_values 1 --balance_dist additive --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 4
+python independent_model/main2.py --balance_values 0,.25,.5,.75,1 --balance_dist fixed --responsive_values .25,.5,.75,1 --responsive_type fixed --percent_place_cells 1,.85,.7,.55 --num_iters 4
 ```
 
 ---
 
-### Dependent Model (`dependent_model/main2.py`)
+### Place-Dependent Model (`place_dependent_model/main2.py`)
 
-Similar to the additive model; tEBC responsiveness depends on the balance factor.
+Similar to the independent model; tEBC responsiveness depends on the balance factor.
 
 ```
-python dependent_model/main2.py [--balance_values ...] [--balance_dist ...] [--balance_std ...]
+python place_dependent_model/main2.py [--balance_values ...] [--balance_dist ...] [--balance_std ...]
                                 [--responsive_values ...] [--responsive_type ...]
                                 [--percent_place_cells ...] [--num_iters ...]
 ```
 
-Arguments are identical to the additive model above.
+Arguments are identical to the independent model above.
 
 ```bash
-python dependent_model/main2.py --balance_values 0.3,0.5,0.7 --balance_dist gaussian --balance_std 0.1 --responsive_values 0.4,0.6,0.8 --responsive_type binomial --percent_place_cells .7 --num_iters 1
-python dependent_model/main2.py --balance_values 0.5 --balance_dist fixed --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 1
-python dependent_model/main2.py --balance_values 1 --balance_dist additive --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 1
-python dependent_model/main2.py --balance_values 0,.25,.5,.75,1 --balance_dist fixed --responsive_values .25,.5,.75,1 --responsive_type fixed --percent_place_cells 1,.85,.7,.55 --num_iters 1
+python place_dependent_model/main2.py --balance_values 0.3,0.5,0.7 --balance_dist gaussian --balance_std 0.1 --responsive_values 0.4,0.6,0.8 --responsive_type binomial --percent_place_cells .7 --num_iters 1
+python place_dependent_model/main2.py --balance_values 0.5 --balance_dist fixed --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 1
+python place_dependent_model/main2.py --balance_values 1 --balance_dist additive --responsive_values 0.5 --responsive_type fixed --percent_place_cells .7 --num_iters 1
+python place_dependent_model/main2.py --balance_values 0,.25,.5,.75,1 --balance_dist fixed --responsive_values .25,.5,.75,1 --responsive_type fixed --percent_place_cells 1,.85,.7,.55 --num_iters 1
 ```
 
 ---

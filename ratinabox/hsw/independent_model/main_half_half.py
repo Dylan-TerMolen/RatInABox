@@ -12,8 +12,8 @@ import scipy.io
 
 from hannahs_cebras import cond_decoding_AvsB, pos_decoding_AvsB
 from ratinabox.hsw import config
-from ratinabox.hsw.additive_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
-from ratinabox.hsw.additive_model.simulate_agent import simulate_agent
+from ratinabox.hsw.independent_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
+from ratinabox.hsw.independent_model.simulate_agent import simulate_agent
 
 from ratinabox.hsw import utils
 from ratinabox.hsw.simulation_helpers import build_agent, filter_eyeblink_trials, filter_by_velocity, write_iteration_results, unwrap_scalar, save_simulation_data
@@ -28,11 +28,11 @@ args = parser.parse_args()
 num_iters = args.num_iters
 
 # Set up save directory using config
-save_directory = config.get_save_directory(model_name='additive')
+save_directory = config.get_save_directory(model_name='independent')
 config.setup_ratinabox_figure_directory(save_directory)
 
 # Construct the filename
-results_filename = f"AM_half_half_results.txt"
+results_filename = f"IM_half_half_results.txt"
 results_filepath = os.path.join(save_directory, results_filename)
 
 # Load MATLAB file and extract position data
@@ -162,7 +162,7 @@ for i in range(num_iters):
 current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 # Construct filenames with the date and directory
-results_filename = f"AM_half_half_results_matrix"
+results_filename = f"IM_half_half_results_matrix"
 
 csv_filename = os.path.join(save_directory, f"{results_filename}_{current_date}.csv")
 npy_filename = os.path.join(save_directory, f"{results_filename}_{current_date}.npy")

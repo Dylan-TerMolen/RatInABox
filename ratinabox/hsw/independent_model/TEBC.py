@@ -1,11 +1,11 @@
 import numpy as np
 
 from ratinabox.hsw.combined_place_tebc import CombinedPlaceTebc
-from ratinabox.hsw.additive_model.tebc_response2 import response_profiles as RESPONSE_PROFILES
+from ratinabox.hsw.independent_model.tebc_response2 import response_profiles as RESPONSE_PROFILES
 
 
 class TEBC(CombinedPlaceTebc):
-    """Additive model: every responsive cell's tEBC response uses a fixed amplitude
+    """Independent model: every responsive cell's tEBC response uses a fixed amplitude
     (max_fr), independent of its place firing."""
 
     response_profiles = RESPONSE_PROFILES

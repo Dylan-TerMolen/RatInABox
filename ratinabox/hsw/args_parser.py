@@ -13,9 +13,9 @@ CEBRA_PARAMS = [
 UNIVERSAL_PARAMS = ['model_type', 'experiment', 'num_iters', 'responsive_values', 'responsive_type', 'percent_place_cells', 'holdovers', 'decode_position', 'decode_task', 'task_types'] + CEBRA_PARAMS
 
 MODEL_REQUIRED_PARAMS = {
-    'additive': ['balance_values', 'balance_dist', 'balance_std'],
-    'dependent': ['balance_values', 'balance_dist', 'balance_std'],
-    'place_dependent': [],
+    'independent': ['balance_values', 'balance_dist', 'balance_std'],
+    'place_dependent': ['balance_values', 'balance_dist', 'balance_std'],
+    'arousal_mediated': [],
 }
 
 DEFAULTS = {
@@ -67,7 +67,7 @@ def _add_arguments(parser):
     parser.add_argument('--decode_task', type=lambda x: x.lower() != 'false', default=True,
                         help='Run task/condition decoding (default: True)')
 
-    # Balance params (additive, dependent only) — default=None so explicit passing is detectable
+    # Balance params (independent, place_dependent only) — default=None so explicit passing is detectable
     parser.add_argument('--balance_values', type=str, default=None,
                         help='List of balance values or means for Gaussian distribution')
     parser.add_argument('--balance_dist', choices=['fixed', 'gaussian', 'additive'], default=None,
