@@ -45,8 +45,8 @@ place_N = num_neurons // 2
 tebc_N = num_neurons - place_N
 percent_place_cell = 0.5
 
-position_data_envA = data['envA314_522']
-position_data_envB = data['envB314_524']
+position_data_envA = data['envA313_531']
+position_data_envB = data['envB313_602']
 
 # Calculate the total number of runs
 total_runs = num_iters
@@ -73,7 +73,7 @@ for i in range(num_iters):
     tebc_responsive_neurons, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution)
 
     agentA = build_agent(position_data_envA)
-    agentB = build_agent(position_data_envB)
+    agentB = build_agent(position_data_envB, env_shape='elliptical')
 
     spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cell, cell_types)
 

@@ -85,8 +85,8 @@ write_cebra_config(summary_filepath, effective_cebra_config)
 matlab_file_path = config.get_matlab_file_path()
 data = scipy.io.loadmat(matlab_file_path)
 
-position_data_envA = data['envA314_522']
-position_data_envB = data['envB314_524']
+position_data_envA = data['envA313_531']
+position_data_envB = data['envB313_602']
 
 num_neurons = 80
 
@@ -118,7 +118,7 @@ for combo in itertools.product(*grid_values):
             balance_distribution_B = utils.get_distribution_values(args.balance_dist, [balance_value, args.balance_std], num_neurons) if balance_value is not None else None
             task_responsive_B, cell_types = assign_tebc_types_and_responsiveness(num_neurons, responsive_distribution, args.task_types)
 
-        agentB = build_agent(position_data_envB)
+        agentB = build_agent(position_data_envB, env_shape='elliptical')
         modelB = build_model(args.model_type, agentB, balance_distribution_B, responsive_distribution, task_responsive_B, percent_place_cell, cell_types, PLACE_CELL_WIDTH_ENV_B)
         spikesB, firingrate_envB, agentB = simulate_agent(modelB, agentB)
 

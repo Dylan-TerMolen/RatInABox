@@ -53,8 +53,8 @@ data = scipy.io.loadmat(matlab_file_path)
 # Set parameters
 num_neurons = 80
 
-position_data_envA = data['envA314_522']
-position_data_envB = data['envB314_524']
+position_data_envA = data['envA313_531']
+position_data_envB = data['envB313_602']
 
 # Column headers
 headers = [
@@ -92,7 +92,7 @@ for balance_value, responsive_val, percent_place_cell in itertools.product(balan
 
         # Now run the function normally to capture its output
         agentA = build_agent(position_data_envA)
-        agentB = build_agent(position_data_envB)
+        agentB = build_agent(position_data_envB, env_shape='elliptical')
 
         spikesA, eyeblink_neuronsA, firingrate_envA, agentA = simulate_agent(agentA, position_data_envA, balance_distribution, responsive_distribution, tebc_responsive_neurons, percent_place_cell, cell_types)
         # also want a percent of place cells metric

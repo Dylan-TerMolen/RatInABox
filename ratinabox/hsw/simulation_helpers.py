@@ -6,12 +6,21 @@ import pandas as pd
 import scipy.io
 
 from ratinabox.hsw import config, utils
-from ratinabox.hsw.environment_builder import build_rectangular_environment
+from ratinabox.hsw.environment_builder import build_elliptical_environment, build_rectangular_environment
 from ratinabox.hsw.tebc_agent import TebcAgent
 
+ENV_BUILDERS = {
+    'rectangular': build_rectangular_environment,
+    'elliptical': build_elliptical_environment,
+}
 
-def build_agent(position_data):
-    """Interpolate position data, build a rectangular environment, and initialise a TebcAgent.
+
+def build_agent(position_data, env_shape='rectangular'):
+    """Interpolate position data, build an environment, and initialise a TebcAgent.
+
+    env_shape selects the Environment boundary fit to the positions' bounding box:
+    'rectangular' (default, matches env A's enclosure) or 'elliptical' (matches env
+    B's oval enclosure, see ratinabox/hsw/environment_builder.py).
 
     Interpolated position_data is accessible via agent.position_data.
 
@@ -19,7 +28,7 @@ def build_agent(position_data):
         agent
     """
     position_data, time_steps, positions = utils.interpolate_position_data(position_data)
-    env = build_rectangular_environment(position_data[1:3].T)
+    env = ENV_BUILDERS[env_shape](position_data[1:3].T)
     agent = TebcAgent(env, position_data)
     agent.import_trajectory(times=time_steps, positions=positions, interpolate=False)
     return agent

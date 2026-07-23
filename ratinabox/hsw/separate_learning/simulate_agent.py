@@ -2,7 +2,7 @@ import numpy as np
 from ratinabox.Agent import Agent
 from CombinedPlaceTebcNeurons import CombinedPlaceTebcNeurons
 from ratinabox.hsw import utils
-from ratinabox.hsw.environment_builder import build_rectangular_environment
+from ratinabox.hsw.environment_builder import build_elliptical_environment, build_rectangular_environment
 from ratinabox.hsw.tebc_agent import TebcAgent
 
 def simulate_agent(agent, position_data, balance_value):
@@ -38,19 +38,6 @@ def simulate_envA(position_data, balance_value):
 
 
 def simulate_envB(position_data, balance_value):
-    # Parameters for oval shape
-    # height_in_meters = 18 * 0.0254
-    # width_in_meters = 26 * 0.0254
-    # num_points = 100  # Number of points to define the oval
-
-    # Create an oval-shaped boundary
-    #boundary = [[width_in_meters / 2 * np.cos(theta), height_in_meters / 2 * np.sin(theta)] for theta in np.linspace(0, 2 * np.pi, num_points)]
-
-    # env_params = {
-    #     'boundary': [[0, 0], [0, .8], [.9, .8], [.9, 0]],
-    #     'boundary_conditions': 'solid'
-    # }
-    # env = Environment(params=env_params)
-    envB = build_rectangular_environment(position_data[1:3].T)
+    envB = build_elliptical_environment(position_data[1:3].T)
     agent = TebcAgent(envB, position_data)
     return simulate_agent(agent, position_data, balance_value)

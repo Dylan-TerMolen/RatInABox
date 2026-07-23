@@ -23,8 +23,8 @@ args = parser.parse_args()
 # Load MATLAB file and extract position data
 matlab_file_path = config.get_matlab_file_path()
 data = scipy.io.loadmat(matlab_file_path)
-position_data_envA = data['envA314_522']  # Adjust variable name as needed
-position_data_envB = data['envB314_524']  # Adjust variable name as needed
+position_data_envA = data['envA313_531']  # Adjust variable name as needed
+position_data_envB = data['envB313_602']  # Adjust variable name as needed
 
 # Set parameters
 num_neurons = 80
