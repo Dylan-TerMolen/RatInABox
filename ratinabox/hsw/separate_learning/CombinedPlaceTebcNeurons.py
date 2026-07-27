@@ -4,6 +4,11 @@ from ratinabox.Neurons import Neurons, PlaceCells
 from tebc_response import response_profiles
 
 '''
+WIP: unfinished. __init__ calls self.build_cell_types(), which is not defined on this class
+(only assign_tebc_responsiveness_and_types exists), and update() calls into an API
+(update_state()/self.firing_rates) that doesn't match what simulate_agent.py expects.
+Does not run end-to-end yet.
+
 Python class template for CombinedPlaceTebcNeurons that integrates both place cell and tEBC
 cell functionalities. This class is designed to be used with the RatInABox framework.
 - It includes a balance parameter to adjust the contribution of place cell activity versus

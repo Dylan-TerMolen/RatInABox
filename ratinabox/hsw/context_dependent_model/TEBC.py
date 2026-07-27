@@ -1,3 +1,5 @@
+# WIP: unfinished fifth model variant, not wired into simulate_envs.py's model registry.
+# Not importable as-is -- this dir has no tebc_response2.py or __init__.py.
 import random
 import numpy as np
 

@@ -61,7 +61,9 @@ def _add_arguments(parser):
                         help='Whether to hold TEBC cells over from env A')
     parser.add_argument('--task_types', type=str, default=None,
                         help='Comma-separated subset of tEBC response types to use, e.g. "1,2,7,8". '
-                             'Default: all types at their empirical prevalence.')
+                             'Default: all types at their empirical prevalence. '
+                             'Has no effect for --model_type arousal_mediated: that model selects '
+                             'its response function from in-field/running state, not cell_types.')
     parser.add_argument('--decode_position', type=lambda x: x.lower() != 'false', default=True,
                         help='Run position decoding (default: True)')
     parser.add_argument('--decode_task', type=lambda x: x.lower() != 'false', default=True,
