@@ -1,6 +1,8 @@
 """High-level specs: for a 3-neuron population (one place-only, one task-only,
 one place+task), the independent and place-dependent TEBC models must compute the exact,
 hand-derivable firing rate at a moment during the CS and a moment during the US.
+They must also stop applying the balance blend the instant the animal leaves a
+trial, even if the tEBC response itself hasn't decayed back to zero yet.
 
 Design:
   - The place-responsive neurons' field centres are pinned to the agent's exact
@@ -15,17 +17,19 @@ Design:
     of the refactor that differs between models) and the real category-routing
     / balance-blend arithmetic in `CombinedPlaceTebc` -- it just swaps out the
     (irrelevant here, unchanged by this refactor) biological curve shape.
-  - The velocity-modulation polynomial and the US-checkpoint place rate (the
-    agent has walked away from the pinned centre by then) are the two pieces
-    still sourced from the real, trusted subsystems rather than hand
+  - The velocity-modulation polynomial and the non-pinned-checkpoint place rate
+    (the agent has walked away from the pinned centre by then) are the two
+    pieces still sourced from the real, trusted subsystems rather than hand
     re-derived; each is called out where used below.
 """
 import numpy as np
 import pytest
 
 from ratinabox.Neurons import PlaceCells
+from ratinabox.hsw.environment_builder import build_rectangular_environment
 from ratinabox.hsw.independent_model.TEBC import TEBC as IndependentTEBC
 from ratinabox.hsw.place_dependent_model.TEBC import TEBC as PlaceDependentTEBC
+from ratinabox.hsw.tebc_agent import TebcAgent
 from ratinabox.hsw.tests.conftest import CS_CHECK_STEPS, STEPS_CS_TO_US
 
 N = 3
@@ -68,10 +72,10 @@ def _build_model(model_cls, agent, pinned_centre):
     return model
 
 
-def _place_rate_at_us_checkpoint(model):
-    """Oracle for the US-checkpoint place rate: the agent has walked away from
-    the pinned centre by now, so this is sourced from the real PlaceCells
-    Gaussian computation rather than hand-derived."""
+def _place_rate_oracle(model):
+    """Oracle for the place rate at the model's current checkpoint: once the
+    agent has walked away from the pinned centre, this is sourced from the real
+    PlaceCells Gaussian computation rather than hand-derived."""
     PlaceCells.update(model)
     raw_place = model.firingrate.copy()
     vel = model.agent.smoothed_velocity
@@ -106,7 +110,7 @@ def test_independent_model_firing_rates_during_cs_and_us(fresh_agent, no_jitter)
     # --- US checkpoint (time_since_cs == 0.8) ---
     for _ in range(STEPS_CS_TO_US):
         fresh_agent.update()
-    place_fr_us = _place_rate_at_us_checkpoint(model)  # oracle: agent has moved off the pinned centre
+    place_fr_us = _place_rate_oracle(model)  # oracle: agent has moved off the pinned centre
     task_fr_us = 12.0 * 0.5  # toy_response(0.8, amplitude=12) -> in the US window -> half amplitude -> 6.0
     expected_us = np.array([
         place_fr_us[PLACE_ONLY],
@@ -152,7 +156,7 @@ def test_place_dependent_model_firing_rates_during_cs_and_us(fresh_agent, no_jit
     # --- US checkpoint (time_since_cs == 0.8) ---
     for _ in range(STEPS_CS_TO_US):
         fresh_agent.update()
-    place_fr_us = _place_rate_at_us_checkpoint(model)  # oracle: agent has moved off the pinned centre
+    place_fr_us = _place_rate_oracle(model)  # oracle: agent has moved off the pinned centre
     task_fr_us_task_only = task_only_amplitude * 0.5  # toy_response(0.8, 0.5) -> US window -> 0.25
     task_fr_us_mixed = place_fr_us[MIXED] * 0.5        # toy_response(0.8, place_fr_us) -> US window -> half
     expected_us = np.array([
@@ -186,3 +190,50 @@ def test_place_dependent_amplitude_tracks_place_rate_or_baseline(fresh_agent):
     assert amplitudes[PLACE_ONLY] == pytest.approx(place_fr[PLACE_ONLY])
     assert amplitudes[MIXED] == pytest.approx(place_fr[MIXED])
     assert amplitudes[TASK_ONLY] == pytest.approx(model.task_only_baseline)
+
+
+# A single CS pulse (index 2) that drops straight back to inter-trial (index 3+),
+# so time_since_cs == 1/30s -- still inside the toy CS window -- at the same step
+# the marker has already left the trial. Exercises the case a hand-derived CS/US
+# checkpoint can't: a lingering tEBC response after the animal has left a trial.
+POST_TRIAL_CHECK_STEPS = 3
+_OFF_TRIAL_MARKERS = np.array([0, 0, 1, 0, 0, 0])
+
+
+def _build_off_trial_agent():
+    n_steps = len(_OFF_TRIAL_MARKERS)
+    step = (WALK_SPEED_CM_S / 100) / (30 * np.sqrt(2))  # cm/s -> m/step, same diagonal walk as conftest
+    times = np.arange(n_steps) / 30
+    xs = 0.4 + step * np.arange(n_steps)
+    ys = 0.4 + step * np.arange(n_steps)
+    position_data = np.vstack([times, xs, ys, _OFF_TRIAL_MARKERS])
+
+    env = build_rectangular_environment(position_data[1:3].T)
+    agent = TebcAgent(env, position_data)
+    agent.import_trajectory(times=position_data[0], positions=position_data[1:3].T, interpolate=False)
+    return agent
+
+
+def test_balance_has_no_effect_outside_a_trial(no_jitter):
+    """The balance blend must switch off the instant the animal leaves a trial,
+    even though the tEBC response is still active (hasn't decayed to zero yet):
+    a place+task cell should fall back to its pure place rate, not a blend."""
+    agent = _build_off_trial_agent()
+    model = _build_model(IndependentTEBC, agent, pinned_centre=np.array([0.5, 0.5]))
+
+    for _ in range(POST_TRIAL_CHECK_STEPS):
+        agent.update()
+    assert not agent.in_trial  # marker has already returned to inter-trial
+    assert CS_WINDOW[0] <= agent.time_since_cs < CS_WINDOW[1]  # but the tEBC response hasn't lapsed yet
+
+    place_fr = _place_rate_oracle(model)
+    balance = BALANCE[MIXED]  # 0.3
+    task_fr_would_be = 12.0  # toy_response(time_since_cs, amplitude=12) -> in the CS window -> 12
+    blend_if_ungated = balance * task_fr_would_be + (1 - balance) * place_fr[MIXED]
+    # Sanity check the test is non-vacuous: without the in-trial gate, the blend
+    # really would differ from pure place, so the final assertion can catch its absence.
+    assert not np.isclose(blend_if_ungated, place_fr[MIXED])
+
+    model.update()
+
+    assert model.firingrate[MIXED] == pytest.approx(place_fr[MIXED])

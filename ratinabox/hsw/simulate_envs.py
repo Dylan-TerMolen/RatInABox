@@ -13,10 +13,11 @@ _TEBC_CLASS = {
     'arousal_mediated': ArousalMediatedTEBC,
 }
 
-# Gaussian place-field widths (metres), scaled per environment so env B's larger
-# arena keeps the same field-to-spacing tiling as env A (0.20 * sqrt(areaB/areaA)).
+# Gaussian place-field widths (metres). Matched across envs rather than scaled by
+# area -- env B's bounding-box area is actually smaller than env A's, so scaling
+# by sqrt(areaB/areaA) would shrink env B's width below env A's, not grow it.
 PLACE_CELL_WIDTH_ENV_A = 0.20
-PLACE_CELL_WIDTH_ENV_B = 0.40
+PLACE_CELL_WIDTH_ENV_B = 0.20
 
 
 def build_model(model_type, agent, balance_distribution, responsive_distribution, task_responsive_indices, percent_place_cells, cell_types, place_cell_width):

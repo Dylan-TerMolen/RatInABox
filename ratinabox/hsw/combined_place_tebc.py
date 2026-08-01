@@ -76,9 +76,9 @@ class CombinedPlaceTebc(PlaceCells):
             n=num_place, method="uniform_jitter")
 
     def _set_category_masks(self):
-        self.place_only = self.place_responsive_indices & ~self.task_responsive_indices
-        self.place_task = self.place_responsive_indices & self.task_responsive_indices
-        self.task_only = ~self.place_responsive_indices & self.task_responsive_indices
+        self.place_only_indices = self.place_responsive_indices & ~self.task_responsive_indices
+        self.place_task_indices = self.place_responsive_indices & self.task_responsive_indices
+        self.task_only_indices = ~self.place_responsive_indices & self.task_responsive_indices
 
     def update(self):
         super().update()
@@ -118,9 +118,9 @@ class CombinedPlaceTebc(PlaceCells):
     def _combine_by_category(self, place_fr, task_fr):
         """Place-only -> place, task-only -> task, place+task -> balance blend, silent -> baseline."""
         firingrate = np.full(self.n, BASELINE_FR)
-        firingrate[self.place_only] = place_fr[self.place_only]
-        firingrate[self.task_only] = task_fr[self.task_only]
-        mixed = self.place_task
+        firingrate[self.place_only_indices] = place_fr[self.place_only_indices]
+        firingrate[self.task_only_indices] = task_fr[self.task_only_indices]
+        mixed = self.place_task_indices
         balance = self.task_to_place_weight_distribution
         firingrate[mixed] = balance[mixed] * task_fr[mixed] + (1 - balance[mixed]) * place_fr[mixed]
         return firingrate
