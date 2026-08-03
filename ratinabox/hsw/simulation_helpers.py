@@ -172,7 +172,7 @@ def save_simulation_data(save_dir, spikes_A, spikes_B, fr_A, fr_B,
     """Save spike and firing-rate arrays for both environments as CSV files.
 
     label: model-specific parameter string embedded in the filename, e.g.
-           "responsive_0.5_PC_0.7" or "balance_0.5_responsive_0.5_PC_0.7"
+           "responsive_0.5_PC_0.7" or "percent_task_in_response_0.5_responsive_0.5_PC_0.7"
     """
     datasets = [
         ("spikesA",         spikes_A),

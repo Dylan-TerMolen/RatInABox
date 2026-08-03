@@ -17,7 +17,7 @@ config.setup_ratinabox_figure_directory(save_directory)
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='Simulation Script for Neuronal Firing Rate Analysis')
-parser.add_argument('--responsive_values', type=utils.parse_list, help='List of responsive rates or probabilities for distributions')
+parser.add_argument('--percent_task_responsive_cells', type=utils.parse_list, help='List of responsive rates or probabilities for distributions')
 args = parser.parse_args()
 
 # Load MATLAB file and extract position data
@@ -28,10 +28,10 @@ position_data_envB = data['envB313_602']  # Adjust variable name as needed
 
 # Set parameters
 num_neurons = 80
-responsive_values = utils.parse_list(args.responsive_values) if args.responsive_values else [0.5]
+percent_task_responsive_cells = utils.parse_list(args.percent_task_responsive_cells) if args.percent_task_responsive_cells else [0.5]
 
-# Perform grid search over balance and responsive rates
-for responsive_val in itertools.product(responsive_values):
+# Perform grid search over percent-task-in-response and responsive rates
+for responsive_val in itertools.product(percent_task_responsive_cells):
     response_envA, agentA, combined_neuronsA = simulate_envA(position_data_envA, responsive_val)
     response_envB, agentB, combined_neuronsB = simulate_envB(position_data_envB, responsive_val)
 

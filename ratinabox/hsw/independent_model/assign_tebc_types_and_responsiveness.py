@@ -28,14 +28,14 @@ def _resolve_task_type_distribution(task_types):
     return np.array(types), probs
 
 
-def assign_tebc_types_and_responsiveness(N, responsive_distribution, task_types=None):
-    # Check if responsive_distribution is a single value or an array
-    if isinstance(responsive_distribution, (float, int)):
-        responsive_probs = np.full(N, responsive_distribution)
+def assign_tebc_types_and_responsiveness(N, percent_task_responsive_cells_distribution, task_types=None):
+    # Check if percent_task_responsive_cells_distribution is a single value or an array
+    if isinstance(percent_task_responsive_cells_distribution, (float, int)):
+        responsive_probs = np.full(N, percent_task_responsive_cells_distribution)
     else:
-        responsive_probs = np.array(responsive_distribution)
+        responsive_probs = np.array(percent_task_responsive_cells_distribution)
         if responsive_probs.ndim != 1 or len(responsive_probs) != N:
-            raise ValueError("responsive_distribution must be a 1D array of length N")
+            raise ValueError("percent_task_responsive_cells_distribution must be a 1D array of length N")
     responsive_probs = np.clip(responsive_probs, 0, 1)
     responsive_neurons = np.random.rand(N) < responsive_probs
 

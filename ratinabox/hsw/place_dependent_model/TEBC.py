@@ -5,7 +5,7 @@ from ratinabox.hsw.place_dependent_model.tebc_response2 import response_profiles
 
 # Placeholder amplitude that drives the tEBC response of task-only cells, which
 # have no place field to scale off of. Deliberately low; tune experimentally.
-TASK_ONLY_BASELINE = 0.5
+TASK_ONLY_BASELINE = 0.02 / 30
 
 
 class TEBC(CombinedPlaceTebc):

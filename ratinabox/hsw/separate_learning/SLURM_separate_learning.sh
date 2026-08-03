@@ -19,5 +19,5 @@ PYTHON=${HOME}/miniconda3/envs/ratinabox/bin/python
 module purge
 
 "${PYTHON}" "${BASE_DIR}/ratinabox/hsw/separate_learning/main.py" \
-    --balance_values 0,.10,.20,.30,.40 --balance_dist fixed \
-    --responsive_values 0,.10,.20,.30,.40 --responsive_type fixed
+    --percent_task_in_response_values 0,.10,.20,.30,.40 --percent_task_in_response_dist fixed \
+    --percent_task_responsive_cells 0,.10,.20,.30,.40 --percent_is_task_responsive_distribution fixed

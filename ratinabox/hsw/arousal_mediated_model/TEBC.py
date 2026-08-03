@@ -6,7 +6,7 @@ from ratinabox.hsw.arousal_mediated_model.tebc_response2 import *
 class TEBC(PlaceCells):
     default_params = dict()
 
-    def __init__(self, agent, N, responsive_distribution, percent_place_cells, task_responsive_indices=None, cell_types=None, place_cell_width=0.20):
+    def __init__(self, agent, N, percent_task_responsive_cells_distribution, percent_place_cells, task_responsive_indices=None, cell_types=None, place_cell_width=0.20):
         place_cells_params = {
             "n": N,
             "description": "gaussian",
@@ -35,7 +35,7 @@ class TEBC(PlaceCells):
             self.cell_types = np.full(N, False)  # Default value: all False
 
         self.agent = agent
-        self.responsive_distribution = responsive_distribution
+        self.percent_task_responsive_cells_distribution = percent_task_responsive_cells_distribution
 
         # Calculate indices to zero out based on percent place cells
         if isinstance(percent_place_cells, list):

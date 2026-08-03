@@ -5,7 +5,7 @@
 
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --array=0-8  # one task per grid combination (3 responsive_values x 1 pcs)
+#SBATCH --array=0-8  # one task per grid combination (3 percent_task_responsive_cells x 1 pcs)
 #SBATCH --mem=8GB
 #SBATCH --time=2:00:00
 #SBATCH --job-name="ARM_job_${SLURM_ARRAY_TASK_ID}"
@@ -19,21 +19,21 @@ PYTHON=${HOME}/miniconda3/envs/ratinabox/bin/python
 module purge
 
 # Grid definition — add values here to expand the search
-RESPONSIVE_VALUES=(0.25 0.50 0.75)
+PERCENT_TASK_RESPONSIVE_CELLS_VALUES=(0.25 0.50 0.75)
 PERCENT_PLACE_CELLS=(0.2 0.4 0.60)
 
 # Map task ID to one combination (row-major)
-N_RESPONSIVE=${#RESPONSIVE_VALUES[@]}
+N_RESPONSIVE=${#PERCENT_TASK_RESPONSIVE_CELLS_VALUES[@]}
 
 IDX=${SLURM_ARRAY_TASK_ID}
-RESPONSIVE=${RESPONSIVE_VALUES[$((IDX % N_RESPONSIVE))]}; IDX=$((IDX / N_RESPONSIVE))
+PERCENT_TASK_RESPONSIVE_CELLS=${PERCENT_TASK_RESPONSIVE_CELLS_VALUES[$((IDX % N_RESPONSIVE))]}; IDX=$((IDX / N_RESPONSIVE))
 PCS=${PERCENT_PLACE_CELLS[$IDX]}
 
-echo "Task ${SLURM_ARRAY_TASK_ID}: responsive=${RESPONSIVE} pcs=${PCS}"
+echo "Task ${SLURM_ARRAY_TASK_ID}: responsive=${PERCENT_TASK_RESPONSIVE_CELLS} pcs=${PCS}"
 
 "${PYTHON}" "${BASE_DIR}/ratinabox/hsw/main.py" \
       --model arousal_mediated \
-      --responsive_values "${RESPONSIVE}" --responsive_type fixed \
+      --percent_task_responsive_cells "${PERCENT_TASK_RESPONSIVE_CELLS}" --percent_is_task_responsive_distribution fixed \
       --percent_place_cells "${PCS}" --holdovers 1 --num_iters 5
 
 

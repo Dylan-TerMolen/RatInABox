@@ -10,23 +10,23 @@ CEBRA_PARAMS = [
     'cebra_distance', 'cebra_conditional',
 ]
 
-UNIVERSAL_PARAMS = ['model_type', 'experiment', 'num_iters', 'responsive_values', 'responsive_type', 'percent_place_cells', 'holdovers', 'decode_position', 'decode_task', 'task_types'] + CEBRA_PARAMS
+UNIVERSAL_PARAMS = ['model_type', 'experiment', 'num_iters', 'percent_task_responsive_cells', 'percent_is_task_responsive_distribution', 'percent_place_cells', 'holdovers', 'decode_position', 'decode_task', 'task_types'] + CEBRA_PARAMS
 
 MODEL_REQUIRED_PARAMS = {
-    'independent': ['balance_values', 'balance_dist', 'balance_std'],
-    'place_dependent': ['balance_values', 'balance_dist', 'balance_std'],
+    'independent': ['percent_task_in_response_values', 'percent_task_in_response_dist', 'percent_task_in_response_std'],
+    'place_dependent': ['percent_task_in_response_values', 'percent_task_in_response_dist', 'percent_task_in_response_std'],
     'arousal_mediated': [],
 }
 
 DEFAULTS = {
     'num_iters': 1,
-    'responsive_values': '0.5',
-    'responsive_type': 'fixed',
+    'percent_task_responsive_cells': '0.5',
+    'percent_is_task_responsive_distribution': 'fixed',
     'percent_place_cells': '0.7',
     'holdovers': '1',
-    'balance_values': '0.5',
-    'balance_dist': 'fixed',
-    'balance_std': 0.1,
+    'percent_task_in_response_values': '0.5',
+    'percent_task_in_response_dist': 'fixed',
+    'percent_task_in_response_std': 0.1,
 }
 
 
@@ -51,9 +51,9 @@ def _add_arguments(parser):
                              'from the same experiment share a common prefix.')
     parser.add_argument('--num_iters', type=int, default=DEFAULTS['num_iters'],
                         help='Number of iterations')
-    parser.add_argument('--responsive_values', type=str, default=DEFAULTS['responsive_values'],
+    parser.add_argument('--percent_task_responsive_cells', type=str, default=DEFAULTS['percent_task_responsive_cells'],
                         help='List of responsive rates or probabilities for distributions')
-    parser.add_argument('--responsive_type', choices=['fixed', 'binomial', 'normal', 'poisson'], default=DEFAULTS['responsive_type'],
+    parser.add_argument('--percent_is_task_responsive_distribution', choices=['fixed', 'binomial', 'normal', 'poisson'], default=DEFAULTS['percent_is_task_responsive_distribution'],
                         help='Type of distribution for responsive rate')
     parser.add_argument('--percent_place_cells', type=str, default=DEFAULTS['percent_place_cells'],
                         help='Percentage of place cells (single value or comma-separated list)')
@@ -69,13 +69,13 @@ def _add_arguments(parser):
     parser.add_argument('--decode_task', type=lambda x: x.lower() != 'false', default=True,
                         help='Run task/condition decoding (default: True)')
 
-    # Balance params (independent, place_dependent only) — default=None so explicit passing is detectable
-    parser.add_argument('--balance_values', type=str, default=None,
-                        help='List of balance values or means for Gaussian distribution')
-    parser.add_argument('--balance_dist', choices=['fixed', 'gaussian', 'additive'], default=None,
-                        help='Distribution type for balance')
-    parser.add_argument('--balance_std', type=float, default=None,
-                        help='Standard deviation for Gaussian balance distribution')
+    # Percent-task-in-response params (independent, place_dependent only) — default=None so explicit passing is detectable
+    parser.add_argument('--percent_task_in_response_values', type=str, default=None,
+                        help='List of percent-task-in-response values or means for Gaussian distribution')
+    parser.add_argument('--percent_task_in_response_dist', choices=['fixed', 'gaussian', 'additive'], default=None,
+                        help='Distribution type for percent task in response')
+    parser.add_argument('--percent_task_in_response_std', type=float, default=None,
+                        help='Standard deviation for Gaussian percent-task-in-response distribution')
 
     _add_cebra_arguments(parser)
 
@@ -167,7 +167,7 @@ def _set_defaults(args):
         if getattr(args, attr) is None:
             setattr(args, attr, DEFAULTS[attr])
 
-    for attr in ['balance_values', 'responsive_values', 'percent_place_cells', 'holdovers']:
+    for attr in ['percent_task_in_response_values', 'percent_task_responsive_cells', 'percent_place_cells', 'holdovers']:
         if getattr(args, attr) is not None:
             setattr(args, attr, parse_list(getattr(args, attr)))
 

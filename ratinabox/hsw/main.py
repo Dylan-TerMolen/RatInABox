@@ -20,11 +20,11 @@ from ratinabox.hsw.simulation_helpers import filter_eyeblink_trials, filter_by_v
 import args_parser
 
 # Universal grid params apply to all models; model-specific params are added per model
-_UNIVERSAL_GRID_PARAMS = ['responsive_values', 'percent_place_cells', 'holdovers']
+_UNIVERSAL_GRID_PARAMS = ['percent_task_responsive_cells', 'percent_place_cells', 'holdovers']
 
 MODEL_GRID_PARAMS = {
-    'independent':      ['balance_values'] + _UNIVERSAL_GRID_PARAMS,
-    'place_dependent':  ['balance_values'] + _UNIVERSAL_GRID_PARAMS,
+    'independent':      ['percent_task_in_response_values'] + _UNIVERSAL_GRID_PARAMS,
+    'place_dependent':  ['percent_task_in_response_values'] + _UNIVERSAL_GRID_PARAMS,
     'arousal_mediated': _UNIVERSAL_GRID_PARAMS,
 }
 
@@ -36,10 +36,10 @@ config.setup_ratinabox_figure_directory(save_directory)
 
 current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 _experiment_prefix = f"{args.experiment}-" if args.experiment is not None else ""
-_balance_tag = f"-balance-{args.balance_values}-{args.balance_dist}-std-{args.balance_std}" if args.balance_values is not None else ""
+_percent_task_in_response_tag = f"-percent_task_in_response-{args.percent_task_in_response_values}-{args.percent_task_in_response_dist}-std-{args.percent_task_in_response_std}" if args.percent_task_in_response_values is not None else ""
 _task_types_tag = f"-tasktypes-[{'-'.join(map(str, args.task_types))}]" if args.task_types is not None else ""
 _cebra_tag = args_parser.cebra_filename_tag(cebra_params)
-results_file_base = os.path.join(save_directory, f"{_experiment_prefix}{current_date}:{args.model_type}_results{_balance_tag}-response-{args.responsive_values}-{args.responsive_type}-PCs-{args.percent_place_cells}{_task_types_tag}{_cebra_tag}")
+results_file_base = os.path.join(save_directory, f"{_experiment_prefix}{current_date}:{args.model_type}_results{_percent_task_in_response_tag}-response-{args.percent_task_responsive_cells}-{args.percent_is_task_responsive_distribution}-PCs-{args.percent_place_cells}{_task_types_tag}{_cebra_tag}")
 summary_filepath = f"{results_file_base}.log"
 write_run_header(summary_filepath, vars(args))
 
@@ -63,16 +63,16 @@ grid_values = [getattr(args, p) for p in grid_param_names]
 
 for combo in itertools.product(*grid_values):
     params = dict(zip(grid_param_names, combo))
-    balance_value = params.get('balance_values')
-    responsive_val = params['responsive_values']
+    percent_task_in_response_value = params.get('percent_task_in_response_values')
+    percent_task_responsive_cells_val = params['percent_task_responsive_cells']
     percent_place_cell = params['percent_place_cells']
     holdover = params['holdovers']
     print(params)
     for i in range(args.num_iters):
         spikesA, firingrate_envA, agentA, spikesB, firingrate_envB, agentB = simulate_experiment(
             args.model_type, position_data_envA, position_data_envB, num_neurons,
-            balance_value, args.balance_dist, args.balance_std,
-            responsive_val, args.responsive_type, percent_place_cell,
+            percent_task_in_response_value, args.percent_task_in_response_dist, args.percent_task_in_response_std,
+            percent_task_responsive_cells_val, args.percent_is_task_responsive_distribution, percent_place_cell,
             holdover, args.task_types,
         )
 
@@ -99,8 +99,8 @@ for combo in itertools.product(*grid_values):
             place_a_to_a = place_a_to_b = place_shuffled_a_to_a = place_shuffled_a_to_b = place_b_to_b = (None, None, None, None)
 
         # Construct the identifier for this iteration
-        _balance_id = f"{balance_value}_{args.balance_dist}_" if balance_value is not None else ""
-        identifier = f"{_balance_id}responsive_{responsive_val}_{args.responsive_type}_PCs_{percent_place_cell}.npy"
+        _percent_task_in_response_id = f"{percent_task_in_response_value}_{args.percent_task_in_response_dist}_" if percent_task_in_response_value is not None else ""
+        identifier = f"{_percent_task_in_response_id}responsive_{percent_task_responsive_cells_val}_{args.percent_is_task_responsive_distribution}_PCs_{percent_place_cell}.npy"
 
         percent_place_cell = unwrap_scalar(percent_place_cell)
         task_a_to_a = unwrap_scalar(task_a_to_a)
@@ -118,9 +118,9 @@ for combo in itertools.product(*grid_values):
         )
 
         current_date = datetime.datetime.now().strftime("%Y%m%d")
-        _save_label = f"balance_{balance_value}_" if balance_value is not None else ""
+        _save_label = f"percent_task_in_response_{percent_task_in_response_value}_" if percent_task_in_response_value is not None else ""
         save_simulation_data(save_directory, spikesA, spikesB, firingrate_envA, firingrate_envB,
-                                f"{_save_label}responsive_{responsive_val}_PC_{percent_place_cell}", i, current_date)
+                                f"{_save_label}responsive_{percent_task_responsive_cells_val}_PC_{percent_place_cell}", i, current_date)
 
 
         del spikesA, spikesB, firingrate_envA, firingrate_envB

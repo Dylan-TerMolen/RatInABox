@@ -53,8 +53,8 @@ def test_simulate_experiment_runs_full_data_path(model_type, holdover, position_
 
     spikesA, firingrate_envA, agentA, spikesB, firingrate_envB, agentB = simulate_experiment(
         model_type, position_data_envA, position_data_envB, NUM_NEURONS,
-        balance_value=0.5, balance_dist="fixed", balance_std=0.1,
-        responsive_val=0.5, responsive_type="fixed", percent_place_cell=0.5,
+        percent_task_in_response_value=0.5, percent_task_in_response_dist="fixed", percent_task_in_response_std=0.1,
+        percent_task_responsive_cells_val=0.5, percent_is_task_responsive_distribution="fixed", percent_place_cell=0.5,
         holdover=holdover, task_types=None,
     )
 
