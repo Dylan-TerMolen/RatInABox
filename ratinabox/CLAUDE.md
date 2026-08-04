@@ -21,6 +21,14 @@ summary tying each finding to the model code (`wirtshafter-2025-universal-hippoc
     `MODEL_REQUIRED_PARAMS` are per-model. Unsupported params for a model are rejected.
   - Models: `independent_model/`, `place_dependent_model/`, `arousal_mediated_model/`, `separate_learning/`.
   - Shared helpers: `simulation_helpers.py`, `utils.py`, `env.py`/`config`, `tebc_agent.py`.
+  - WIP, not wired in: `context_dependent_model/` (imports a `tebc_response2` module that doesn't
+    exist in that dir — a fifth model variant left unfinished) and `separate_learning/CombinedPlaceTebcNeurons.py`
+    (calls `self.build_cell_types()`, which isn't defined — pipeline doesn't run end-to-end yet).
+
+**Gotcha — `--task_types` has no effect for `arousal_mediated`.** That model picks its response
+function from in-field/running state (`type_one_response`..`type_four_response`), not from
+`cell_types`, and `simulate_envs.py`'s `build_model()` never passes `cell_types` into it. The flag
+parses and validates fine but silently does nothing for this model.
 - **Hannahs-CEBRAs repo** (`/Users/dylantermolen/Projects/Hannahs-CEBRAs`) owns the CEBRA decoders,
   imported here as the `hannahs_cebras` package. Cross-environment decoding lives in
   `cond_decoding_AvsB.py` (task/eyeblink) and `pos_decoding_AvsB_DEP.py` (position).

@@ -58,7 +58,10 @@ def _add_arguments(parser):
     parser.add_argument('--percent_place_cells', type=str, default=DEFAULTS['percent_place_cells'],
                         help='Percentage of place cells (single value or comma-separated list)')
     parser.add_argument('--holdovers', type=str, default=DEFAULTS['holdovers'],
-                        help='Whether to hold TEBC cells over from env A')
+                        help='Fraction (0-1) of env A task-responsive cells to carry into env B '
+                             'by identity and cell type; env B\'s remaining task-responsive slots '
+                             '(up to its own target count) are drawn fresh. 0 = fully fresh, 1 = '
+                             'carry over as many of A\'s task-responsive cells as fit.')
     parser.add_argument('--task_types', type=str, default=None,
                         help='Comma-separated subset of tEBC response types to use, e.g. "1,2,7,8". '
                              'Default: all types at their empirical prevalence. '

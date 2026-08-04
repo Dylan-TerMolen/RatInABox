@@ -1,7 +1,9 @@
 """Integration spec: simulate_experiment must run the full data path
 main.py drives per grid combination -- build agent, build model, run the tEBC
-simulation in both environments, and (for holdover=True) carry env A's fitted
-task-responsive identity into env B -- without raising, for every model type.
+simulation in both environments, and (for holdover > 0) carry a fraction of env
+A's fitted task-responsive identity into env B -- without raising, for every
+model type and across the holdover fraction's full range (0 = fully fresh,
+1 = fully carried over, plus a fractional value in between).
 Stops short of CEBRA decoding, which main.py hands this output to next; that's
 an external dependency this repo doesn't need to exercise here.
 
@@ -47,7 +49,7 @@ def position_data_pair():
 
 
 @pytest.mark.parametrize("model_type", MODEL_TYPES)
-@pytest.mark.parametrize("holdover", [True, False])
+@pytest.mark.parametrize("holdover", [0.0, 0.5, 1.0])
 def test_simulate_experiment_runs_full_data_path(model_type, holdover, position_data_pair):
     position_data_envA, position_data_envB = position_data_pair
 

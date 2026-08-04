@@ -1,7 +1,7 @@
 import numpy as np
 
 from ratinabox.hsw import utils
-from ratinabox.hsw.independent_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness
+from ratinabox.hsw.independent_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness, holdover_task_responsiveness
 from ratinabox.hsw.independent_model.TEBC import TEBC as IndependentTEBC
 from ratinabox.hsw.place_dependent_model.TEBC import TEBC as PlaceDependentTEBC
 from ratinabox.hsw.arousal_mediated_model.TEBC import TEBC as ArousalMediatedTEBC
@@ -60,13 +60,16 @@ def simulate_experiment(model_type, position_data_envA, position_data_envB, num_
     modelA = build_model(model_type, agentA, percent_task_in_response_distribution, percent_task_responsive_cells_distribution, task_responsive_indices, percent_place_cell, cell_types, place_cell_width_envA)
     spikesA, firingrate_envA, agentA = simulate_agent(modelA, agentA)
 
-    # Holdover: carry learned env A params into env B; otherwise re-assign fresh params
-    if holdover:
+    # Holdover: `holdover` is the fraction of env A's task-responsive cells (same
+    # indices + cell types) carried into env B; the rest of env B's target task-responsive
+    # count is drawn fresh. holdover=0 draws B entirely fresh, holdover=1 carries over as
+    # many of A's task-responsive cells as fit within B's target count.
+    task_responsive_indices_B, cell_types = holdover_task_responsiveness(
+        modelA.task_responsive_indices, cell_types, holdover, percent_task_responsive_cells_distribution, task_types)
+    if holdover > 0:
         percent_task_in_response_distribution_B = getattr(modelA, 'percent_task_in_response_distribution', percent_task_in_response_distribution)
-        task_responsive_indices_B = modelA.task_responsive_indices
     else:
         percent_task_in_response_distribution_B = utils.get_distribution_values(percent_task_in_response_dist, [percent_task_in_response_value, percent_task_in_response_std], num_neurons) if percent_task_in_response_value is not None else None
-        task_responsive_indices_B, cell_types = assign_tebc_types_and_responsiveness(num_neurons, percent_task_responsive_cells_distribution, task_types)
 
     agentB = build_agent(position_data_envB, env_shape='elliptical')
     modelB = build_model(model_type, agentB, percent_task_in_response_distribution_B, percent_task_responsive_cells_distribution, task_responsive_indices_B, percent_place_cell, cell_types, place_cell_width_envB)

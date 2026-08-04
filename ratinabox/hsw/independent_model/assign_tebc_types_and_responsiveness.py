@@ -43,4 +43,44 @@ def assign_tebc_types_and_responsiveness(N, percent_task_responsive_cells_distri
     cell_types = np.random.choice(types, size=N, p=cell_type_probs)
     return responsive_neurons, cell_types
 
+
+def holdover_task_responsiveness(task_responsive_indices_A, cell_types_A, holdover_fraction,
+                                  percent_task_responsive_cells_distribution_B, task_types=None):
+    """Blend env A's task-responsive cells into env B's assignment.
+
+    `ceil(holdover_fraction * num_A_task_responsive)` of env A's actual task-responsive
+    cells carry over into env B unchanged (same indices, same cell types) -- these cells
+    may or may not remain place-responsive in B, since place-responsiveness is redrawn
+    independently per env. The remaining slots needed to reach env B's target task-responsive
+    count are drawn fresh (new indices, new cell types) from whichever cells aren't already
+    held over. Env B's target count is exact (round of the distribution's sum), so the total
+    never inflates past target regardless of how many cells were held over.
+    """
+    N = len(task_responsive_indices_A)
+    a_responsive_indices = np.flatnonzero(task_responsive_indices_A)
+    target_total = int(round(np.sum(percent_task_responsive_cells_distribution_B)))
+    # Env A's own assignment is still a per-cell Bernoulli draw (not exact-count), so its
+    # realized task-responsive count can exceed env B's target by chance -- cap at target_total
+    # so a high holdover_fraction can't carry that overshoot into env B.
+    num_held = min(int(np.ceil(holdover_fraction * len(a_responsive_indices))), target_total)
+    held_indices = np.random.choice(a_responsive_indices, size=num_held, replace=False)
+
+    remaining_pool = np.setdiff1d(np.arange(N), held_indices)
+    # target_total <= N and num_held <= target_total, so num_fresh always lands in
+    # [0, len(remaining_pool)] -- no clamping needed.
+    num_fresh = target_total - num_held
+    fresh_indices = np.random.choice(remaining_pool, size=num_fresh, replace=False)
+
+    task_responsive_indices_B = np.full(N, False)
+    task_responsive_indices_B[held_indices] = True
+    task_responsive_indices_B[fresh_indices] = True
+
+    types, cell_type_probs = _resolve_task_type_distribution(task_types)
+    responsive_indices_B = np.flatnonzero(task_responsive_indices_B)
+    cell_types_B = np.zeros(N, dtype=int)
+    cell_types_B[responsive_indices_B] = np.random.choice(types, size=len(responsive_indices_B), p=cell_type_probs)
+    cell_types_B[held_indices] = cell_types_A[held_indices]
+
+    return task_responsive_indices_B, cell_types_B
+
 #type 2 has a flat top
