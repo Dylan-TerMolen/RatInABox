@@ -31,7 +31,13 @@ def simulate_agent(model, agent):
     for _ in agent.follow_trajectory():
         model.update()
     firing_rates = np.array(model.history['firingrate']).T
-    FR_MAX = utils.max_excluding_outliers(firing_rates)
+    # utils.max_excluding_outliers collapses to ~0.003 here (IQR-fence
+    # trimming over a population that's mostly at/near baseline treats nearly every
+    # genuine place/task peak as an "outlier"), which saturates spike generation below.
+    # A single global max instead overcorrects the other way -- a place cell's peak (~4.6)
+    # starves task-only cells, whose entire dynamic range tops out near TASK_ONLY_BASELINE
+    # (~0.0007). Scaling each cell to its own max keeps the draw graded per-cell instead.
+    FR_MAX = firing_rates.max(axis=1, keepdims=True)
     cell_spikes = np.random.uniform(0, FR_MAX, size=firing_rates.shape) < firing_rates
     spikes = cell_spikes.astype(int)
     return spikes, firing_rates, agent

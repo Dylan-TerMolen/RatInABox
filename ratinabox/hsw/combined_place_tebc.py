@@ -4,6 +4,8 @@ import numpy as np
 
 from ratinabox.Neurons import PlaceCells
 
+from ratinabox.hsw.environment_builder import sample_ellipse_positions
+
 # Near-silent floor for cells with no place field and/or no task drive.
 BASELINE_FR = 0.02 / 30
 
@@ -72,8 +74,22 @@ class CombinedPlaceTebc(PlaceCells):
         num_place = np.count_nonzero(self.place_responsive_indices)
         if num_place == 0:
             return
-        self.place_cell_centres[self.place_responsive_indices] = self.agent.Environment.sample_positions(
-            n=num_place, method="uniform_jitter")
+        self.place_cell_centres[self.place_responsive_indices] = self._sample_place_centres(num_place)
+
+    def _sample_place_centres(self, num_place):
+        """Env-shape-aware centre placement.
+
+        Elliptical envs use the golden-angle sunflower spiral (see
+        environment_builder.sample_ellipse_positions), which gives even areal coverage
+        with no rejection sampling. Every other shape keeps RatInABox's own
+        bounding-box grid tiling, which is already exact for a rectangle (a rectangle
+        is its own bounding box, so nothing ever falls outside it) but breaks down for
+        non-rectangular boundaries -- see sample_ellipse_positions's docstring.
+        """
+        ellipse_geometry = getattr(self.agent.Environment, 'ellipse_geometry', None)
+        if ellipse_geometry is not None:
+            return sample_ellipse_positions(ellipse_geometry, num_place)
+        return self.agent.Environment.sample_positions(n=num_place, method="uniform_jitter")
 
     def _set_category_masks(self):
         self.place_only_indices = self.place_responsive_indices & ~self.task_responsive_indices
