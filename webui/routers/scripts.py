@@ -29,9 +29,21 @@ def script_form(request: Request, script_id: str):
         return RedirectResponse("/scripts", status_code=303)
     defaults = config.slurm_defaults()
     default_job_name = re.sub(r"[^a-zA-Z0-9_]+", "_", spec.display_name).strip("_")[:40]
+
+    visible = config.script_form_visible_params(spec.id)
+    if visible is None:
+        primary_params, other_params = spec.params, []
+    else:
+        visible_set = set(visible)
+        # Required params with no default always show -- the command can't
+        # be built without them, regardless of what's configured as "visible".
+        primary_params = [p for p in spec.params if p.name in visible_set or p.required]
+        other_params = [p for p in spec.params if p not in primary_params]
+
     return view.templates.TemplateResponse("script_form.html", {
         "request": request, "spec": spec, "defaults": defaults,
         "default_job_name": default_job_name,
+        "primary_params": primary_params, "other_params": other_params,
     })
 
 

@@ -40,6 +40,14 @@ def slurm_defaults() -> dict:
     return dict(load_config()["slurm_defaults"])
 
 
+def script_form_visible_params(script_id: str) -> list[str] | None:
+    """List of param names to render as inputs for this script, or None if
+    the script has no entry under script_forms: (meaning "show everything",
+    the original unscoped behavior)."""
+    entry = load_config().get("script_forms", {}).get(script_id)
+    return entry["visible_params"] if entry else None
+
+
 def _resolve_app_path(key: str) -> Path:
     raw = load_config()["app"][key]
     p = Path(raw)

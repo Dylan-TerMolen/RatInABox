@@ -31,7 +31,7 @@
     <h3>Script params</h3>
     <p class="help">For any param, type a comma-separated list and check "grid" to sweep it as a SLURM array
        (one array task per combination across all grid params, row-major).</p>
-    {% for p in spec.params %}
+    {% for p in primary_params %}
     <div class="param-row">
       <div class="name">
         {% if p.flag %}{{ p.flag }}{% else %}{{ p.name }} <span class="muted">(positional)</span>{% endif %}
@@ -62,6 +62,21 @@
     <p class="muted">No params detected for this script -- the generated command will just be the bare entry point.
        If it needs args, add them via the "Upload existing .sh" flow instead.</p>
     {% endfor %}
+
+    {% if other_params %}
+    <details style="margin-top: 0.75rem;">
+      <summary class="muted" style="cursor: pointer;">{{ other_params|length }} other param{{ 's' if other_params|length != 1 }} not shown -- using the script's own default (edit webui/config.yaml's script_forms to change which params appear here)</summary>
+      <table style="margin-top: 0.5rem;">
+        <tr><th>Param</th><th>Default</th></tr>
+        {% for p in other_params %}
+        <tr>
+          <td><code>{{ p.flag or p.name }}</code></td>
+          <td class="muted">{{ p.default if p.default is not none else '(none)' }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </details>
+    {% endif %}
   </div>
 
   <button class="btn" type="submit">Preview SLURM script</button>
