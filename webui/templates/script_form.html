@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ spec.display_name }}</h2>
+<p class="muted"><code>{{ spec.entry_point }}</code>{% if spec.note %} — {{ spec.note }}{% endif %}</p>
+
+<form method="post" action="/scripts/{{ spec.id }}/preview">
+  <div class="card">
+    <h3>SLURM options</h3>
+    <div class="row">
+      <div class="field"><label>Job name</label><input type="text" name="job_name" value="{{ default_job_name }}"></div>
+      <div class="field"><label>Account</label><input type="text" name="account" value="{{ defaults.account }}"></div>
+      <div class="field"><label>Partition</label><input type="text" name="partition" value="{{ defaults.partition }}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>GRES</label><input type="text" name="gres" value="{{ defaults.gres }}"></div>
+      <div class="field"><label>Nodes</label><input type="number" name="nodes" value="{{ defaults.nodes }}"></div>
+      <div class="field"><label>Ntasks</label><input type="number" name="ntasks" value="{{ defaults.ntasks }}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Memory</label><input type="text" name="mem" value="{{ defaults.mem }}"></div>
+      <div class="field"><label>Time</label><input type="text" name="time" value="{{ defaults.time }}"></div>
+      <div class="field"><label>Conda env</label><input type="text" name="conda_env" value="{{ defaults.conda_env }}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Mail type</label><input type="text" name="mail_type" value="{{ defaults.mail_type }}"></div>
+      <div class="field"><label>Mail user</label><input type="email" name="mail_user" value="{{ defaults.mail_user }}"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Script params</h3>
+    <p class="help">For any param, type a comma-separated list and check "grid" to sweep it as a SLURM array
+       (one array task per combination across all grid params, row-major).</p>
+    {% for p in spec.params %}
+    <div class="param-row">
+      <div class="name">
+        {% if p.flag %}{{ p.flag }}{% else %}{{ p.name }} <span class="muted">(positional)</span>{% endif %}
+        {% if p.required %}<span class="req">*</span>{% endif %}
+      </div>
+      <div class="value">
+        {% if p.type == 'bool' %}
+          <label class="inline"><input type="checkbox" name="value__{{ p.name }}" {% if p.default %}checked{% endif %}> enabled</label>
+        {% elif p.choices %}
+          <input type="text" name="value__{{ p.name }}" list="choices__{{ p.name }}"
+                 value="{{ p.default if p.default is not none else '' }}"
+                 placeholder="{{ p.choices|join(', ') }}">
+          <datalist id="choices__{{ p.name }}">
+            {% for c in p.choices %}<option value="{{ c }}">{% endfor %}
+          </datalist>
+        {% else %}
+          <input type="text" name="value__{{ p.name }}" value="{{ p.default if p.default is not none else '' }}">
+        {% endif %}
+        {% if p.help %}<div class="help">{{ p.help }}</div>{% endif %}
+      </div>
+      <div class="grid-toggle">
+        {% if p.type != 'bool' %}
+        <label class="inline"><input type="checkbox" name="grid__{{ p.name }}"> grid (comma-sep)</label>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <p class="muted">No params detected for this script -- the generated command will just be the bare entry point.
+       If it needs args, add them via the "Upload existing .sh" flow instead.</p>
+    {% endfor %}
+  </div>
+
+  <button class="btn" type="submit">Preview SLURM script</button>
+</form>
+{% endblock %}

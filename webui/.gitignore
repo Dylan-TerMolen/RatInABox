@@ -1,0 +1,6 @@
+# Runtime state -- local to whoever's running the app, not shared via git.
+data/jobs.db
+data/generated/*.sh
+data/uploads/*
+!data/generated/.gitkeep
+!data/uploads/.gitkeep

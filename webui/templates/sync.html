@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Sync data from Quest</h2>
+<p class="muted">Manual only -- pulls <code>results_subdir</code> from Quest down to your machine via rsync.
+   Nothing runs on a timer; click "Sync now" whenever you want fresh data.</p>
+
+<div class="card">
+  <form method="post" action="/sync">
+    <div class="field">
+      <label>Repo</label>
+      <select name="repo">
+        {% for key, cfg in repos.items() %}
+        <option value="{{ key }}">{{ key }} — {{ cfg.remote_path }}/{{ cfg.results_subdir }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn" type="submit">Sync now</button>
+  </form>
+</div>
+
+{% if last_result %}
+<div class="card">
+  <h3>Last run {{ 'succeeded' if last_result.ok else 'failed' }}</h3>
+  <pre class="script">{{ last_result.combined_output }}</pre>
+</div>
+{% endif %}
+
+<div class="card">
+  <h3>Sync history</h3>
+  {% if runs %}
+  <table>
+    <tr><th>When</th><th>Repo</th><th>Result</th></tr>
+    {% for r in runs %}
+    <tr>
+      <td>{{ r['created_at'] }}</td>
+      <td>{{ r['repo'] }}</td>
+      <td><span class="badge {{ 'COMPLETED' if r['success'] else 'FAILED' }}">{{ 'ok' if r['success'] else 'failed' }}</span></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No syncs yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

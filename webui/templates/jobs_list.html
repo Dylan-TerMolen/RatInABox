@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Jobs</h2>
+<p><a class="btn secondary" href="/jobs/new-raw">Upload existing .sh</a>
+   <a class="btn secondary" href="/scripts">Build from script</a></p>
+
+<div class="card">
+  {% if jobs %}
+  <table>
+    <tr><th>ID</th><th>Job name</th><th>Repo</th><th>Script</th><th>Status</th><th>Array</th><th>Sbatch ID</th><th>Created</th></tr>
+    {% for j in jobs %}
+    <tr>
+      <td><a href="/jobs/{{ j['id'] }}">{{ j['id'] }}</a></td>
+      <td>{{ j['job_name'] }}</td>
+      <td>{{ j['repo'] }}</td>
+      <td>{{ j['script_display_name'] }}</td>
+      <td><span class="badge {{ j['status'] }}">{{ j['status'] }}</span></td>
+      <td>{{ j['array_count'] }}</td>
+      <td>{{ j['sbatch_job_id'] or '—' }}</td>
+      <td class="muted">{{ j['created_at'] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No jobs yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

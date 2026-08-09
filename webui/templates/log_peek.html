@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Log peek: {{ job['job_name'] }} (array task {{ task }})</h2>
+<p class="muted"><code>{{ log_path }}</code></p>
+<p class="help">Snapshot only -- last 50 lines as of now. Reload this page to take a fresh snapshot; it does not auto-update.</p>
+<pre class="script">{{ result.combined_output or '(no output -- job may not have produced this log yet)' }}</pre>
+<a class="btn secondary" href="/jobs/{{ job['id'] }}">Back to job</a>
+{% endblock %}

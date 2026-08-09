@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Preview: {{ job_name }}</h2>
+
+<div class="card">
+  <div class="stat-row">
+    <div class="stat"><span class="num">{{ array_count }}</span>array task{{ 's' if array_count != 1 }}</div>
+    <div class="stat"><span class="num">{{ repo }}</span>repo</div>
+  </div>
+  <h3>Command</h3>
+  <p class="help"><code>{{ command_preview }}</code></p>
+</div>
+
+<div class="card">
+  <h3>Generated SLURM script</h3>
+  <pre class="script">{{ script_text }}</pre>
+</div>
+
+<form method="post" action="/jobs/create-from-preview">
+  <input type="hidden" name="repo" value="{{ repo }}">
+  <input type="hidden" name="script_id" value="{{ script_id }}">
+  <input type="hidden" name="script_display_name" value="{{ script_display_name }}">
+  <input type="hidden" name="job_name" value="{{ job_name }}">
+  <input type="hidden" name="array_count" value="{{ array_count }}">
+  <input type="hidden" name="command_preview" value="{{ command_preview }}">
+  <input type="hidden" name="params_json" value='{{ params_json_str }}'>
+  <input type="hidden" name="grid_json" value='{{ grid_json_str }}'>
+  <textarea name="script_text" style="display:none">{{ script_text }}</textarea>
+  <button class="btn" type="submit">Save job</button>
+  <a class="btn secondary" href="/scripts/{{ script_id }}">Back to edit</a>
+</form>
+{% endblock %}

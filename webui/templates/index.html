@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Dashboard</h2>
+
+{% if stub_warnings %}
+<div class="warn-box">
+  <strong>Heads up:</strong> config.yaml still has placeholder values.
+  <ul>
+    {% for w in stub_warnings %}<li>{{ w }}</li>{% endfor %}
+  </ul>
+  Edit <code>webui/config.yaml</code>, then restart the app.
+</div>
+{% endif %}
+
+<div class="card">
+  <h3>Get started</h3>
+  <p><a href="/scripts">Browse scripts</a> to build a new job from a command + params,
+     or <a href="/jobs/new-raw">upload a ready-made .sh</a> directly.</p>
+</div>
+
+<div class="card">
+  <h3>Recent jobs</h3>
+  {% if recent_jobs %}
+  <table>
+    <tr><th>ID</th><th>Job name</th><th>Repo</th><th>Status</th><th>Sbatch ID</th></tr>
+    {% for j in recent_jobs %}
+    <tr>
+      <td><a href="/jobs/{{ j['id'] }}">{{ j['id'] }}</a></td>
+      <td>{{ j['job_name'] }}</td>
+      <td>{{ j['repo'] }}</td>
+      <td><span class="badge {{ j['status'] }}">{{ j['status'] }}</span></td>
+      <td>{{ j['sbatch_job_id'] or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No jobs yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

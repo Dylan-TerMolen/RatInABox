@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Scripts</h2>
+<p class="muted">Pick a script to build a job from a param form and an auto-generated SLURM script.
+   Don't see what you need, or the script's args weren't auto-detected? <a href="/jobs/new-raw">Upload a ready-made .sh instead</a>.</p>
+
+{% for repo, scripts in by_repo.items() %}
+<div class="card">
+  <h3>{{ repo }}</h3>
+  <table>
+    <tr><th>Script</th><th>Entry point</th><th>Params</th><th></th></tr>
+    {% for s in scripts %}
+    <tr>
+      <td>{{ s.display_name }}</td>
+      <td><code>{{ s.entry_point }}</code></td>
+      <td>
+        {% if s.introspected %}{{ s.params|length }} detected{% else %}<span class="muted">{{ s.note }}</span>{% endif %}
+      </td>
+      <td><a class="btn secondary" href="/scripts/{{ s.id }}">Build job</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endfor %}
+{% endblock %}

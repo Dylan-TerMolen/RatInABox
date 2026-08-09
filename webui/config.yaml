@@ -1,0 +1,50 @@
+# Local config for the Quest job runner web UI.
+# Everything in this file is a STUB — edit the CHANGE_ME values for your machine
+# and NetID before using the upload/queue/sync features. Nothing here is committed
+# to git as secrets (no passwords/keys — auth relies on your existing SSH setup),
+# but do keep NetIDs/paths accurate for the app to find things.
+
+quest:
+  # Alias in your ~/.ssh/config that connects to Quest with a key (no password
+  # prompt), e.g.:
+  #   Host quest
+  #     HostName quest.northwestern.edu
+  #     User CHANGE_ME_NETID
+  #     IdentityFile ~/.ssh/id_ed25519
+  ssh_alias: "quest"
+  # Your NetID, used for `squeue -u <username>` / `sacct -u <username>`.
+  username: "CHANGE_ME_NETID"
+
+# One entry per repo this tool can generate/submit jobs for. local_path is where
+# that repo lives on THIS machine (the one running the web UI); remote_path is
+# where it lives on Quest.
+repos:
+  ratinabox:
+    local_path: "CHANGE_ME e.g. /Users/you/Projects/RatInABox"
+    remote_path: "CHANGE_ME e.g. /home/CHANGE_ME_NETID/projects/RatInABox"
+    # Where results/logs land, relative to each repo's path above.
+    results_subdir: "saved/results"
+  hannahs_cebras:
+    local_path: "CHANGE_ME e.g. /Users/you/Projects/Hannahs-CEBRAs"
+    remote_path: "CHANGE_ME e.g. /home/CHANGE_ME_NETID/Programming/Hannahs-CEBRAs"
+    results_subdir: "results"
+
+# Defaults pre-filled into the SLURM header when generating a new script. All
+# overridable per-job in the UI.
+slurm_defaults:
+  account: "p32072"
+  partition: "gengpu"
+  gres: "gpu:a100:1"
+  nodes: 1
+  ntasks: 1
+  mem: "32GB"
+  time: "12:00:00"
+  mail_type: "END,FAIL"
+  mail_user: "dptermolen@gmail.com"
+  conda_env: "ratinabox"
+
+# Local paths (on this machine) used by the app itself.
+app:
+  db_path: "webui/data/jobs.db"
+  generated_scripts_dir: "webui/data/generated"
+  uploads_dir: "webui/data/uploads"

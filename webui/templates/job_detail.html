@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ job['job_name'] }} <span class="badge {{ job['status'] }}">{{ job['status'] }}</span></h2>
+
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+
+<div class="card">
+  <div class="row">
+    <div><strong>Repo:</strong> {{ job['repo'] }}</div>
+    <div><strong>Script:</strong> {{ job['script_display_name'] }}</div>
+    <div><strong>Array tasks:</strong> {{ job['array_count'] }}</div>
+    <div><strong>Sbatch ID:</strong> {{ job['sbatch_job_id'] or '—' }}</div>
+  </div>
+  <p class="help"><code>{{ job['command'] }}</code></p>
+</div>
+
+<div class="card">
+  <h3>Actions</h3>
+  <form method="post" action="/jobs/{{ job['id'] }}/upload" style="display:inline">
+    <button class="btn secondary" type="submit">Upload to Quest</button>
+  </form>
+  <form method="post" action="/jobs/{{ job['id'] }}/queue" style="display:inline">
+    <button class="btn secondary" type="submit" {% if not job['slurm_script_remote_path'] %}disabled{% endif %}>sbatch (queue)</button>
+  </form>
+  <form method="post" action="/jobs/{{ job['id'] }}/refresh" style="display:inline">
+    <button class="btn" type="submit" {% if not job['sbatch_job_id'] %}disabled{% endif %}>Refresh status</button>
+  </form>
+  <a class="btn secondary" href="/jobs/{{ job['id'] }}/peek-log" {% if not job['sbatch_job_id'] %}style="pointer-events:none;opacity:0.4"{% endif %}>Peek log (last 50 lines)</a>
+  <p class="help">Status is never auto-refreshed -- click "Refresh status" whenever you want the current squeue/sacct state.</p>
+</div>
+
+{% if last_status %}
+<div class="card">
+  <h3>Progress <span class="muted">(as of {{ job['last_status_at'] }})</span></h3>
+  <div class="stat-row">
+    <div class="stat"><span class="num">{{ last_status.done }}/{{ last_status.total_array_tasks }}</span>completed</div>
+    <div class="stat"><span class="num">{{ last_status.running }}</span>running</div>
+    <div class="stat"><span class="num">{{ last_status.pending }}</span>pending</div>
+    <div class="stat"><span class="num">{{ last_status.failed }}</span>failed</div>
+  </div>
+  {% if last_status.tasks %}
+  <table>
+    <tr><th>Task</th><th>State</th><th>Elapsed</th></tr>
+    {% for t in last_status.tasks %}
+    <tr>
+      <td>{{ t.job_id }}</td>
+      <td><span class="badge {{ t.state }}">{{ t.state }}</span></td>
+      <td>{{ t.elapsed or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No task rows returned by squeue/sacct -- job may not have started yet, or already aged out of history.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="card">
+  <h3>SLURM script</h3>
+  <pre class="script">{{ script_text }}</pre>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ path.split('/')[-1] }}</h2>
+
+{% if error %}<div class="warn-box">{{ error }}</div>{% endif %}
+
+{% if columns %}
+<div class="card">
+  <p class="muted">{{ row_count }} rows, {{ columns|length }} columns.</p>
+  <form method="get" action="/results/view">
+    <input type="hidden" name="path" value="{{ path }}">
+    <div class="row">
+      <div class="field">
+        <label>X column</label>
+        <select name="x">
+          {% for c in columns %}<option value="{{ c }}" {% if c == x %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Y column</label>
+        <select name="y">
+          {% for c in columns %}<option value="{{ c }}" {% if c == y %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <button class="btn" type="submit">Plot</button>
+  </form>
+</div>
+{% endif %}
+
+{% if plot_data_json %}
+<div class="card">
+  <canvas id="chart"></canvas>
+  <script id="plot-data" type="application/json">{{ plot_data_json | safe }}</script>
+</div>
+{% endif %}
+
+<a class="btn secondary" href="/results">Back to results</a>
+{% endblock %}
