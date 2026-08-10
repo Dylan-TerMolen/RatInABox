@@ -31,6 +31,17 @@ here entirely.
   you click "Sync now".
 - **Results** — browse synced CSVs, pick X/Y columns, plot (a small
   dependency-free canvas plotter, no charting library, no CDN).
+- **Job results** (`/jobs/{id}/results`) — grid-sweep view of a job's
+  matched decoding logs: one faceted surface figure per metric (default
+  facet = percent_place_cells, x = %task, y = %task_cells, z = decoding
+  accuracy), toggleable per metric. Each figure is a PNG rendered on demand
+  by `webui/sweep_plots.py`, which calls
+  `scripts/pull_and_plot_holdover_sweep.py`'s own matplotlib plotting
+  function directly -- so it's pixel-identical to that script's own surface
+  plots, not a reimplementation of its look. This is the one place in
+  `webui/` that imports matplotlib/numpy/pandas (already in the `ratinabox`
+  conda env per `requirements.txt`'s note), and it only does so lazily, the
+  first time a metric's image is actually requested.
 
 ## Setup
 

@@ -78,3 +78,9 @@ pre.script { background: #0b0d12; border: 1px solid var(--border); border-radius
 .stat { font-size: 0.85rem; }
 .stat .num { font-size: 1.3rem; font-weight: 700; display: block; }
 canvas#chart { width: 100%; height: 360px; background: #0b0d12; border: 1px solid var(--border); border-radius: 6px; }
+
+.metric-toggles { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; }
+.inline-check { display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem; cursor: pointer; }
+.inline-check.disabled { color: var(--muted); cursor: not-allowed; }
+.inline-check input { width: auto; }
+.surface-image { display: block; width: 100%; height: auto; background: #0b0d12; border-radius: 4px; }

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ job['job_name'] }} — Results <span class="muted">(job #{{ job['id'] }})</span></h2>
+
+<div class="card">
+  <div class="row">
+    <div><strong>Matched records:</strong> {{ records_count }}</div>
+    <div><strong>Facet:</strong> {{ axes.facet or '—' }}</div>
+    <div><strong>X:</strong> {{ axes.x or '—' }}</div>
+    <div><strong>Y:</strong> {{ axes.y or '—' }}</div>
+  </div>
+  <p class="help">Facet/x/y axes are inferred from this job's swept params (best-effort match against
+     current flag naming) -- not user-selectable yet. Each figure is rendered server-side with
+     scripts/pull_and_plot_holdover_sweep.py's own matplotlib plotting code, so it matches that
+     script's own surface-plot output exactly.</p>
+</div>
+
+{% if not records_count %}
+<div class="warn-box">No matched result logs for this job yet -- sync, then come back (see the job's
+   Iterations table for per-task match state).</div>
+{% elif not axes.x or not axes.y or not axes.facet %}
+<div class="warn-box">Fewer than three swept numeric params found in this job's iterations -- a
+   faceted surface needs a facet plus x/y axis, so there's nothing to plot yet.</div>
+{% else %}
+<div class="card">
+  <h3>Metrics</h3>
+  <div class="metric-toggles">
+    {% for m in metrics %}
+    <label class="inline-check{% if not m.available %} disabled{% endif %}">
+      <input type="checkbox" class="metric-toggle" data-metric="{{ m.key }}"
+             data-src="/jobs/{{ job['id'] }}/results/plot?metric={{ m.key | urlencode }}"
+             {% if m.default and m.available %}checked{% endif %}
+             {% if not m.available %}disabled{% endif %}>
+      {{ m.label }}{% if not m.available %} <span class="muted">(no data)</span>{% endif %}
+    </label>
+    {% endfor %}
+  </div>
+</div>
+
+{% for m in metrics if m.available %}
+<div class="card surface-figure" data-metric="{{ m.key }}"{% if not m.default %} style="display:none"{% endif %}>
+  <img class="surface-image" alt="{{ m.label }} surface plot" loading="lazy">
+</div>
+{% endfor %}
+{% endif %}
+
+<script src="/static/js/sweep_plot.js"></script>
+
+<a class="btn secondary" href="/jobs/{{ job['id'] }}">Back to job</a>
+{% endblock %}

@@ -27,6 +27,7 @@
     <button class="btn" type="submit" {% if not job['sbatch_job_id'] %}disabled{% endif %}>Refresh status</button>
   </form>
   <a class="btn secondary" href="/jobs/{{ job['id'] }}/peek-log" {% if not job['sbatch_job_id'] %}style="pointer-events:none;opacity:0.4"{% endif %}>Peek log (last 50 lines)</a>
+  <a class="btn secondary" href="/jobs/{{ job['id'] }}/results">View results</a>
   <p class="help">Status is never auto-refreshed -- click "Refresh status" whenever you want the current squeue/sacct state.</p>
 
   {% if not job['sbatch_job_id'] %}

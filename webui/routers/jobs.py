@@ -6,9 +6,9 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Form, Request, UploadFile, File
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 
-from .. import config, db, grid_parser, quest, view
+from .. import config, db, grid_parser, quest, sweep_results, view
 from . import results
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -170,6 +170,41 @@ def job_detail(request: Request, job_id: int):
         "flash": flash, "iterations": iterations, "fallback_logs": fallback_logs,
         "completed_iterations": completed_iterations, "param_columns": param_columns,
     })
+
+
+@router.get("/{job_id}/results")
+def job_results(request: Request, job_id: int):
+    """Grid-sweep view of this job's matched decoding logs -- see
+    sweep_results.py. Toggle-only for now: which metric's surface plot(s)
+    are shown; facet/x/y axes are inferred, not user-chosen. Each shown
+    metric's actual figure is fetched lazily from /results/plot below."""
+    job = db.get_job(job_id)
+    if job is None:
+        return RedirectResponse("/jobs", status_code=303)
+    view_data = sweep_results.build_results_view(job_id)
+    return view.templates.TemplateResponse("job_results.html", {
+        "request": request, "job": job, **view_data,
+    })
+
+
+@router.get("/{job_id}/results/plot")
+def job_results_plot(job_id: int, metric: str):
+    """One metric's faceted surface figure as a PNG, rendered on demand by
+    sweep_plots.py (reuses scripts/pull_and_plot_holdover_sweep.py's own
+    matplotlib code) -- not precomputed, so an unrequested metric never
+    costs anything. 404s rather than erroring if there's nothing to plot,
+    e.g. a stale request for a metric this job has no data for."""
+    from .. import sweep_plots  # deferred: only pull in matplotlib/pandas if a plot is actually requested
+
+    job = db.get_job(job_id)
+    if job is None:
+        return Response(status_code=404)
+    records = sweep_results.job_sweep_records(job_id)
+    axes = sweep_results.infer_axes(records)
+    png = sweep_plots.render_metric_surface_png(records, axes, metric, job["experiment_tag"])
+    if png is None:
+        return Response(status_code=404)
+    return Response(content=png, media_type="image/png")
 
 
 @router.post("/{job_id}/upload")
