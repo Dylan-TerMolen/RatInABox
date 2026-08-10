@@ -160,10 +160,15 @@ def job_detail(request: Request, job_id: int):
     # true even when the run produced nothing usable).
     completed_iterations = sum(1 for it in iterations if it["log_file_path"])
 
+    # Same params keys on every iteration of a job (same script, same flags
+    # -- only the swept values differ), so the first row's key order is the
+    # column order for all of them.
+    param_columns = list(iterations[0]["params"].keys()) if iterations else []
+
     return view.templates.TemplateResponse("job_detail.html", {
         "request": request, "job": job, "script_text": script_text, "last_status": last_status,
         "flash": flash, "iterations": iterations, "fallback_logs": fallback_logs,
-        "completed_iterations": completed_iterations,
+        "completed_iterations": completed_iterations, "param_columns": param_columns,
     })
 
 
@@ -203,6 +208,22 @@ def recompute_iterations(job_id: int):
     if p.is_file():
         _populate_iterations(job_id, p.read_text())
     return RedirectResponse(f"/jobs/{job_id}", status_code=303)
+
+
+@router.get("/{job_id}/debug-matching")
+def debug_matching(request: Request, job_id: int):
+    """Read-only diagnostic: what candidate .log files were found for this
+    job's experiment tag, and for still-unmatched iterations, exactly which
+    params differ from the closest candidate. For figuring out why
+    match_unmatched_iterations isn't finding a match, not for matching
+    itself -- see results.diagnose_unmatched()."""
+    job = db.get_job(job_id)
+    if job is None:
+        return RedirectResponse("/jobs", status_code=303)
+    diag = results.diagnose_unmatched(job_id)
+    return view.templates.TemplateResponse("debug_matching.html", {
+        "request": request, "job": job, "diag": diag,
+    })
 
 
 @router.post("/{job_id}/attach-sbatch-id")

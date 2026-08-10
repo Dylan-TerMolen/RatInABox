@@ -19,12 +19,18 @@ from .. import config, db, hsw_log, view
 router = APIRouter(prefix="/results", tags=["results"])
 
 
-def _results_root() -> Path | None:
+def _expected_results_root() -> Path | None:
+    """The configured results path, whether or not it exists yet -- for
+    diagnostics, where "doesn't exist" is itself useful information."""
     repo_cfg = config.repo_config("ratinabox")
     if config.is_stubbed(repo_cfg.get("local_path")):
         return None
-    root = Path(repo_cfg["local_path"]) / repo_cfg["results_subdir"]
-    return root if root.is_dir() else None
+    return Path(repo_cfg["local_path"]) / repo_cfg["results_subdir"]
+
+
+def _results_root() -> Path | None:
+    root = _expected_results_root()
+    return root if root and root.is_dir() else None
 
 
 def _resolve_safe(path_str: str) -> Path | None:
@@ -122,6 +128,43 @@ def match_unmatched_iterations() -> int:
                     matched += 1
                     break
     return matched
+
+
+def diagnose_unmatched(job_id: int, limit: int = 20) -> dict:
+    """Read-only: for up to `limit` of a job's still-unmatched iterations,
+    show what candidate logs exist and -- for the closest one -- exactly
+    which params differ. Doesn't write anything; for figuring out *why*
+    match_unmatched_iterations isn't matching something, not for matching
+    itself."""
+    root = _expected_results_root()
+    job = next((j for j in db.list_jobs() if j["id"] == job_id), None)
+    experiment_tag = job["experiment_tag"] if job else None
+
+    candidates = logs_for_experiment(experiment_tag) if experiment_tag else []
+    parsed_candidates = [(c["name"], hsw_log.parse(Path(c["path"]).read_text()).run_params) for c in candidates]
+
+    unmatched = db.list_unmatched_iterations(job_id)
+    rows = []
+    for it in unmatched[:limit]:
+        it_params = json.loads(it["params_json"])
+        best_name, best_mismatches = None, None
+        for name, log_params in parsed_candidates:
+            mismatches = {k: (v, log_params.get(k)) for k, v in it_params.items()
+                          if k not in log_params or not _values_close(v, log_params[k])}
+            if best_mismatches is None or len(mismatches) < len(best_mismatches):
+                best_name, best_mismatches = name, mismatches
+        rows.append({
+            "array_task_index": it["array_task_index"], "params": it_params,
+            "closest_log": best_name, "mismatches": best_mismatches or {},
+        })
+
+    return {
+        "results_root": str(root) if root else None,
+        "results_root_exists": bool(root and root.is_dir()),
+        "experiment_tag": experiment_tag,
+        "candidate_count": len(candidates), "candidate_names": [c[0] for c in parsed_candidates],
+        "unmatched_count": len(unmatched), "rows": rows,
+    }
 
 
 @router.get("")

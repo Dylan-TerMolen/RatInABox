@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Debug matching: {{ job['job_name'] }}</h2>
+<p class="muted">Read-only -- doesn't change anything, just shows what the matcher sees.</p>
+
+<div class="card">
+  <div class="row">
+    <div><strong>Experiment tag:</strong> {{ diag.experiment_tag or '—' }}</div>
+    <div><strong>Results root:</strong> <code>{{ diag.results_root or '(not configured)' }}</code>
+      {% if diag.results_root and not diag.results_root_exists %}<span class="muted">(doesn't exist locally yet -- sync first)</span>{% endif %}</div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Candidate .log files ({{ diag.candidate_count }})</h3>
+  <p class="help">Files under the results root whose name starts with <code>{{ diag.experiment_tag }}-</code>.</p>
+  {% if diag.candidate_names %}
+  <ul>{% for n in diag.candidate_names %}<li><code>{{ n }}</code></li>{% endfor %}</ul>
+  {% elif not diag.experiment_tag %}
+  <div class="warn-box">This job has no experiment tag set -- nothing to match against. Set one on the job, or re-upload with an <code>EXPERIMENT=</code> var / <code>--experiment</code> flag the auto-extractor can find.</div>
+  {% else %}
+  <div class="warn-box">
+    No .log files found starting with <code>{{ diag.experiment_tag }}-</code> under <code>{{ diag.results_root }}</code>.
+    Most likely causes: nothing's been synced yet ("Sync now" on the Sync page), the experiment tag in the
+    filename doesn't actually match (check a filename directly on Quest), or <code>results_subdir</code> in
+    <code>config.yaml</code> points somewhere other than Quest's real <code>SAVE_DIRECTORY</code> (that's set in
+    <code>ratinabox/hsw/.env</code>, separately from this app's config -- worth double-checking they agree).
+  </div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3>Unmatched iterations ({{ diag.unmatched_count }}{% if diag.rows|length < diag.unmatched_count %}, showing first {{ diag.rows|length }}{% endif %})</h3>
+  {% for row in diag.rows %}
+  <div style="margin-bottom:1rem; border-bottom:1px solid var(--border); padding-bottom:0.75rem;">
+    <p><strong>Task {{ row.array_task_index }}</strong>{% if row.closest_log %} — closest candidate: <code>{{ row.closest_log }}</code>{% endif %}</p>
+    {% if row.mismatches %}
+    <table>
+      <tr><th>Param</th><th>Iteration expects</th><th>Log has</th></tr>
+      {% for k, vals in row.mismatches.items() %}
+      <tr>
+        <td>{{ k }}</td>
+        <td>{{ vals[0] }}</td>
+        <td>{{ vals[1] if vals[1] is not none else '(missing from log header entirely)' }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% elif diag.candidate_count == 0 %}
+    <p class="muted">No candidates to compare against.</p>
+    {% else %}
+    <p class="muted">No mismatches against the closest candidate -- this should have matched already; worth a second look.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% if not diag.rows %}
+  <p class="muted">Nothing unmatched.</p>
+  {% endif %}
+</div>
+
+<a class="btn secondary" href="/jobs/{{ job['id'] }}">Back to job</a>
+{% endblock %}

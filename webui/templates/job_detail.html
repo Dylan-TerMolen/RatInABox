@@ -64,11 +64,15 @@
   {% if iterations %}
   <div style="overflow-x:auto">
   <table>
-    <tr><th>#</th><th>Params</th><th>State</th><th>Log</th></tr>
+    <tr>
+      <th>#</th>
+      {% for col in param_columns %}<th>{{ col }}</th>{% endfor %}
+      <th>State</th><th>Log</th>
+    </tr>
     {% for it in iterations %}
     <tr>
       <td>{{ it.array_task_index }}</td>
-      <td class="muted">{% for k, v in it.params.items() %}{{ k }}={{ v }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</td>
+      {% for col in param_columns %}<td class="muted">{{ it.params.get(col, '—') }}</td>{% endfor %}
       <td>{% if it.task_state %}<span class="badge {{ it.task_state.state }}">{{ it.task_state.state }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
       <td>{% if it.log_file_path %}<a class="btn secondary" href="/results/view?path={{ it.log_file_path | urlencode }}">View</a>{% else %}<span class="muted">—</span>{% endif %}</td>
     </tr>
@@ -91,9 +95,10 @@
   {% endif %}
   {% endif %}
 
-  <form method="post" action="/jobs/{{ job['id'] }}/recompute-iterations" style="margin-top:0.75rem">
+  <form method="post" action="/jobs/{{ job['id'] }}/recompute-iterations" style="margin-top:0.75rem; display:inline">
     <button class="btn secondary" type="submit">Recompute iterations from script</button>
   </form>
+  <a class="btn secondary" href="/jobs/{{ job['id'] }}/debug-matching" style="margin-top:0.75rem">Debug matching</a>
 </div>
 
 <div class="card">
