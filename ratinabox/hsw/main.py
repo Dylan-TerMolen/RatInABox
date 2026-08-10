@@ -56,7 +56,7 @@ data = scipy.io.loadmat(matlab_file_path)
 position_data_envA = data['envA313_531']
 position_data_envB = data['envB313_602']
 
-num_neurons = 80
+num_neurons = 132
 
 grid_param_names = MODEL_GRID_PARAMS[args.model_type]
 grid_values = [getattr(args, p) for p in grid_param_names]

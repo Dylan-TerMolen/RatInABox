@@ -1,8 +1,10 @@
 """High-level specs: for a 3-neuron population (one place-only, one task-only,
 one place+task), the independent and place-dependent TEBC models must compute the exact,
 hand-derivable firing rate at a moment during the CS and a moment during the US.
-They must also stop applying the balance blend the instant the animal leaves a
-trial, even if the tEBC response itself hasn't decayed back to zero yet.
+They must also gate off every task-driven contribution -- the balance blend for
+place+task cells, and the raw response for task-only cells -- the instant the
+animal leaves a trial, even if the tEBC response itself hasn't decayed back to
+zero yet.
 
 Design:
   - The place-responsive neurons' field centres are pinned to the agent's exact
@@ -26,9 +28,11 @@ import numpy as np
 import pytest
 
 from ratinabox.Neurons import PlaceCells
+from ratinabox.hsw.combined_place_tebc import BASELINE_FR
 from ratinabox.hsw.environment_builder import build_rectangular_environment
 from ratinabox.hsw.independent_model.TEBC import TEBC as IndependentTEBC
 from ratinabox.hsw.place_dependent_model.TEBC import TEBC as PlaceDependentTEBC
+from ratinabox.hsw.place_dependent_model.TEBC import TASK_ONLY_BASELINE
 from ratinabox.hsw.tebc_agent import TebcAgent
 from ratinabox.hsw.tests.conftest import CS_CHECK_STEPS, STEPS_CS_TO_US
 
@@ -128,7 +132,7 @@ def test_place_dependent_model_firing_rates_during_cs_and_us(fresh_agent, no_jit
     cs_position = fresh_agent.pos.copy()
 
     model = _build_model(PlaceDependentTEBC, fresh_agent, cs_position)
-    assert model.task_only_baseline == 0.5  # default; the task-only cell's amplitude below relies on it
+    assert model.task_only_baseline == TASK_ONLY_BASELINE  # default; the task-only cell's amplitude below relies on it
 
     # --- CS checkpoint (time_since_cs == 0.0) ---
     place_fr_cs = 12.0 * (VELOCITY_POLY(WALK_SPEED_CM_S) / 30)  # == 2.0926592107, same derivation as independent
@@ -215,9 +219,10 @@ def _build_off_trial_agent():
 
 
 def test_balance_has_no_effect_outside_a_trial(no_jitter):
-    """The balance blend must switch off the instant the animal leaves a trial,
-    even though the tEBC response is still active (hasn't decayed to zero yet):
-    a place+task cell should fall back to its pure place rate, not a blend."""
+    """Every task-driven contribution must switch off the instant the animal leaves
+    a trial, even though the tEBC response is still active (hasn't decayed to zero
+    yet): a place+task cell falls back to its pure place rate (not a blend), and a
+    task-only cell falls back to baseline (not its raw response)."""
     agent = _build_off_trial_agent()
     model = _build_model(IndependentTEBC, agent, pinned_centre=np.array([0.5, 0.5]))
 
@@ -230,10 +235,13 @@ def test_balance_has_no_effect_outside_a_trial(no_jitter):
     balance = BALANCE[MIXED]  # 0.3
     task_fr_would_be = 12.0  # toy_response(time_since_cs, amplitude=12) -> in the CS window -> 12
     blend_if_ungated = balance * task_fr_would_be + (1 - balance) * place_fr[MIXED]
-    # Sanity check the test is non-vacuous: without the in-trial gate, the blend
-    # really would differ from pure place, so the final assertion can catch its absence.
+    # Sanity check the test is non-vacuous: without the in-trial gate, the blend and
+    # the task-only response really would differ from their gated fallbacks, so the
+    # final assertions can catch the gate's absence.
     assert not np.isclose(blend_if_ungated, place_fr[MIXED])
+    assert not np.isclose(task_fr_would_be, BASELINE_FR)
 
     model.update()
 
     assert model.firingrate[MIXED] == pytest.approx(place_fr[MIXED])
+    assert model.firingrate[TASK_ONLY] == pytest.approx(BASELINE_FR)

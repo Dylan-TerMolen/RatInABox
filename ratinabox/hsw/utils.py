@@ -2,6 +2,11 @@ import numpy as np
 from scipy import stats
 from scipy.interpolate import interp1d
 
+# Fixed resampling rate interpolate_position_data resamples trajectories to (~30 Hz,
+# matching the rig's original sample rate). Also doubles as the spike-count bin window
+# T in simulate_envs.simulate_agent -- one bin per simulated timestep.
+SIMULATION_STEP_SECONDS = 1 / 30
+
 # TODO: deprecate in favour of args_parser.parse_list once all callers use args_parser
 def parse_list(arg_value):
     if isinstance(arg_value, list):
@@ -14,6 +19,17 @@ def parse_list(arg_value):
         return [float(item) for item in arg_value.split(',')]
     else:
         return [float(arg_value)]
+
+def num_place_cells_for(num_neurons, percent_place_cells):
+    """How many of num_neurons carry a place field, given percent_place_cells.
+
+    percent_place_cells may be a bare float or a single-element list (some
+    call sites pass grid values through as lists), hence the unwrap.
+    """
+    if isinstance(percent_place_cells, list):
+        percent_place_cells = float(percent_place_cells[0])
+    return int(round(num_neurons * percent_place_cells))
+
 
 def log_duplicate_timestamps(times):
     _, counts = np.unique(times, return_counts=True)
@@ -68,7 +84,7 @@ def _map_trial_markers_to_interpolated_times(original_times, trial_markers, inte
 
     return interpolated_trial_markers
 
-def interpolate_position_data(position_data, step=1/30):
+def interpolate_position_data(position_data, step=SIMULATION_STEP_SECONDS):
     """
     Interpolate position and trial marker data to uniform time steps.
 
