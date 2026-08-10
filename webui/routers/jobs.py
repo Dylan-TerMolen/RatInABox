@@ -15,13 +15,13 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
 def _populate_iterations(job_id: int, script_text: str) -> int:
-    """Parse the sweep out of a job's script text (works for both generated
-    and hand-written scripts, see grid_parser.py), (re)write its
-    job_iterations rows, and correct jobs.array_count to match -- the two
-    must agree, since the Progress card divides squeue/sacct's completed
-    count by array_count. Returns the number of iterations written."""
-    axes = grid_parser.parse_grid_axes(script_text)
-    combos = grid_parser.expand_combinations(axes)
+    """Parse the full resolved param set out of a job's script text --
+    swept axis values plus every fixed param (e.g. percent_place_cells when
+    it's pinned, not swept) -- works for both generated and hand-written
+    scripts, see grid_parser.py. (Re)writes job_iterations and corrects
+    jobs.array_count to match -- the two must agree. Returns the number of
+    iterations written."""
+    combos = grid_parser.build_iteration_combos(script_text)
     db.replace_job_iterations(job_id, combos)
     db.set_array_count(job_id, len(combos))
     return len(combos)
@@ -154,9 +154,16 @@ def job_detail(request: Request, job_id: int):
     if not iterations and job["experiment_tag"]:
         fallback_logs = results.logs_for_experiment(job["experiment_tag"])
 
+    # "Completed" means an iteration has a matched .log -- a real result
+    # landed, confirmed by Sync -- not SLURM's own COMPLETED task state
+    # (which only means the process exited without being killed, and can be
+    # true even when the run produced nothing usable).
+    completed_iterations = sum(1 for it in iterations if it["log_file_path"])
+
     return view.templates.TemplateResponse("job_detail.html", {
         "request": request, "job": job, "script_text": script_text, "last_status": last_status,
         "flash": flash, "iterations": iterations, "fallback_logs": fallback_logs,
+        "completed_iterations": completed_iterations,
     })
 
 

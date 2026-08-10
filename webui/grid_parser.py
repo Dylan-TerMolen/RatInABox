@@ -22,6 +22,16 @@ from dataclasses import dataclass
 _ARRAY_DECL_RE = re.compile(r"^(\w+)_VALUES=\(([^)]*)\)", re.MULTILINE)
 _ASSIGN_FROM_ARRAY_RE = re.compile(r"\b(\w+)=\$\{(\w+)_VALUES\[")
 _FLAG_VAR_RE = re.compile(r'--([a-zA-Z_][\w-]*)[\s=]+"?\$\{(\w+)\}"?')
+# Any --flag token + whatever comes after it, var-reference or bare literal.
+_FLAG_VALUE_RE = re.compile(r'--([a-zA-Z_][\w-]*)[\s=]+"?(\$\{\w+\}|[^\s"]+)"?')
+_VAR_REF_RE = re.compile(r"^\$\{(\w+)\}$")
+
+
+def _strip_comment_lines(script_text: str) -> str:
+    """Drop full-comment lines (SBATCH directives, shebang, actual comments)
+    before scanning for --flag tokens -- #SBATCH --account=... etc. would
+    otherwise be misread as CLI args."""
+    return "\n".join(line for line in script_text.splitlines() if not line.lstrip().startswith("#"))
 
 
 @dataclass
@@ -31,6 +41,7 @@ class GridAxis:
 
 
 def parse_grid_axes(script_text: str) -> list[GridAxis]:
+    script_text = _strip_comment_lines(script_text)
     arrays = dict(_ARRAY_DECL_RE.findall(script_text))          # array_name -> raw values str
     scalar_to_array = dict(_ASSIGN_FROM_ARRAY_RE.findall(script_text))  # scalar_var -> array_name
     flag_to_scalar = dict(_FLAG_VAR_RE.findall(script_text))    # flag -> scalar_var
@@ -45,6 +56,51 @@ def parse_grid_axes(script_text: str) -> list[GridAxis]:
         if flag and values:
             axes.append(GridAxis(flag_name=flag, values=values))
     return axes
+
+
+def _resolve_plain_scalar(script_text: str, var_name: str) -> str | None:
+    """Value of a plain (non-array-indexed) `VAR=value` assignment, quotes
+    stripped. None if there's no such assignment, or it's actually the
+    array-indexed form (that's a swept axis, handled separately)."""
+    m = re.search(rf"^{re.escape(var_name)}=([^\n]+)$", script_text, re.MULTILINE)
+    if not m:
+        return None
+    value = m.group(1).strip()
+    if re.match(r"^\$\{\w+_VALUES\[", value):
+        return None  # array-indexed -- a swept axis, not a fixed scalar
+    return value.strip("\"'")
+
+
+def parse_fixed_params(script_text: str, swept_flags: set[str]) -> dict[str, str]:
+    """Every --flag passed to the command that *isn't* one of the swept
+    axes: resolves `--flag "${VAR}"` back to VAR's plain assignment, or
+    takes a bare `--flag value` literally. Skips a flag whose value can't be
+    resolved (e.g. references something built dynamically) rather than
+    guessing."""
+    script_text = _strip_comment_lines(script_text)
+    fixed = {}
+    for flag, raw_value in _FLAG_VALUE_RE.findall(script_text):
+        if flag in swept_flags or flag in fixed:
+            continue
+        var_ref = _VAR_REF_RE.match(raw_value)
+        if var_ref:
+            resolved = _resolve_plain_scalar(script_text, var_ref.group(1))
+            if resolved is not None:
+                fixed[flag] = resolved
+        else:
+            fixed[flag] = raw_value
+    return fixed
+
+
+def build_iteration_combos(script_text: str) -> list[dict[str, str]]:
+    """The full per-array-task param set -- swept axis values *and* every
+    fixed param the command was actually called with (e.g.
+    percent_place_cells when it's pinned rather than swept) -- so each
+    iteration's params reflect the complete resolved command, not just
+    what varies."""
+    axes = parse_grid_axes(script_text)
+    fixed = parse_fixed_params(script_text, swept_flags={a.flag_name for a in axes})
+    return [{**fixed, **combo} for combo in expand_combinations(axes)]
 
 
 def expand_combinations(axes: list[GridAxis]) -> list[dict[str, str]]:

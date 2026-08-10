@@ -40,17 +40,21 @@
   {% endif %}
 </div>
 
-{% if last_status %}
 <div class="card">
-  <h3>Progress <span class="muted">(as of {{ job['last_status_at'] }})</span></h3>
+  <h3>Progress</h3>
   <div class="stat-row">
-    <div class="stat"><span class="num">{{ last_status.done }}/{{ last_status.total_array_tasks }}</span>completed</div>
+    <div class="stat"><span class="num">{{ completed_iterations }}/{{ iterations|length }}</span>completed</div>
+    {% if last_status %}
     <div class="stat"><span class="num">{{ last_status.running }}</span>running</div>
     <div class="stat"><span class="num">{{ last_status.pending }}</span>pending</div>
     <div class="stat"><span class="num">{{ last_status.failed }}</span>failed</div>
+    {% endif %}
   </div>
+  <p class="help">Completed = iterations with a matched .log (updates on "Sync now"), not SLURM's own COMPLETED task
+     state -- a task can exit cleanly without producing a usable result.
+     {% if last_status %}Running/pending/failed are from squeue/sacct, as of {{ job['last_status_at'] }}.
+     {% else %}Click "Refresh status" below for running/pending/failed.{% endif %}</p>
 </div>
-{% endif %}
 
 <div class="card">
   <h3>Iterations <span class="muted">{% if iterations %}({{ iterations|length }}){% endif %}{% if job['experiment_tag'] %} — experiment: {{ job['experiment_tag'] }}{% endif %}</span></h3>
