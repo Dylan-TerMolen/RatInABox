@@ -17,13 +17,11 @@ router = APIRouter(prefix="/results", tags=["results"])
 
 def _allowed_roots() -> dict[str, Path]:
     roots = {}
-    for key in ("ratinabox", "hannahs_cebras"):
-        repo_cfg = config.repo_config(key)
-        if config.is_stubbed(repo_cfg.get("local_path")):
-            continue
+    repo_cfg = config.repo_config("ratinabox")
+    if not config.is_stubbed(repo_cfg.get("local_path")):
         root = Path(repo_cfg["local_path"]) / repo_cfg["results_subdir"]
         if root.is_dir():
-            roots[key] = root
+            roots["ratinabox"] = root
     return roots
 
 

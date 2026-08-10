@@ -1,6 +1,6 @@
 """Builds a SLURM `.sh` submission script from a chosen script + filled-in
 params, following the conventions already used by hand in
-SLURM/*.sh (hannahs-cebras) and ratinabox/hsw/*/SLURM_*.sh.
+ratinabox/hsw/*/SLURM_*.sh.
 
 Grid params: any param can be marked as a "grid axis" in the UI by passing a
 comma-separated value list instead of a single value. Multiple grid axes are
@@ -96,21 +96,13 @@ def build_command(*, repo: str, entry_point: str, conda_env: str,
 
     Returns (env_setup, command_line).
     """
-    if repo == "ratinabox":
-        repo_cfg = config.repo_config("ratinabox")
-        python_bin = f"${{HOME}}/miniconda3/envs/{conda_env}/bin/python"
-        script_path = f"{repo_cfg['remote_path']}/{entry_point}"
-        env_setup = 'eval "$(conda shell.bash hook)"\n'
-    else:
-        repo_cfg = config.repo_config("hannahs_cebras")
-        python_bin = "python"
-        script_path = f"{repo_cfg['remote_path']}/{entry_point}"
-        env_setup = (
-            'eval "$(conda shell.bash hook)"\n'
-            f"source activate {conda_env}\n"
-            f'export PYTHONPATH="${{PYTHONPATH}}:{repo_cfg["remote_path"]}"\n'
-            f'export PYTHONPATH="${{PYTHONPATH}}:{repo_cfg["remote_path"]}/scripts"\n'
-        )
+    if repo != "ratinabox":
+        raise ValueError(f"slurm_templates only knows how to build commands for repo='ratinabox', got {repo!r}")
+
+    repo_cfg = config.repo_config("ratinabox")
+    python_bin = f"${{HOME}}/miniconda3/envs/{conda_env}/bin/python"
+    script_path = f"{repo_cfg['remote_path']}/{entry_point}"
+    env_setup = 'eval "$(conda shell.bash hook)"\n'
 
     tokens = [python_bin, shlex.quote(script_path)]
     for name, flag, value in fixed_args:
@@ -150,17 +142,5 @@ def render_slurm_script(*, job_name: str, repo: str, entry_point: str,
     if grid_section:
         parts.append(grid_section)
     parts.append(f"mkdir -p {shlex.quote(output_dir)}\n")
-
-    if repo == "hannahs_cebras":
-        # hannahs-cebras scripts save output as a bare relative filename
-        # (e.g. np.savetxt("cond_lr...csv", ...)) -- there's no results/
-        # convention in that repo to write into, and by hand you'd just be
-        # sitting in the right directory when you ran `sbatch`. We aren't,
-        # so pin one explicitly and cd into it, or fail loudly rather than
-        # writing output wherever sbatch happened to be invoked from
-        # (webui_slurm/, mixed in with the uploaded scripts).
-        results_dir = f"{repo_cfg['remote_path']}/{repo_cfg['results_subdir']}"
-        parts.append(f"mkdir -p {shlex.quote(results_dir)} && cd {shlex.quote(results_dir)} || exit 1\n")
-
     parts.append(f"{command_line}\n")
     return "".join(parts), n

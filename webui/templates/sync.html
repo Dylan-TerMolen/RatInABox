@@ -5,15 +5,9 @@
    Nothing runs on a timer; click "Sync now" whenever you want fresh data.</p>
 
 <div class="card">
+  <p class="muted"><code>{{ repo_cfg.remote_path }}/{{ repo_cfg.results_subdir }}</code> &rarr;
+     <code>{{ repo_cfg.local_path }}/{{ repo_cfg.results_subdir }}</code></p>
   <form method="post" action="/sync">
-    <div class="field">
-      <label>Repo</label>
-      <select name="repo">
-        {% for key, cfg in repos.items() %}
-        <option value="{{ key }}">{{ key }} — {{ cfg.remote_path }}/{{ cfg.results_subdir }}</option>
-        {% endfor %}
-      </select>
-    </div>
     <button class="btn" type="submit">Sync now</button>
   </form>
 </div>

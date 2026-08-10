@@ -49,10 +49,9 @@ def index(request: Request):
     for field in ("host", "username", "identity_file"):
         if config.is_stubbed(cfg["quest"].get(field)):
             stub_warnings.append(f"quest.{field} is still a CHANGE_ME placeholder in webui/config.yaml")
-    for repo_key in ("ratinabox", "hannahs_cebras"):
-        repo_cfg = cfg["repos"][repo_key]
-        if config.is_stubbed(repo_cfg.get("local_path")) or config.is_stubbed(repo_cfg.get("remote_path")):
-            stub_warnings.append(f"repos.{repo_key} paths are still CHANGE_ME placeholders in webui/config.yaml")
+    repo_cfg = cfg["repos"]["ratinabox"]
+    if config.is_stubbed(repo_cfg.get("local_path")) or config.is_stubbed(repo_cfg.get("remote_path")):
+        stub_warnings.append("repos.ratinabox paths are still CHANGE_ME placeholders in webui/config.yaml")
     recent_jobs = db.list_jobs()[:10]
     return view.templates.TemplateResponse("index.html", {
         "request": request, "stub_warnings": stub_warnings, "recent_jobs": recent_jobs,

@@ -25,7 +25,7 @@ def new_raw_form(request: Request):
 
 
 @router.post("/new-raw")
-async def create_raw_job(request: Request, repo: str = Form(...), job_name: str = Form(...),
+async def create_raw_job(request: Request, job_name: str = Form(...),
                           sh_file: UploadFile = File(...)):
     job_name = re.sub(r"[^a-zA-Z0-9_\-]+", "_", job_name.strip()) or "uploaded_job"
     gen_dir = config.generated_scripts_dir()
@@ -36,7 +36,7 @@ async def create_raw_job(request: Request, repo: str = Form(...), job_name: str 
     local_path.write_bytes(contents)
 
     job_id = db.insert_job(
-        repo=repo, script_id="raw-upload", script_display_name=sh_file.filename or "uploaded.sh",
+        repo="ratinabox", script_id="raw-upload", script_display_name=sh_file.filename or "uploaded.sh",
         command="(uploaded .sh script, not generated)", params={}, grid=None, array_count=1,
         job_name=job_name, slurm_script_local_path=str(local_path),
     )

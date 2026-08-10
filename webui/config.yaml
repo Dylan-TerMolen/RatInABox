@@ -11,9 +11,12 @@ quest:
   # copied anywhere, just referenced via `ssh -i`.
   identity_file: "~/.ssh/slurm_pk"
 
-# One entry per repo this tool can generate/submit jobs for. local_path is where
-# that repo lives on THIS machine (the one running the web UI); remote_path is
-# where it lives on Quest.
+# One entry per repo this tool can generate/submit jobs for. Just ratinabox --
+# hannahs-cebras is a decoding utility library that hsw/main.py imports
+# (installed as the `hannahs_cebras` pip package on Quest), not something we
+# submit jobs to or need scripts/params for. local_path is where the repo
+# lives on THIS machine (the one running the web UI); remote_path is where
+# it lives on Quest.
 repos:
   ratinabox:
     local_path: "/Users/dylantermolen/Projects/RatInABox"
@@ -21,17 +24,6 @@ repos:
     # Real existing convention (ratinabox/hsw/config.py's get_save_directory())
     # -- main.py always writes here itself, regardless of cwd.
     results_subdir: "saved/results"
-  hannahs_cebras:
-    local_path: "CHANGE_ME e.g. /Users/you/Projects/Hannahs-CEBRAs"
-    remote_path: "CHANGE_ME e.g. /home/CHANGE_ME_NETID/Programming/Hannahs-CEBRAs"
-    # No pre-existing results convention in this repo -- its scripts just
-    # np.savetxt/to_csv a bare relative filename into whatever the working
-    # directory happens to be. This is an app-owned directory: the generated
-    # SLURM script mkdir -p's and `cd`s into it before running (see
-    # slurm_templates.py), so app-submitted jobs' output always lands here,
-    # in sync with what "Sync now" pulls down. Doesn't affect how you run
-    # things by hand.
-    results_subdir: "webui_results"
 
 # Per-script form scoping. Params not listed here still work exactly as
 # before (the script's own default applies, flag simply isn't passed) -- they
