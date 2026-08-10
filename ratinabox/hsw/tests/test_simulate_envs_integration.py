@@ -20,8 +20,8 @@ import pytest
 from ratinabox.hsw.simulate_envs import simulate_experiment
 from ratinabox.hsw.simulation_helpers import filter_eyeblink_trials, filter_by_velocity
 
-# build_model hardcodes 80 neurons per TEBC class (see simulate_envs.py), so the
-# distributions/masks simulate_experiment builds must be sized to match.
+# build_model now threads this straight through to each TEBC class instead of
+# hardcoding 80 (see simulate_envs.py), so this no longer has to match a fixed value.
 NUM_NEURONS = 80
 
 MODEL_TYPES = ["independent", "place_dependent", "arousal_mediated"]
@@ -63,7 +63,8 @@ def test_simulate_experiment_runs_full_data_path(model_type, holdover, position_
     for spikes, firingrate in [(spikesA, firingrate_envA), (spikesB, firingrate_envB)]:
         assert spikes.shape == firingrate.shape
         assert spikes.shape[0] == NUM_NEURONS
-        assert np.isin(spikes, [0, 1]).all()
+        assert (spikes >= 0).all()  # binned Poisson spike counts, no longer clipped to {0, 1}
+        assert np.issubdtype(spikes.dtype, np.integer)
         assert np.isfinite(firingrate).all()
 
     # The rest of main.py's pre-decoding data path, run on the same

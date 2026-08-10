@@ -4,6 +4,9 @@ import numpy as np
 
 from ratinabox.Neurons import PlaceCells
 
+from ratinabox.hsw import utils
+from ratinabox.hsw.environment_builder import sample_ellipse_positions
+
 # Near-silent floor for cells with no place field and/or no task drive.
 BASELINE_FR = 0.02 / 30
 
@@ -13,8 +16,9 @@ class CombinedPlaceTebc(PlaceCells):
     carrying a place field (percent_place_cells) and being tEBC-responsive.
 
         place-only  : spatial firing only
-        place+task  : spatial firing blended with the tEBC response by `balance`
-        task-only   : tEBC response only (no place field)
+        place+task  : spatial firing blended with the tEBC response by `balance` (in-trial only;
+                      falls back to pure spatial firing outside a trial)
+        task-only   : tEBC response only (in-trial only; baseline outside a trial)
         silent      : neither (baseline)
 
     Only place-responsive cells receive field centres, distributed evenly across
@@ -60,9 +64,7 @@ class CombinedPlaceTebc(PlaceCells):
 
     def _build_place_responsive_mask(self, percent_place_cells):
         """Randomly choose which cells carry a place field (round(N * percent))."""
-        if isinstance(percent_place_cells, list):
-            percent_place_cells = float(percent_place_cells[0])
-        num_place = int(round(self.n * percent_place_cells))
+        num_place = utils.num_place_cells_for(self.n, percent_place_cells)
         mask = np.full(self.n, False)
         mask[random.sample(range(self.n), num_place)] = True
         return mask
@@ -72,8 +74,22 @@ class CombinedPlaceTebc(PlaceCells):
         num_place = np.count_nonzero(self.place_responsive_indices)
         if num_place == 0:
             return
-        self.place_cell_centres[self.place_responsive_indices] = self.agent.Environment.sample_positions(
-            n=num_place, method="uniform_jitter")
+        self.place_cell_centres[self.place_responsive_indices] = self._sample_place_centres(num_place)
+
+    def _sample_place_centres(self, num_place):
+        """Env-shape-aware centre placement.
+
+        Elliptical envs use the golden-angle sunflower spiral (see
+        environment_builder.sample_ellipse_positions), which gives even areal coverage
+        with no rejection sampling. Every other shape keeps RatInABox's own
+        bounding-box grid tiling, which is already exact for a rectangle (a rectangle
+        is its own bounding box, so nothing ever falls outside it) but breaks down for
+        non-rectangular boundaries -- see sample_ellipse_positions's docstring.
+        """
+        ellipse_geometry = getattr(self.agent.Environment, 'ellipse_geometry', None)
+        if ellipse_geometry is not None:
+            return sample_ellipse_positions(ellipse_geometry, num_place)
+        return self.agent.Environment.sample_positions(n=num_place, method="uniform_jitter")
 
     def _set_category_masks(self):
         self.place_only_indices = self.place_responsive_indices & ~self.task_responsive_indices
@@ -116,11 +132,20 @@ class CombinedPlaceTebc(PlaceCells):
         raise NotImplementedError
 
     def _combine_by_category(self, place_fr, task_fr):
-        """Place-only -> place, task-only -> task, place+task -> balance blend, silent -> baseline."""
+        """Place-only -> place, task-only -> task, place+task -> balance blend, silent -> baseline.
+
+        Outside a trial, every task-driven category falls back to its trial-off state --
+        task-only to baseline, place+task to pure place -- even if the tEBC response curve
+        hasn't decayed to zero yet (response_profiles are evaluated on time_since_cs alone,
+        which keeps counting up after the trial marker itself has already returned to
+        inter-trial)."""
         firingrate = np.full(self.n, BASELINE_FR)
         firingrate[self.place_only_indices] = place_fr[self.place_only_indices]
-        firingrate[self.task_only_indices] = task_fr[self.task_only_indices]
-        mixed = self.place_task_indices
-        balance = self.task_to_place_weight_distribution
-        firingrate[mixed] = balance[mixed] * task_fr[mixed] + (1 - balance[mixed]) * place_fr[mixed]
+        if self.agent.in_trial:
+            firingrate[self.task_only_indices] = task_fr[self.task_only_indices]
+            mixed = self.place_task_indices
+            balance = self.task_to_place_weight_distribution
+            firingrate[mixed] = balance[mixed] * task_fr[mixed] + (1 - balance[mixed]) * place_fr[mixed]
+        else:
+            firingrate[self.place_task_indices] = place_fr[self.place_task_indices]
         return firingrate

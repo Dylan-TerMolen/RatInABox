@@ -1,5 +1,17 @@
+from collections import namedtuple
+
 from ratinabox.Environment import Environment
 import numpy as np
+
+# Centre + semi-axes of a built ellipse, stashed on the Environment so downstream
+# code (place-field placement) can sample from the ellipse's own geometry instead
+# of its bounding box. See sample_ellipse_positions.
+EllipseGeometry = namedtuple('EllipseGeometry', ['centre_x', 'centre_y', 'radius_x', 'radius_y'])
+
+# Successive golden-angle rotations never repeat a fraction of a full turn, so points
+# placed at increasing radius never line up into radial spokes. See sample_ellipse_positions.
+GOLDEN_ANGLE = np.pi * (3 - np.sqrt(5))
+
 
 def _calculate_boundaries(positions):
     min_x = np.min(positions[:, 0])
@@ -54,7 +66,37 @@ def build_elliptical_environment(positions, n_boundary_points=256, margin=5e-3):
         centre_y + radius_y * np.sin(theta),
     ])
 
-    return Environment(params={
+    env = Environment(params={
         'boundary': boundary.tolist(),
         'boundary_conditions': 'solid'
     })
+    env.ellipse_geometry = EllipseGeometry(centre_x, centre_y, radius_x, radius_y)
+    return env
+
+
+def sample_ellipse_positions(ellipse_geometry, n, jitter_frac=0.1):
+    """n positions spread evenly across an ellipse via the golden-angle ("sunflower") spiral.
+
+    Radius follows an equal-area schedule (sqrt((k + 0.5) / n)) so each point owns an
+    equal slice of the ellipse's area rather than being packed densest at the centre;
+    angle advances by GOLDEN_ANGLE each step so points never fall into radial spokes.
+    Every point lands inside the ellipse by construction (r < 1 for all k < n), so --
+    unlike Environment.sample_positions's bounding-box grid, which discards whatever
+    tiled point falls outside a non-rectangular boundary and replaces it with an
+    uncorrelated random point (see build_elliptical_environment) -- this needs no
+    rejection sampling and stays even for any n.
+
+    jitter_frac scales a random radial nudge by each point's remaining headroom to the
+    boundary (1 - r) and a random angular nudge by a fraction of the golden angle, so a
+    jittered point can never land outside the ellipse.
+    """
+    k = np.arange(n)
+    r = np.sqrt((k + 0.5) / n)
+    theta = k * GOLDEN_ANGLE
+    if jitter_frac:
+        headroom = 1 - r
+        r = r + np.random.uniform(-jitter_frac, jitter_frac, n) * headroom
+        theta = theta + np.random.uniform(-jitter_frac, jitter_frac, n) * GOLDEN_ANGLE
+    x = ellipse_geometry.centre_x + ellipse_geometry.radius_x * r * np.cos(theta)
+    y = ellipse_geometry.centre_y + ellipse_geometry.radius_y * r * np.sin(theta)
+    return np.column_stack([x, y])
