@@ -28,14 +28,30 @@ def run_sync(request: Request):
     db.insert_sync_run(repo="ratinabox", remote_path=remote_dir, local_path=local_dir,
                         success=result.ok, output=result.combined_output)
 
-    matched_count = None
-    if result.ok:
-        # New .log files may have landed -- see if any pending iterations
-        # now have a match. Pure local file/DB work, no extra Quest round trip.
-        matched_count = results.match_unmatched_iterations()
+    # Always try matching, even if rsync reported a nonzero exit -- rsync
+    # can exit non-zero for all sorts of partial/transient reasons (one
+    # permission-denied file, a dropped connection) while still having
+    # transferred everything else fine. Skipping this on result.ok==False
+    # meant a real sync's transferred files could sit unmatched
+    # indefinitely. Pure local file/DB work either way, no extra Quest round trip.
+    matched_count = results.match_unmatched_iterations()
 
     runs = db.list_sync_runs(limit=20)
     return view.templates.TemplateResponse("sync.html", {
         "request": request, "runs": runs, "repo_cfg": repo_cfg, "last_result": result,
         "matched_count": matched_count,
+    })
+
+
+@router.post("/rematch")
+def rematch_only(request: Request):
+    """Re-run iteration<->log matching against whatever's already on disk
+    locally, without an rsync round trip -- for when files are already
+    there (e.g. a previous sync's match pass got skipped) and you just want
+    to retry the matching itself."""
+    matched_count = results.match_unmatched_iterations()
+    runs = db.list_sync_runs(limit=20)
+    return view.templates.TemplateResponse("sync.html", {
+        "request": request, "runs": runs, "repo_cfg": config.repo_config("ratinabox"),
+        "matched_count": matched_count, "rematch_only": True,
     })

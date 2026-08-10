@@ -7,18 +7,23 @@
 <div class="card">
   <p class="muted"><code>{{ repo_cfg.remote_path }}/{{ repo_cfg.results_subdir }}</code> &rarr;
      <code>{{ repo_cfg.local_path }}/{{ repo_cfg.results_subdir }}</code></p>
-  <form method="post" action="/sync">
+  <form method="post" action="/sync" style="display:inline">
     <button class="btn" type="submit">Sync now</button>
   </form>
+  <form method="post" action="/sync/rematch" style="display:inline">
+    <button class="btn secondary" type="submit">Re-run matching only</button>
+  </form>
+  <p class="help">"Re-run matching only" re-checks whatever's already on disk locally against pending iterations,
+     without an rsync round trip -- use it if files are already there but didn't get matched (matching always
+     runs as part of "Sync now" too, even if rsync itself reports an error, since a nonzero rsync exit doesn't
+     mean nothing transferred).</p>
 </div>
 
-{% if last_result %}
+{% if matched_count is not none %}
 <div class="card">
-  <h3>Last run {{ 'succeeded' if last_result.ok else 'failed' }}</h3>
-  {% if matched_count is not none %}
+  <h3>{% if rematch_only %}Rematch{% else %}Last sync{% endif %} {% if last_result %}{{ 'succeeded' if last_result.ok else 'reported an error' }}{% endif %}</h3>
   <p class="muted">{{ matched_count }} job iteration{{ 's' if matched_count != 1 }} matched to a .log file this pass.</p>
-  {% endif %}
-  <pre class="script">{{ last_result.combined_output }}</pre>
+  {% if last_result %}<pre class="script">{{ last_result.combined_output }}</pre>{% endif %}
 </div>
 {% endif %}
 

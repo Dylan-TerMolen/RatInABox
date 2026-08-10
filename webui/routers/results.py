@@ -147,6 +147,16 @@ def diagnose_unmatched(job_id: int, limit: int = 20) -> dict:
     rows = []
     for it in unmatched[:limit]:
         it_params = json.loads(it["params_json"])
+        if not it_params:
+            # _iteration_matches_log() refuses to match on zero params (an
+            # empty comparison would trivially "match" anything) -- surface
+            # that explicitly rather than silently reporting "0 candidates
+            # checked, no mismatches" which reads as "should have matched".
+            rows.append({
+                "array_task_index": it["array_task_index"], "params": it_params,
+                "closest_log": None, "mismatches": {}, "no_params": True,
+            })
+            continue
         best_name, best_mismatches = None, None
         for name, log_params in parsed_candidates:
             mismatches = {k: (v, log_params.get(k)) for k, v in it_params.items()
@@ -155,7 +165,7 @@ def diagnose_unmatched(job_id: int, limit: int = 20) -> dict:
                 best_name, best_mismatches = name, mismatches
         rows.append({
             "array_task_index": it["array_task_index"], "params": it_params,
-            "closest_log": best_name, "mismatches": best_mismatches or {},
+            "closest_log": best_name, "mismatches": best_mismatches or {}, "no_params": False,
         })
 
     return {

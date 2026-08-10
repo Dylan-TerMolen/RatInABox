@@ -34,7 +34,11 @@
   {% for row in diag.rows %}
   <div style="margin-bottom:1rem; border-bottom:1px solid var(--border); padding-bottom:0.75rem;">
     <p><strong>Task {{ row.array_task_index }}</strong>{% if row.closest_log %} — closest candidate: <code>{{ row.closest_log }}</code>{% endif %}</p>
-    {% if row.mismatches %}
+    {% if row.no_params %}
+    <p class="muted">This iteration has zero params recorded (empty params_json) -- the matcher refuses to match on
+       nothing, since an empty comparison would trivially match any log. Click "Recompute iterations from script"
+       on the job page to re-derive it with the current parser.</p>
+    {% elif row.mismatches %}
     <table>
       <tr><th>Param</th><th>Iteration expects</th><th>Log has</th></tr>
       {% for k, vals in row.mismatches.items() %}
@@ -48,7 +52,10 @@
     {% elif diag.candidate_count == 0 %}
     <p class="muted">No candidates to compare against.</p>
     {% else %}
-    <p class="muted">No mismatches against the closest candidate -- this should have matched already; worth a second look.</p>
+    <p class="muted">No mismatches against the closest candidate, and this iteration has real params to match on --
+       it should already be matched. Try "Re-run matching only" on the Sync page (matching used to only run when
+       rsync reported success, which could silently skip real transfers on a nonzero-but-partial rsync exit --
+       fixed, but anything synced before the fix needs one more matching pass to pick up).</p>
     {% endif %}
   </div>
   {% endfor %}
