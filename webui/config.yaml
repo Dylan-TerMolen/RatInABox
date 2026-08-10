@@ -36,6 +36,7 @@ repos:
 script_forms:
   "ratinabox:hsw_main":
     visible_params:
+      - experiment
       - holdovers
       - percent_task_responsive_cells
       - percent_is_task_responsive_distribution

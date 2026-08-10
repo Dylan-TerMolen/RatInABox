@@ -3,6 +3,10 @@
 <h2>Upload existing .sh</h2>
 <p class="muted">For scripts you've already written by hand, or ones the auto-generator doesn't cover yet.
    This is submitted to Quest exactly as uploaded -- no templating.</p>
+<p class="muted">Already submitted this one yourself (e.g. from before this tool existed)? Fill in its sbatch
+   job id below to start tracking it here right away, instead of Upload+Queue re-submitting it. Don't have
+   the id handy? Leave it blank -- you can add it from the job page once you look it up
+   (<code>squeue -u tfl2886</code>).</p>
 
 <form method="post" action="/jobs/new-raw" enctype="multipart/form-data" class="card">
   <div class="field">
@@ -12,6 +16,10 @@
   <div class="field">
     <label>.sh file</label>
     <input type="file" name="sh_file" accept=".sh" required>
+  </div>
+  <div class="field">
+    <label>Sbatch job id (optional -- only if already submitted)</label>
+    <input type="text" name="sbatch_job_id" placeholder="e.g. 6284213">
   </div>
   <button class="btn" type="submit">Save</button>
 </form>

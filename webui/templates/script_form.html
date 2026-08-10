@@ -47,10 +47,14 @@
           <datalist id="choices__{{ p.name }}">
             {% for c in p.choices %}<option value="{{ c }}">{% endfor %}
           </datalist>
+        {% elif p.name == 'experiment' %}
+          <input type="text" name="value__{{ p.name }}" value="{{ default_job_name }}">
         {% else %}
           <input type="text" name="value__{{ p.name }}" value="{{ p.default if p.default is not none else '' }}">
         {% endif %}
-        {% if p.help %}<div class="help">{{ p.help }}</div>{% endif %}
+        {% if p.name == 'experiment' %}
+          <div class="help">{{ p.help }} Defaults to the job name above -- this app matches jobs to their .log results by this tag, so leaving it as-is keeps that link 1:1.</div>
+        {% elif p.help %}<div class="help">{{ p.help }}</div>{% endif %}
       </div>
       <div class="grid-toggle">
         {% if p.type != 'bool' %}

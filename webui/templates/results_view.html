@@ -4,29 +4,74 @@
 
 {% if error %}<div class="warn-box">{{ error }}</div>{% endif %}
 
-{% if columns %}
 <div class="card">
-  <p class="muted">{{ row_count }} rows, {{ columns|length }} columns.</p>
-  <form method="get" action="/results/view">
+  <h3>Run parameters</h3>
+  {% if parsed.run_params %}
+  <table>
+    {% for k, v in parsed.run_params.items() %}
+    <tr><td class="muted">{{ k }}</td><td>{{ v }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No run-parameters header found -- not a hsw/main.py log, or it's still being written.</p>
+  {% endif %}
+</div>
+
+{% if parsed.cebra_config %}
+<div class="card">
+  <h3>CEBRA config</h3>
+  {% for label, cfg in parsed.cebra_config.items() %}
+  <p class="muted" style="margin-bottom:0.2rem">[{{ label }}]</p>
+  <table style="margin-bottom:0.75rem">
+    {% for k, v in cfg.items() %}
+    <tr><td class="muted">{{ k }}</td><td>{{ v }}</td></tr>
+    {% endfor %}
+  </table>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <h3>Iterations ({{ parsed.iterations|length }})</h3>
+  {% if parsed.iterations %}
+  <div style="overflow-x:auto">
+  <table>
+    <tr><th>#</th><th>Parameters</th>
+      <th>place A→A</th><th>place B→B</th><th>place A→B</th><th>place shuffA→A</th><th>place shuffA→B</th>
+      <th>task A→A</th><th>task B→B</th><th>task A→B</th><th>task shuffA→A</th><th>task shuffA→B</th>
+    </tr>
+    {% for it in parsed.iterations %}
+    <tr>
+      <td>{{ loop.index0 }}</td>
+      <td class="muted">{{ it.identifier }}</td>
+      {% for k in ['A->A', 'B->B', 'A->B', 'shuffA->A', 'shuffA->B'] %}
+      <td>{{ '%.4f' % it.place[k] if it.place.get(k) is not none else 'n/a' }}</td>
+      {% endfor %}
+      {% for k in ['A->A', 'B->B', 'A->B', 'shuffA->A', 'shuffA->B'] %}
+      <td>{{ '%.4f' % it.task[k] if it.task.get(k) is not none else 'n/a' }}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+
+  <form method="get" action="/results/view" style="margin-top:1rem">
     <input type="hidden" name="path" value="{{ path }}">
-    <div class="row">
-      <div class="field">
-        <label>X column</label>
-        <select name="x">
-          {% for c in columns %}<option value="{{ c }}" {% if c == x %}selected{% endif %}>{{ c }}</option>{% endfor %}
-        </select>
-      </div>
-      <div class="field">
-        <label>Y column</label>
-        <select name="y">
-          {% for c in columns %}<option value="{{ c }}" {% if c == y %}selected{% endif %}>{{ c }}</option>{% endfor %}
-        </select>
-      </div>
+    <div class="field" style="max-width:280px">
+      <label>Plot metric across iterations</label>
+      <select name="metric">
+        <option value="">-- choose --</option>
+        {% for m in metric_options %}
+        <option value="{{ m }}" {% if m == metric %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
     </div>
     <button class="btn" type="submit">Plot</button>
   </form>
+  {% else %}
+  <p class="muted">No iteration score blocks found in this log yet.</p>
+  {% endif %}
 </div>
-{% endif %}
 
 {% if plot_data_json %}
 <div class="card">

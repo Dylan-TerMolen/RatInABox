@@ -9,6 +9,7 @@ from fastapi import APIRouter, Form, Request, UploadFile, File
 from fastapi.responses import RedirectResponse
 
 from .. import config, db, quest, view
+from . import results
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -24,9 +25,31 @@ def new_raw_form(request: Request):
     return view.templates.TemplateResponse("job_new_raw.html", {"request": request})
 
 
+_EXPERIMENT_VAR_RE = re.compile(r'^\s*EXPERIMENT\s*=\s*"?([^\s"]+)"?', re.MULTILINE)
+_EXPERIMENT_FLAG_RE = re.compile(r'--experiment[\s=]+"?([^\s"$][^\s"]*)"?')
+
+
+def _extract_experiment_tag(script_text: str) -> str | None:
+    """Best-effort: pull the experiment tag out of an uploaded .sh so jobs
+    submitted by hand (not through the generator) still link to their .log
+    results here. Tries an `EXPERIMENT=...` bash var first (the convention
+    in hand-written sweep scripts), then a literal `--experiment <value>`
+    flag. Doesn't try to resolve `--experiment "${EXPERIMENT}"` beyond that
+    -- if neither pattern matches, leave it blank and let the user fill in
+    the tag on the job detail page instead."""
+    m = _EXPERIMENT_VAR_RE.search(script_text)
+    if m:
+        return m.group(1)
+    m = _EXPERIMENT_FLAG_RE.search(script_text)
+    if m:
+        return m.group(1)
+    return None
+
+
 @router.post("/new-raw")
 async def create_raw_job(request: Request, job_name: str = Form(...),
-                          sh_file: UploadFile = File(...)):
+                          sh_file: UploadFile = File(...),
+                          sbatch_job_id: str = Form("")):
     job_name = re.sub(r"[^a-zA-Z0-9_\-]+", "_", job_name.strip()) or "uploaded_job"
     gen_dir = config.generated_scripts_dir()
     gen_dir.mkdir(parents=True, exist_ok=True)
@@ -34,12 +57,20 @@ async def create_raw_job(request: Request, job_name: str = Form(...),
     local_path = gen_dir / f"{job_name}_{stamp}.sh"
     contents = await sh_file.read()
     local_path.write_bytes(contents)
+    script_text = contents.decode(errors="replace")
 
     job_id = db.insert_job(
         repo="ratinabox", script_id="raw-upload", script_display_name=sh_file.filename or "uploaded.sh",
         command="(uploaded .sh script, not generated)", params={}, grid=None, array_count=1,
         job_name=job_name, slurm_script_local_path=str(local_path),
+        experiment_tag=_extract_experiment_tag(script_text),
     )
+    sbatch_job_id = sbatch_job_id.strip()
+    if sbatch_job_id:
+        # Already submitted outside this app (e.g. run by hand before this
+        # tool existed) -- record the known id directly, no actual sbatch
+        # call, so status refresh/peek-log work immediately.
+        db.mark_queued(job_id, sbatch_job_id)
     return RedirectResponse(f"/jobs/{job_id}", status_code=303)
 
 
@@ -55,6 +86,7 @@ async def create_from_preview(request: Request):
     params = json.loads(form.get("params_json", "{}"))
     grid = json.loads(form.get("grid_json", "{}")) or None
     command_preview = form.get("command_preview", "")
+    experiment_tag = form.get("experiment_tag", "").strip() or None
 
     gen_dir = config.generated_scripts_dir()
     gen_dir.mkdir(parents=True, exist_ok=True)
@@ -66,6 +98,7 @@ async def create_from_preview(request: Request):
         repo=repo, script_id=script_id, script_display_name=script_display_name,
         command=command_preview, params=params, grid=grid, array_count=array_count,
         job_name=job_name, slurm_script_local_path=str(local_path),
+        experiment_tag=experiment_tag,
     )
     return RedirectResponse(f"/jobs/{job_id}", status_code=303)
 
@@ -85,9 +118,10 @@ def job_detail(request: Request, job_id: int):
         flash = "Upload succeeded." if request.query_params["upload_ok"] == "1" else "Upload failed -- check the SSH alias in config.yaml."
     elif "queue_ok" in request.query_params:
         flash = "Job queued." if request.query_params["queue_ok"] == "1" else "sbatch failed -- see job for details."
+    result_logs = results.logs_for_experiment(job["experiment_tag"]) if job["experiment_tag"] else []
     return view.templates.TemplateResponse("job_detail.html", {
         "request": request, "job": job, "script_text": script_text, "last_status": last_status,
-        "flash": flash,
+        "flash": flash, "result_logs": result_logs,
     })
 
 
@@ -111,6 +145,17 @@ def upload_job(job_id: int):
     if result.ok:
         db.mark_uploaded(job_id, remote_path)
     return RedirectResponse(f"/jobs/{job_id}?upload_ok={int(result.ok)}", status_code=303)
+
+
+@router.post("/{job_id}/attach-sbatch-id")
+def attach_sbatch_id(job_id: int, sbatch_job_id: str = Form(...)):
+    """Record a sbatch job id for a job that was submitted outside this app
+    (or before this app existed) -- no actual sbatch call, just wires up
+    status refresh/peek-log for a job we didn't submit ourselves."""
+    sbatch_job_id = sbatch_job_id.strip()
+    if db.get_job(job_id) is not None and sbatch_job_id:
+        db.mark_queued(job_id, sbatch_job_id)
+    return RedirectResponse(f"/jobs/{job_id}", status_code=303)
 
 
 @router.post("/{job_id}/queue")

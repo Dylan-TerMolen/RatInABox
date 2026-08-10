@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     grid_json TEXT,
     array_count INTEGER NOT NULL DEFAULT 1,
     job_name TEXT NOT NULL,
+    experiment_tag TEXT,
     slurm_script_local_path TEXT,
     slurm_script_remote_path TEXT,
     sbatch_job_id TEXT,
@@ -63,6 +64,21 @@ def get_conn() -> sqlite3.Connection:
 def init_db() -> None:
     with get_conn() as conn:
         conn.executescript(SCHEMA)
+        _migrate(conn)
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """No migration framework (see module docstring) -- just add any columns
+    a pre-existing local jobs.db predates. Each ALTER is wrapped since SQLite
+    has no 'ADD COLUMN IF NOT EXISTS'; a 'duplicate column' error just means
+    this one's already there."""
+    for statement in ["ALTER TABLE jobs ADD COLUMN experiment_tag TEXT"]:
+        try:
+            conn.execute(statement)
+        except sqlite3.OperationalError as e:
+            if "duplicate column" not in str(e).lower():
+                raise
+    conn.commit()
 
 
 @contextmanager
@@ -79,17 +95,17 @@ def _cursor():
 
 def insert_job(*, repo, script_id, script_display_name, command, params: dict,
                grid: dict | None, array_count: int, job_name: str,
-               slurm_script_local_path: str) -> int:
+               slurm_script_local_path: str, experiment_tag: str | None = None) -> int:
     with _cursor() as (conn, cur):
         cur.execute(
             """INSERT INTO jobs
                (created_at, repo, script_id, script_display_name, command,
-                params_json, grid_json, array_count, job_name,
+                params_json, grid_json, array_count, job_name, experiment_tag,
                 slurm_script_local_path, status)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')""",
             (_now(), repo, script_id, script_display_name, command,
              json.dumps(params), json.dumps(grid) if grid else None,
-             array_count, job_name, slurm_script_local_path),
+             array_count, job_name, experiment_tag, slurm_script_local_path),
         )
         return cur.lastrowid
 

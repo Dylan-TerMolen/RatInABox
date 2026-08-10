@@ -1,29 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Results</h2>
-<p class="muted">Shows CSVs already on disk locally (from the last sync). <a href="/sync">Sync</a> first if this looks stale.</p>
+<p class="muted">.log files already on disk locally (from the last sync). <a href="/sync">Sync</a> first if this looks stale.</p>
 
-{% if not unstubbed %}
-<div class="warn-box">No repo local_path is configured yet -- edit webui/config.yaml.</div>
+{% if not have_root %}
+<div class="warn-box">repos.ratinabox.local_path isn't configured yet -- edit webui/config.yaml.</div>
 {% endif %}
 
-{% for repo, csvs in by_repo.items() %}
 <div class="card">
-  <h3>{{ repo }}</h3>
-  {% if csvs %}
+  {% if logs %}
   <table>
-    <tr><th>File</th><th>Size</th><th></th></tr>
-    {% for c in csvs %}
+    <tr><th>File</th><th>Job</th><th>Size</th><th></th></tr>
+    {% for l in logs %}
     <tr>
-      <td>{{ c.name }}</td>
-      <td class="muted">{{ (c.size / 1024) | round(1) }} KB</td>
-      <td><a class="btn secondary" href="/results/view?path={{ c.path | urlencode }}">View / plot</a></td>
+      <td>{{ l.name }}</td>
+      <td>{% if l.job_id %}<a href="/jobs/{{ l.job_id }}">#{{ l.job_id }}</a>{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="muted">{{ (l.size / 1024) | round(1) }} KB</td>
+      <td><a class="btn secondary" href="/results/view?path={{ l.path | urlencode }}">View</a></td>
     </tr>
     {% endfor %}
   </table>
   {% else %}
-  <p class="muted">No CSVs found under this repo's results dir yet.</p>
+  <p class="muted">No .log files found under the results dir yet.</p>
   {% endif %}
 </div>
-{% endfor %}
 {% endblock %}

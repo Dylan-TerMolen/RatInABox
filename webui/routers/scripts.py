@@ -112,4 +112,5 @@ async def preview(request: Request, script_id: str):
         "array_count": n, "job_name": job_name, "command_preview": command_preview,
         "repo": spec.repo, "script_id": spec.id, "script_display_name": spec.display_name,
         "params_json_str": json.dumps(params_for_record), "grid_json_str": json.dumps(grid_params),
+        "experiment_tag": params_for_record.get("experiment") or "",
     })
