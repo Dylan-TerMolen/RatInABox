@@ -150,5 +150,17 @@ def render_slurm_script(*, job_name: str, repo: str, entry_point: str,
     if grid_section:
         parts.append(grid_section)
     parts.append(f"mkdir -p {shlex.quote(output_dir)}\n")
+
+    if repo == "hannahs_cebras":
+        # hannahs-cebras scripts save output as a bare relative filename
+        # (e.g. np.savetxt("cond_lr...csv", ...)) -- there's no results/
+        # convention in that repo to write into, and by hand you'd just be
+        # sitting in the right directory when you ran `sbatch`. We aren't,
+        # so pin one explicitly and cd into it, or fail loudly rather than
+        # writing output wherever sbatch happened to be invoked from
+        # (webui_slurm/, mixed in with the uploaded scripts).
+        results_dir = f"{repo_cfg['remote_path']}/{repo_cfg['results_subdir']}"
+        parts.append(f"mkdir -p {shlex.quote(results_dir)} && cd {shlex.quote(results_dir)} || exit 1\n")
+
     parts.append(f"{command_line}\n")
     return "".join(parts), n

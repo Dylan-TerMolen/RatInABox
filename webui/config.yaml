@@ -18,12 +18,20 @@ repos:
   ratinabox:
     local_path: "/Users/dylantermolen/Projects/RatInABox"
     remote_path: "/home/tfl2886/projects/RatInABox"
-    # Where results/logs land, relative to each repo's path above.
+    # Real existing convention (ratinabox/hsw/config.py's get_save_directory())
+    # -- main.py always writes here itself, regardless of cwd.
     results_subdir: "saved/results"
   hannahs_cebras:
     local_path: "CHANGE_ME e.g. /Users/you/Projects/Hannahs-CEBRAs"
     remote_path: "CHANGE_ME e.g. /home/CHANGE_ME_NETID/Programming/Hannahs-CEBRAs"
-    results_subdir: "results"
+    # No pre-existing results convention in this repo -- its scripts just
+    # np.savetxt/to_csv a bare relative filename into whatever the working
+    # directory happens to be. This is an app-owned directory: the generated
+    # SLURM script mkdir -p's and `cd`s into it before running (see
+    # slurm_templates.py), so app-submitted jobs' output always lands here,
+    # in sync with what "Sync now" pulls down. Doesn't affect how you run
+    # things by hand.
+    results_subdir: "webui_results"
 
 # Per-script form scoping. Params not listed here still work exactly as
 # before (the script's own default applies, flag simply isn't passed) -- they
