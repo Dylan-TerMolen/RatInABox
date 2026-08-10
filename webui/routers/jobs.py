@@ -99,7 +99,15 @@ def upload_job(job_id: int):
     repo_cfg = config.repo_config(job["repo"])
     remote_dir = f"{repo_cfg['remote_path']}/webui_slurm"
     remote_path = f"{remote_dir}/{Path(job['slurm_script_local_path']).name}"
-    result = quest.upload_file(job["slurm_script_local_path"], remote_path)
+
+    result = quest.write_remote_file(job["slurm_script_local_path"], remote_path)
+    if not result.ok:
+        # Most likely cause the first time: remote_dir doesn't exist yet.
+        # Create it once and retry -- every upload after this one is a
+        # single ssh call (the write above succeeds directly).
+        if quest.ensure_remote_dir(remote_dir).ok:
+            result = quest.write_remote_file(job["slurm_script_local_path"], remote_path)
+
     if result.ok:
         db.mark_uploaded(job_id, remote_path)
     return RedirectResponse(f"/jobs/{job_id}?upload_ok={int(result.ok)}", status_code=303)

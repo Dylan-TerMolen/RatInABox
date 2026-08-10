@@ -73,14 +73,16 @@ Every place this app talks to Quest, all in `webui/quest.py`, all via `ssh
 
 | Action (UI button)          | Router                    | Remote command(s) |
 |---|---|---|
-| Upload to Quest              | `POST /jobs/{id}/upload`  | one ssh call: `mkdir -p <dir> && cat > <path>` (script piped over stdin) |
+| Upload to Quest              | `POST /jobs/{id}/upload`  | one ssh call: `cat > <path>` (script piped over stdin). Falls back to a one-time `mkdir -p <dir>` + retry only if the write fails (e.g. the very first upload to a repo) |
 | sbatch (queue)                | `POST /jobs/{id}/queue`   | one ssh call: `sbatch <path>` |
 | Refresh status                | `POST /jobs/{id}/refresh` | one ssh call running both `squeue -j <id> ...` and `sacct -j <id> ...` |
 | Peek log (last 50 lines)      | `GET /jobs/{id}/peek-log` | one ssh call: `tail -n 50 <path>` |
 | Sync now                      | `POST /sync`              | one rsync call: `rsync -avz -e "ssh -i <identity_file>" <host>:<remote_results_dir>/ <local_results_dir>` |
 
-That's the complete list -- five buttons, five round trips, nothing else in
-the app shells out anywhere. `quest.check_connection()` (a plain `ssh ...
+That's the complete list -- five buttons, one round trip each in steady
+state (upload takes a second one-off round trip only the first time a
+repo's `webui_slurm/` directory doesn't exist yet), nothing else in the app
+shells out anywhere. `quest.check_connection()` (a plain `ssh ...
 whoami`) exists as a smoke test but isn't wired to a button yet.
 
 ## Design notes / current limits

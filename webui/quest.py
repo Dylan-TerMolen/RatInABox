@@ -77,14 +77,20 @@ def check_connection() -> CommandResult:
     return ssh_run("whoami")
 
 
-def upload_file(local_path: str, remote_path: str) -> CommandResult:
-    """Copy a single file (the generated .sh) up to Quest. Uses ssh + `cat`
-    (piping the file over stdin) rather than a separate scp process, so
-    upload is still just the one ssh mechanism -- mkdir and write happen in
-    the same remote command / same round trip."""
-    remote_dir = remote_path.rsplit("/", 1)[0]
+def ensure_remote_dir(remote_dir: str) -> CommandResult:
+    """`mkdir -p` on Quest. Call this once per directory, not on every
+    upload -- write_remote_file() only calls it itself as a one-time
+    fallback if the plain write fails."""
+    return ssh_run(f"mkdir -p {shlex.quote(remote_dir)}")
+
+
+def write_remote_file(local_path: str, remote_path: str) -> CommandResult:
+    """Copy a single file (the generated .sh) up to Quest: pipe its bytes
+    over ssh's stdin to `cat > <remote_path>`. No scp, no mkdir -- assumes
+    the remote directory already exists. In steady state (directory already
+    there) this is the only ssh call an upload makes."""
     content = Path(local_path).read_bytes()
-    remote_command = f"mkdir -p {shlex.quote(remote_dir)} && cat > {shlex.quote(remote_path)}"
+    remote_command = f"cat > {shlex.quote(remote_path)}"
     return _run(_ssh_base_args() + [remote_command], timeout=SSH_TIMEOUT, input_bytes=content)
 
 
