@@ -132,6 +132,11 @@ def mark_uploaded(job_id: int, remote_path: str) -> None:
         )
 
 
+def set_array_count(job_id: int, array_count: int) -> None:
+    with _cursor() as (conn, cur):
+        cur.execute("UPDATE jobs SET array_count=? WHERE id=?", (array_count, job_id))
+
+
 def mark_queued(job_id: int, sbatch_job_id: str) -> None:
     with _cursor() as (conn, cur):
         cur.execute(

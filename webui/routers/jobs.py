@@ -16,11 +16,14 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 def _populate_iterations(job_id: int, script_text: str) -> int:
     """Parse the sweep out of a job's script text (works for both generated
-    and hand-written scripts, see grid_parser.py) and (re)write its
-    job_iterations rows. Returns the number of iterations written."""
+    and hand-written scripts, see grid_parser.py), (re)write its
+    job_iterations rows, and correct jobs.array_count to match -- the two
+    must agree, since the Progress card divides squeue/sacct's completed
+    count by array_count. Returns the number of iterations written."""
     axes = grid_parser.parse_grid_axes(script_text)
     combos = grid_parser.expand_combinations(axes)
     db.replace_job_iterations(job_id, combos)
+    db.set_array_count(job_id, len(combos))
     return len(combos)
 
 
