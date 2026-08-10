@@ -27,7 +27,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-_SCORE_RE = re.compile(r"([A-Za-z>-]+): (n/a|[\d.]+)")
+# Value allows an optional leading '-' -- place-decoder R^2-style scores go
+# negative far more often than task's, so without it every key from the
+# first negative score onward on a line silently drops (see _parse_scores).
+_SCORE_RE = re.compile(r"([A-Za-z>-]+): (n/a|-?[\d.]+)")
 _ITERATION_RE = re.compile(r"Parameters: (.+)\nplace\s+(.+)\ntask\s+(.+)")
 
 # Score keys in the order write_iteration_summary emits them, prefixed with
