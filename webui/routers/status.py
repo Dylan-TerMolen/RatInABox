@@ -19,14 +19,8 @@ def refresh_status(job_id: int):
         return RedirectResponse(f"/jobs/{job_id}", status_code=303)
 
     sbatch_id = job["sbatch_job_id"]
-    live_rows = quest.squeue_status(sbatch_id)
-    hist_rows = quest.sacct_status(sbatch_id)
-
-    # squeue wins for anything still in the live queue; sacct fills in the
-    # rest (finished/failed tasks squeue no longer reports).
-    by_task = {r["job_id"]: r for r in hist_rows}
-    by_task.update({r["job_id"]: r for r in live_rows})
-    tasks = sorted(by_task.values(), key=lambda r: r["job_id"])
+    status = quest.job_status(sbatch_id)  # one ssh round trip (squeue + sacct combined)
+    tasks = status["tasks"]
 
     total = job["array_count"] or 1
     done = sum(1 for t in tasks if t.get("state", "").upper() in ("COMPLETED",))
@@ -38,7 +32,7 @@ def refresh_status(job_id: int):
     summary = {
         "tasks": tasks, "total_array_tasks": total,
         "done": done, "failed": failed, "running": running, "pending": pending,
-        "queried_ok": bool(live_rows or hist_rows),
+        "queried_ok": status["ok"],
     }
     db.update_status_cache(job_id, summary)
     return RedirectResponse(f"/jobs/{job_id}", status_code=303)

@@ -21,12 +21,21 @@ def load_config() -> dict:
         return yaml.safe_load(f)
 
 
-def quest_ssh_alias() -> str:
-    return load_config()["quest"]["ssh_alias"]
+def quest_host() -> str:
+    return load_config()["quest"]["host"]
 
 
 def quest_username() -> str:
     return load_config()["quest"]["username"]
+
+
+def quest_identity_file() -> str:
+    return str(Path(load_config()["quest"]["identity_file"]).expanduser())
+
+
+def quest_target() -> str:
+    """<username>@<host>, as passed straight to ssh/rsync's -e ssh."""
+    return f"{quest_username()}@{quest_host()}"
 
 
 def repo_config(repo_key: str) -> dict:

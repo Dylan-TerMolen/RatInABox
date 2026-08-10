@@ -46,8 +46,9 @@ def _startup():
 def index(request: Request):
     cfg = config.load_config()
     stub_warnings = []
-    if config.is_stubbed(cfg["quest"]["username"]):
-        stub_warnings.append("quest.username is still a CHANGE_ME placeholder in webui/config.yaml")
+    for field in ("host", "username", "identity_file"):
+        if config.is_stubbed(cfg["quest"].get(field)):
+            stub_warnings.append(f"quest.{field} is still a CHANGE_ME placeholder in webui/config.yaml")
     for repo_key in ("ratinabox", "hannahs_cebras"):
         repo_cfg = cfg["repos"][repo_key]
         if config.is_stubbed(repo_cfg.get("local_path")) or config.is_stubbed(repo_cfg.get("remote_path")):

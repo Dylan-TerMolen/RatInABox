@@ -1,27 +1,23 @@
 # Local config for the Quest job runner web UI.
-# Everything in this file is a STUB — edit the CHANGE_ME values for your machine
-# and NetID before using the upload/queue/sync features. Nothing here is committed
-# to git as secrets (no passwords/keys — auth relies on your existing SSH setup),
-# but do keep NetIDs/paths accurate for the app to find things.
+# Nothing here is a secret (no password/key contents, just a path to your
+# existing key file) so this is safe to commit -- auth relies entirely on
+# your existing `~/.ssh/slurm_pk` key, same as the `slurm` alias / `slurmresults`
+# function in ~/.zshrc.
 
 quest:
-  # Alias in your ~/.ssh/config that connects to Quest with a key (no password
-  # prompt), e.g.:
-  #   Host quest
-  #     HostName quest.northwestern.edu
-  #     User CHANGE_ME_NETID
-  #     IdentityFile ~/.ssh/id_ed25519
-  ssh_alias: "quest"
-  # Your NetID, used for `squeue -u <username>` / `sacct -u <username>`.
-  username: "CHANGE_ME_NETID"
+  host: "quest.it.northwestern.edu"
+  username: "tfl2886"
+  # Path to the private key `slurm`/`slurmresults` already use -- never
+  # copied anywhere, just referenced via `ssh -i`.
+  identity_file: "~/.ssh/slurm_pk"
 
 # One entry per repo this tool can generate/submit jobs for. local_path is where
 # that repo lives on THIS machine (the one running the web UI); remote_path is
 # where it lives on Quest.
 repos:
   ratinabox:
-    local_path: "CHANGE_ME e.g. /Users/you/Projects/RatInABox"
-    remote_path: "CHANGE_ME e.g. /home/CHANGE_ME_NETID/projects/RatInABox"
+    local_path: "/Users/dylantermolen/Projects/RatInABox"
+    remote_path: "/home/tfl2886/projects/RatInABox"
     # Where results/logs land, relative to each repo's path above.
     results_subdir: "saved/results"
   hannahs_cebras:
