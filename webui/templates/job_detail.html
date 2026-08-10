@@ -49,41 +49,48 @@
     <div class="stat"><span class="num">{{ last_status.pending }}</span>pending</div>
     <div class="stat"><span class="num">{{ last_status.failed }}</span>failed</div>
   </div>
-  {% if last_status.tasks %}
-  <table>
-    <tr><th>Task</th><th>State</th><th>Elapsed</th></tr>
-    {% for t in last_status.tasks %}
-    <tr>
-      <td>{{ t.job_id }}</td>
-      <td><span class="badge {{ t.state }}">{{ t.state }}</span></td>
-      <td>{{ t.elapsed or '—' }}</td>
-    </tr>
-    {% endfor %}
-  </table>
-  {% else %}
-  <p class="muted">No task rows returned by squeue/sacct -- job may not have started yet, or already aged out of history.</p>
-  {% endif %}
 </div>
 {% endif %}
 
-{% if job['experiment_tag'] %}
 <div class="card">
-  <h3>Results <span class="muted">(experiment: {{ job['experiment_tag'] }})</span></h3>
-  {% if result_logs %}
+  <h3>Iterations <span class="muted">{% if iterations %}({{ iterations|length }}){% endif %}{% if job['experiment_tag'] %} — experiment: {{ job['experiment_tag'] }}{% endif %}</span></h3>
+  <p class="help">One row per grid-parameter combination (array task). State comes from the last "Refresh status" click;
+     log links come from "Sync now". Neither updates on its own.</p>
+
+  {% if iterations %}
+  <div style="overflow-x:auto">
   <table>
-    <tr><th>File</th><th></th></tr>
-    {% for l in result_logs %}
+    <tr><th>#</th><th>Params</th><th>State</th><th>Log</th></tr>
+    {% for it in iterations %}
+    <tr>
+      <td>{{ it.array_task_index }}</td>
+      <td class="muted">{% for k, v in it.params.items() %}{{ k }}={{ v }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</td>
+      <td>{% if it.task_state %}<span class="badge {{ it.task_state.state }}">{{ it.task_state.state }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td>{% if it.log_file_path %}<a class="btn secondary" href="/results/view?path={{ it.log_file_path | urlencode }}">View</a>{% else %}<span class="muted">—</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <p class="muted">No iterations recorded for this job yet
+     {% if job['experiment_tag'] %}(jobs registered before iteration tracking existed need a one-time recompute){% endif %}.</p>
+  {% if fallback_logs %}
+  <table>
+    <tr><th>File (matched by experiment tag only)</th><th></th></tr>
+    {% for l in fallback_logs %}
     <tr>
       <td>{{ l.name }}</td>
       <td><a class="btn secondary" href="/results/view?path={{ l.path | urlencode }}">View</a></td>
     </tr>
     {% endfor %}
   </table>
-  {% else %}
-  <p class="muted">No .log files matching this experiment tag yet -- <a href="/sync">sync</a> if the job's already run, or check back once it has.</p>
   {% endif %}
+  {% endif %}
+
+  <form method="post" action="/jobs/{{ job['id'] }}/recompute-iterations" style="margin-top:0.75rem">
+    <button class="btn secondary" type="submit">Recompute iterations from script</button>
+  </form>
 </div>
-{% endif %}
 
 <div class="card">
   <h3>SLURM script</h3>

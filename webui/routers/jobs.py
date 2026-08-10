@@ -8,16 +8,28 @@ from pathlib import Path
 from fastapi import APIRouter, Form, Request, UploadFile, File
 from fastapi.responses import RedirectResponse
 
-from .. import config, db, quest, view
+from .. import config, db, grid_parser, quest, view
 from . import results
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
+def _populate_iterations(job_id: int, script_text: str) -> int:
+    """Parse the sweep out of a job's script text (works for both generated
+    and hand-written scripts, see grid_parser.py) and (re)write its
+    job_iterations rows. Returns the number of iterations written."""
+    axes = grid_parser.parse_grid_axes(script_text)
+    combos = grid_parser.expand_combinations(axes)
+    db.replace_job_iterations(job_id, combos)
+    return len(combos)
+
+
 @router.get("")
 def list_jobs(request: Request):
     jobs = db.list_jobs()
-    return view.templates.TemplateResponse("jobs_list.html", {"request": request, "jobs": jobs})
+    return view.templates.TemplateResponse("jobs_list.html", {
+        "request": request, "jobs": jobs, "iteration_counts": db.iteration_match_counts(),
+    })
 
 
 @router.get("/new-raw")
@@ -65,6 +77,7 @@ async def create_raw_job(request: Request, job_name: str = Form(...),
         job_name=job_name, slurm_script_local_path=str(local_path),
         experiment_tag=_extract_experiment_tag(script_text),
     )
+    _populate_iterations(job_id, script_text)
     sbatch_job_id = sbatch_job_id.strip()
     if sbatch_job_id:
         # Already submitted outside this app (e.g. run by hand before this
@@ -100,6 +113,7 @@ async def create_from_preview(request: Request):
         job_name=job_name, slurm_script_local_path=str(local_path),
         experiment_tag=experiment_tag,
     )
+    _populate_iterations(job_id, script_text)
     return RedirectResponse(f"/jobs/{job_id}", status_code=303)
 
 
@@ -118,10 +132,28 @@ def job_detail(request: Request, job_id: int):
         flash = "Upload succeeded." if request.query_params["upload_ok"] == "1" else "Upload failed -- check the SSH alias in config.yaml."
     elif "queue_ok" in request.query_params:
         flash = "Job queued." if request.query_params["queue_ok"] == "1" else "sbatch failed -- see job for details."
-    result_logs = results.logs_for_experiment(job["experiment_tag"]) if job["experiment_tag"] else []
+    iterations = [dict(row, params=json.loads(row["params_json"])) for row in db.list_job_iterations(job_id)]
+    # Live squeue/sacct state per array task, if we have one cached -- join
+    # by array task index (sacct/squeue job ids look like "<sbatch_id>_<n>").
+    task_state_by_index = {}
+    if last_status:
+        for t in last_status.get("tasks", []):
+            _, _, suffix = t["job_id"].partition("_")
+            if suffix.isdigit():
+                task_state_by_index[int(suffix)] = t
+    for it in iterations:
+        it["task_state"] = task_state_by_index.get(it["array_task_index"])
+
+    # Fallback for jobs registered before iteration tracking existed (no
+    # job_iterations rows yet, pending a "Recompute iterations" click): show
+    # the flat experiment-tag match instead of nothing.
+    fallback_logs = []
+    if not iterations and job["experiment_tag"]:
+        fallback_logs = results.logs_for_experiment(job["experiment_tag"])
+
     return view.templates.TemplateResponse("job_detail.html", {
         "request": request, "job": job, "script_text": script_text, "last_status": last_status,
-        "flash": flash, "result_logs": result_logs,
+        "flash": flash, "iterations": iterations, "fallback_logs": fallback_logs,
     })
 
 
@@ -145,6 +177,22 @@ def upload_job(job_id: int):
     if result.ok:
         db.mark_uploaded(job_id, remote_path)
     return RedirectResponse(f"/jobs/{job_id}?upload_ok={int(result.ok)}", status_code=303)
+
+
+@router.post("/{job_id}/recompute-iterations")
+def recompute_iterations(job_id: int):
+    """(Re-)derive job_iterations from the job's script text. Mainly for
+    jobs registered before iteration tracking existed (e.g. via 'Upload
+    existing .sh' pre-this-feature) -- new jobs get this at creation time
+    already, but re-running it is harmless (and useful if you hand-edit the
+    saved .sh)."""
+    job = db.get_job(job_id)
+    if job is None or not job["slurm_script_local_path"]:
+        return RedirectResponse(f"/jobs/{job_id}", status_code=303)
+    p = Path(job["slurm_script_local_path"])
+    if p.is_file():
+        _populate_iterations(job_id, p.read_text())
+    return RedirectResponse(f"/jobs/{job_id}", status_code=303)
 
 
 @router.post("/{job_id}/attach-sbatch-id")

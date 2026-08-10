@@ -15,6 +15,9 @@
 {% if last_result %}
 <div class="card">
   <h3>Last run {{ 'succeeded' if last_result.ok else 'failed' }}</h3>
+  {% if matched_count is not none %}
+  <p class="muted">{{ matched_count }} job iteration{{ 's' if matched_count != 1 }} matched to a .log file this pass.</p>
+  {% endif %}
   <pre class="script">{{ last_result.combined_output }}</pre>
 </div>
 {% endif %}

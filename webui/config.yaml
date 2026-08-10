@@ -35,15 +35,15 @@ repos:
 # trimming down.
 script_forms:
   "ratinabox:hsw_main":
+    # Distribution-type (*_dist/*_distribution) and *_std params are hidden
+    # by default -- they fall back to their argparse default ('fixed'/0.1),
+    # which already matches every hand-written sweep script's convention.
     visible_params:
       - experiment
       - holdovers
       - percent_task_responsive_cells
-      - percent_is_task_responsive_distribution
       - percent_place_cells
       - percent_task_in_response_values
-      - percent_task_in_response_dist
-      - percent_task_in_response_std
 
 # Defaults pre-filled into the SLURM header when generating a new script. All
 # overridable per-job in the UI.

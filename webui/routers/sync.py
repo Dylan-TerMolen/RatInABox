@@ -6,6 +6,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 
 from .. import config, db, quest, view
+from . import results
 
 router = APIRouter(prefix="/sync", tags=["sync"])
 
@@ -26,7 +27,15 @@ def run_sync(request: Request):
     result = quest.rsync_pull(remote_dir, local_dir)
     db.insert_sync_run(repo="ratinabox", remote_path=remote_dir, local_path=local_dir,
                         success=result.ok, output=result.combined_output)
+
+    matched_count = None
+    if result.ok:
+        # New .log files may have landed -- see if any pending iterations
+        # now have a match. Pure local file/DB work, no extra Quest round trip.
+        matched_count = results.match_unmatched_iterations()
+
     runs = db.list_sync_runs(limit=20)
     return view.templates.TemplateResponse("sync.html", {
         "request": request, "runs": runs, "repo_cfg": repo_cfg, "last_result": result,
+        "matched_count": matched_count,
     })
