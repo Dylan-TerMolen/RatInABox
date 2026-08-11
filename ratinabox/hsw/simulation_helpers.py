@@ -57,11 +57,18 @@ def filter_eyeblink_trials(position_data, response):
 
 
 def filter_by_velocity(agent, response, threshold=0.02):
-    """Keep only time steps where the agent was moving above *threshold* m/s."""
+    """Keep only time steps where the agent was moving above *threshold* m/s.
+
+    Also returns an in_task boolean mask (True where the rat was in a CS/trace/US
+    trial at that row, same trial-marker column filter_eyeblink_trials uses)
+    aligned to the filtered pos/response, so callers can score position
+    decoding separately for in-task vs. out-of-task rows.
+    """
     pos = agent.position_data[1:3].T
+    in_task = agent.position_data[3] > 0
     vel = np.array(agent.smoothed_velocities)
     moving = np.where(vel > threshold)[0]
-    return pos[moving], response[moving]
+    return pos[moving], response[moving], in_task[moving]
 
 
 def write_iteration_results(results_filepath, identifier, fract_control_all, fract_test_all,
@@ -124,21 +131,45 @@ def _format_score(value):
     return f"{value:.4f}" if isinstance(value, (int, float)) else "n/a"
 
 
+def _place_metric(place_result, task_state, metric_index):
+    """One value (r2 at index 0, mean cm error at index 1) out of a place-decoding
+    direction's pos_score_by_task_state()-shaped result -- {"in_task": (r2, cm_error),
+    "out_of_task": (r2, cm_error)} -- for the given task_state, or None if that
+    direction wasn't computed (e.g. --decode_position false)."""
+    if not place_result:
+        return None
+    return place_result.get(task_state, (None, None))[metric_index]
+
+
+def _place_scores_by_direction(place_by_direction, task_state, metric_index):
+    """Map of direction label -> one place-decoding metric value, for one
+    task_state ('in_task'/'out_of_task') and metric_index (0=r2, 1=cm_error)."""
+    return {label: _place_metric(result, task_state, metric_index) for label, result in place_by_direction.items()}
+
+
 def write_iteration_summary(summary_filepath, identifier,
                             place_a_to_a, place_b_to_b, place_a_to_b,
                             place_shuffled_a_to_a, place_shuffled_a_to_b,
                             task_a_to_a, task_b_to_b, task_a_to_b, task_shuffled_a_to_a, task_shuffled_a_to_b):
     """Append a compact, score-only summary of one iteration's decoding metrics.
 
-    Place decoding reports A->A, B->B, and cross-env A->B plus their shuffled floors;
-    task decoding reports A->A, B->B, cross-env A->B, and their shuffled floors.
+    Place decoding reports A->A, B->B, and cross-env A->B plus their shuffled floors,
+    each scored separately in-task vs. out-of-task (R^2 and mean cm error -- see
+    pos_score.pos_score_by_task_state) across four lines. Task decoding reports the
+    same five directions as a single pooled R^2 each.
     """
-    place_scores = {
-        "A->A":      _metric_score(place_a_to_a),
-        "B->B":      _metric_score(place_b_to_b),
-        "A->B":      _metric_score(place_a_to_b),
-        "shuffA->A": _metric_score(place_shuffled_a_to_a),
-        "shuffA->B": _metric_score(place_shuffled_a_to_b),
+    place_by_direction = {
+        "A->A":      place_a_to_a,
+        "B->B":      place_b_to_b,
+        "A->B":      place_a_to_b,
+        "shuffA->A": place_shuffled_a_to_a,
+        "shuffA->B": place_shuffled_a_to_b,
+    }
+    place_lines = {
+        "place_r2_in_task":     _place_scores_by_direction(place_by_direction, "in_task", 0),
+        "place_cm_in_task":     _place_scores_by_direction(place_by_direction, "in_task", 1),
+        "place_r2_out_of_task": _place_scores_by_direction(place_by_direction, "out_of_task", 0),
+        "place_cm_out_of_task": _place_scores_by_direction(place_by_direction, "out_of_task", 1),
     }
     task_scores = {
         "A->A":      _metric_score(task_a_to_a),
@@ -149,7 +180,8 @@ def write_iteration_summary(summary_filepath, identifier,
     }
     with open(summary_filepath, "a") as f:
         f.write(f"Parameters: {identifier}\n")
-        f.write("place  " + "  ".join(f"{k}: {_format_score(v)}" for k, v in place_scores.items()) + "\n")
+        for label, scores in place_lines.items():
+            f.write(f"{label}  " + "  ".join(f"{k}: {_format_score(v)}" for k, v in scores.items()) + "\n")
         f.write("task   " + "  ".join(f"{k}: {_format_score(v)}" for k, v in task_scores.items()) + "\n")
         f.write("\n")
 

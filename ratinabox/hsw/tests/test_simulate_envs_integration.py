@@ -76,7 +76,7 @@ def test_simulate_experiment_runs_full_data_path(model_type, holdover, position_
     assert response_envA_test.shape[0] == len(envA_eyeblink)
     assert response_envB_test.shape[0] == len(envB_eyeblink)
 
-    posA, filtered_envA = filter_by_velocity(agentA, response_envA)
-    posB, filtered_envB = filter_by_velocity(agentB, response_envB)
-    assert posA.shape[0] == filtered_envA.shape[0]
-    assert posB.shape[0] == filtered_envB.shape[0]
+    posA, filtered_envA, in_task_A = filter_by_velocity(agentA, response_envA)
+    posB, filtered_envB, in_task_B = filter_by_velocity(agentB, response_envB)
+    assert posA.shape[0] == filtered_envA.shape[0] == in_task_A.shape[0]
+    assert posB.shape[0] == filtered_envB.shape[0] == in_task_B.shape[0]

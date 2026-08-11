@@ -172,36 +172,51 @@ def job_detail(request: Request, job_id: int):
     })
 
 
+def _fixed_query_params(request: Request) -> dict[str, str]:
+    """This request's `fixed_<param>=<value>` querystring entries as a plain
+    {param: value} dict -- see sweep_results.resolve_fixed_selection."""
+    return {
+        key[len("fixed_"):]: value
+        for key, value in request.query_params.items()
+        if key.startswith("fixed_")
+    }
+
+
 @router.get("/{job_id}/results")
-def job_results(request: Request, job_id: int):
+def job_results(request: Request, job_id: int, facet_var: str | None = None):
     """Grid-sweep view of this job's matched decoding logs -- see
-    sweep_results.py. Toggle-only for now: which metric's surface plot(s)
-    are shown; facet/x/y axes are inferred, not user-chosen. Each shown
-    metric's actual figure is fetched lazily from /results/plot below."""
+    sweep_results.py. Toggle which metric's surface plot(s) are shown, and
+    (via the facet_var/fixed_* querystring, driven by the page's own
+    selectors) which swept param facets the plot and which value any
+    leftover swept param is pinned to. Each shown metric's actual figure is
+    fetched lazily from /results/plot below."""
     job = db.get_job(job_id)
     if job is None:
         return RedirectResponse("/jobs", status_code=303)
-    view_data = sweep_results.build_results_view(job_id)
+    view_data = sweep_results.build_results_view(job_id, facet_var, _fixed_query_params(request))
     return view.templates.TemplateResponse("job_results.html", {
         "request": request, "job": job, **view_data,
     })
 
 
 @router.get("/{job_id}/results/plot")
-def job_results_plot(job_id: int, metric: str):
+def job_results_plot(request: Request, job_id: int, metric: str, facet_var: str | None = None):
     """One metric's faceted surface figure as a PNG, rendered on demand by
     sweep_plots.py (reuses scripts/pull_and_plot_holdover_sweep.py's own
     matplotlib code) -- not precomputed, so an unrequested metric never
     costs anything. 404s rather than erroring if there's nothing to plot,
-    e.g. a stale request for a metric this job has no data for."""
+    e.g. a stale request for a metric this job has no data for. facet_var/
+    fixed_* mirror job_results's own querystring so a lazily-loaded image
+    always matches the page's current axis selection (see
+    sweep_results.resolve_view)."""
     from .. import sweep_plots  # deferred: only pull in matplotlib/pandas if a plot is actually requested
 
     job = db.get_job(job_id)
     if job is None:
         return Response(status_code=404)
     records = sweep_results.job_sweep_records(job_id)
-    axes = sweep_results.infer_axes(records)
-    png = sweep_plots.render_metric_surface_png(records, axes, metric, job["experiment_tag"])
+    axes, _, resolved_fixed, filtered = sweep_results.resolve_view(records, facet_var, _fixed_query_params(request))
+    png = sweep_plots.render_metric_surface_png(filtered, axes, metric, job["experiment_tag"], fixed=resolved_fixed)
     if png is None:
         return Response(status_code=404)
     return Response(content=png, media_type="image/png")

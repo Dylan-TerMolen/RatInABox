@@ -29,9 +29,13 @@ from scripts.pull_and_plot_holdover_sweep import infer_model_name, plot_metric_s
 from . import sweep_results  # noqa: E402
 
 
-def _records_dataframe(records: list[dict], axes: dict, metric: str) -> pd.DataFrame:
-    """Records -> a numeric DataFrame with just the columns
-    plot_metric_surface_facets needs, dropping rows missing any of them."""
+def _records_dataframe(records: list[dict], axes: dict, metric: str, extra_columns=()) -> pd.DataFrame:
+    """Records -> a numeric DataFrame with the columns plot_metric_surface_facets
+    needs, dropping rows missing any of them. *extra_columns* carries along
+    pinned-but-not-plotted params (e.g. percent_place_cells when
+    facet_var=holdover) purely so plot_metric_surface_facets's own
+    _fixed_param_annotations can label them on the figure -- see
+    render_metric_surface_png's *fixed* argument."""
     rows = []
     for record in records:
         x = sweep_results.numeric_or_none(record.get(axes["x"]))
@@ -40,16 +44,23 @@ def _records_dataframe(records: list[dict], axes: dict, metric: str) -> pd.DataF
         value = record.get(metric)
         if None in (x, y, facet, value):
             continue
-        rows.append({axes["x"]: x, axes["y"]: y, axes["facet"]: facet, metric: value})
+        row = {axes["x"]: x, axes["y"]: y, axes["facet"]: facet, metric: value}
+        for column in extra_columns:
+            row[column] = sweep_results.numeric_or_none(record.get(column))
+        rows.append(row)
     return pd.DataFrame(rows)
 
 
-def render_metric_surface_png(records: list[dict], axes: dict, metric: str, experiment_tag: str | None) -> bytes | None:
+def render_metric_surface_png(records: list[dict], axes: dict, metric: str, experiment_tag: str | None,
+                               fixed: dict[str, float] | None = None) -> bytes | None:
     """This metric's faceted surface figure as PNG bytes, or None if there's
-    nothing plottable (missing axes, or no records with this metric)."""
+    nothing plottable (missing axes, or no records with this metric).
+    *records* should already be filtered to *fixed*'s pinned values (see
+    sweep_results.resolve_view) -- *fixed* itself is only used here to
+    surface those pinned params as figure-title annotations."""
     if not (axes["x"] and axes["y"] and axes["facet"]):
         return None
-    df = _records_dataframe(records, axes, metric)
+    df = _records_dataframe(records, axes, metric, extra_columns=(fixed or {}).keys())
     if df.empty:
         return None
 

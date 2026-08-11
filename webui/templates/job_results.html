@@ -9,11 +9,47 @@
     <div><strong>X:</strong> {{ axes.x or '—' }}</div>
     <div><strong>Y:</strong> {{ axes.y or '—' }}</div>
   </div>
-  <p class="help">Facet/x/y axes are inferred from this job's swept params (best-effort match against
-     current flag naming) -- not user-selectable yet. Each figure is rendered server-side with
+  <p class="help">X/y axes are inferred from this job's swept params (best-effort match against current
+     flag naming). Facet variable defaults the same way but is selectable below -- e.g. switch it to
+     holdover on a holdover-grid sweep. Each figure is rendered server-side with
      scripts/pull_and_plot_holdover_sweep.py's own matplotlib plotting code, so it matches that
      script's own surface-plot output exactly.</p>
 </div>
+
+{% if facet_options|length > 1 or fixed_options %}
+<div class="card">
+  <h3>View</h3>
+  <form method="get" action="/jobs/{{ job['id'] }}/results" class="row" id="axis-form">
+    {% if facet_options|length > 1 %}
+    <div class="field" style="max-width:260px">
+      <label>Facet variable</label>
+      <select name="facet_var" onchange="document.getElementById('axis-form').submit()">
+        {% for option in facet_options %}
+        <option value="{{ option }}" {% if option == axes.facet %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    {% for f in fixed_options %}
+    <div class="field" style="max-width:260px">
+      {% if f.choices|length > 1 %}
+      <label>Fix {{ f.key }}</label>
+      <select name="fixed_{{ f.key }}" onchange="document.getElementById('axis-form').submit()">
+        {% for c in f.choices %}
+        <option value="{{ c.value }}" {% if c.value == f.selected %}selected{% endif %}>{{ c.label }}</option>
+        {% endfor %}
+      </select>
+      {% else %}
+      <label>Fixed</label>
+      <p class="help" style="margin-top:0.5rem">{{ f.key }} = {{ f.choices[0].label }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </form>
+  <p class="help">Choosing a facet variable pins any other swept param it displaces (e.g. percent_place_cells
+     when facet_var=holdover) to the value selected here, so it's never silently averaged over.</p>
+</div>
+{% endif %}
 
 {% if not records_count %}
 <div class="warn-box">No matched result logs for this job yet -- sync, then come back (see the job's
@@ -28,7 +64,7 @@
     {% for m in metrics %}
     <label class="inline-check{% if not m.available %} disabled{% endif %}">
       <input type="checkbox" class="metric-toggle" data-metric="{{ m.key }}"
-             data-src="/jobs/{{ job['id'] }}/results/plot?metric={{ m.key | urlencode }}"
+             data-src="/jobs/{{ job['id'] }}/results/plot?metric={{ m.key | urlencode }}{{ plot_query_suffix }}"
              {% if m.default and m.available %}checked{% endif %}
              {% if not m.available %}disabled{% endif %}>
       {{ m.label }}{% if not m.available %} <span class="muted">(no data)</span>{% endif %}

@@ -89,14 +89,14 @@ for combo in itertools.product(*grid_values):
         else:
             task_a_to_a = task_a_to_b = task_shuffled_a_to_a = task_shuffled_a_to_b = task_b_to_b = None
 
-        posA, response_envA = filter_by_velocity(agentA, response_envA)
-        posB, response_envB = filter_by_velocity(agentB, response_envB)
+        posA, response_envA, in_task_A = filter_by_velocity(agentA, response_envA)
+        posB, response_envB, in_task_B = filter_by_velocity(agentB, response_envB)
 
         #POS DECODE
         if args.decode_position:
-            place_a_to_a, place_a_to_b, place_shuffled_a_to_a, place_shuffled_a_to_b, place_b_to_b = pos_decoding_AvsB(response_envA, posA, response_envB, posB, .7, cebra_params=cebra_params)
+            place_a_to_a, place_a_to_b, place_shuffled_a_to_a, place_shuffled_a_to_b, place_b_to_b = pos_decoding_AvsB(response_envA, posA, in_task_A, response_envB, posB, in_task_B, .7, cebra_params=cebra_params)
         else:
-            place_a_to_a = place_a_to_b = place_shuffled_a_to_a = place_shuffled_a_to_b = place_b_to_b = (None, None, None, None)
+            place_a_to_a = place_a_to_b = place_shuffled_a_to_a = place_shuffled_a_to_b = place_b_to_b = None
 
         # Construct the identifier for this iteration
         _percent_task_in_response_id = f"{percent_task_in_response_value}_{args.percent_task_in_response_dist}_" if percent_task_in_response_value is not None else ""
