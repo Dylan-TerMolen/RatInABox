@@ -101,7 +101,7 @@ class CombinedPlaceTebc(PlaceCells):
         place_fr = self._place_firing_rate()
         task_fr = self._task_firing_rate(place_fr)
         self.firingrate = self._combine_by_category(place_fr, task_fr)
-        self.firingrate += np.random.normal(-0.02 / 30, 0.02 / 30)
+        self.firingrate += np.random.normal(-0.02 / 30, 0.02 / 30, size=self.n)
         self.save_to_history()
 
     def _place_firing_rate(self):

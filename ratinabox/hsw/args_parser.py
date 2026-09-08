@@ -18,6 +18,24 @@ MODEL_REQUIRED_PARAMS = {
     'arousal_mediated': [],
 }
 
+# Params that accept a comma-separated list and get swept via itertools.product
+# in main.py's own run loop (see parse_list below) -- every combination runs
+# sequentially inside one process/SLURM task. Canonical list so callers who grid-
+# search these outside of main.py's own loop (e.g. webui, which instead expands
+# them into one SLURM array task per combination -- see slurm/*_sweep.sh for the
+# hand-written convention) know which params behave this way. Percent-task-in-
+# response is model-specific (independent/place_dependent only); the other three
+# are universal.
+UNIVERSAL_GRID_PARAMS = ['percent_task_responsive_cells', 'percent_place_cells', 'holdovers']
+MODEL_GRID_PARAMS = {
+    'independent': ['percent_task_in_response_values'] + UNIVERSAL_GRID_PARAMS,
+    'place_dependent': ['percent_task_in_response_values'] + UNIVERSAL_GRID_PARAMS,
+    'arousal_mediated': UNIVERSAL_GRID_PARAMS,
+}
+# Union across all models -- for callers (e.g. webui) that build one flat param
+# form instead of a per-model one.
+GRID_ELIGIBLE_PARAMS = sorted({p for params in MODEL_GRID_PARAMS.values() for p in params})
+
 DEFAULTS = {
     'num_iters': 1,
     'percent_task_responsive_cells': '0.5',

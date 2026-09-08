@@ -36,7 +36,7 @@ def linear_decay_response(time_since_CS, baseline, peak_time, mid_time, end_time
         return slope * (time_since_CS) + baseline
     elif .2 <= time_since_CS < .85:
         slope = (second_magnitude - first_magnitude) / .65
-        return slope * (time_since_CS - mid_time) + first_magnitude + first_magnitude
+        return slope * (time_since_CS - mid_time) + first_magnitude
     elif time_since_CS <= end_time+3:
         return second_magnitude
     else:

@@ -19,15 +19,6 @@ from ratinabox.hsw.simulation_helpers import filter_eyeblink_trials, filter_by_v
 
 import args_parser
 
-# Universal grid params apply to all models; model-specific params are added per model
-_UNIVERSAL_GRID_PARAMS = ['percent_task_responsive_cells', 'percent_place_cells', 'holdovers']
-
-MODEL_GRID_PARAMS = {
-    'independent':      ['percent_task_in_response_values'] + _UNIVERSAL_GRID_PARAMS,
-    'place_dependent':  ['percent_task_in_response_values'] + _UNIVERSAL_GRID_PARAMS,
-    'arousal_mediated': _UNIVERSAL_GRID_PARAMS,
-}
-
 args = args_parser.parse()
 cebra_params = args_parser.cebra_overrides(args)
 
@@ -58,7 +49,7 @@ position_data_envB = data['envB313_602']
 
 num_neurons = 132
 
-grid_param_names = MODEL_GRID_PARAMS[args.model_type]
+grid_param_names = args_parser.MODEL_GRID_PARAMS[args.model_type]
 grid_values = [getattr(args, p) for p in grid_param_names]
 
 for combo in itertools.product(*grid_values):

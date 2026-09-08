@@ -71,7 +71,7 @@ class TEBC(PlaceCells):
         task_firing_rates = self._calculate_task_firing_rates(unmodulated_baseline)
 
         self.firingrate += task_firing_rates
-        self.firingrate += np.random.normal(-0.02/30, 0.02/30)
+        self.firingrate += np.random.normal(-0.02/30, 0.02/30, size=self.n)
         
         self.save_to_history()
 
