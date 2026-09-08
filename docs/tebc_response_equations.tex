@@ -17,13 +17,40 @@
 % ---------------------------------------------------------------------------
 \section*{Overview}
 
-\paragraph{Balance parameter $\beta_i$.}
-Each neuron $i$ has a balance parameter $\beta_i \in [0,1]$ drawn from a population
-distribution $P_{\mathrm{balance}}$. It controls the relative contribution of the
-task-driven signal versus the place-cell signal. $\beta_i = 1$ means the neuron is
-fully task-driven; $\beta_i = 0$ means it is a pure place cell.
+\paragraph{Cell categories.} In the independent and place-dependent models, every
+neuron $i$ falls into exactly one of four categories, determined by two independent
+boolean draws: whether it carries a place field
+(probability \texttt{percent\_place\_cells}) and whether it is TEBC-responsive
+(probability from \texttt{percent\_task\_responsive\_cells}):
 
-\paragraph{Model summary.}
+\begin{center}
+\begin{tabular}{lll}
+    \hline
+    Category & Place field? & TEBC-responsive? \\
+    \hline
+    place-only & yes & no \\
+    place+task & yes & yes \\
+    task-only  & no  & yes \\
+    silent     & no  & no \\
+    \hline
+\end{tabular}
+\end{center}
+
+\noindent
+Only \textbf{place+task} cells blend a task and a place signal; place-only cells fire
+purely off the place signal, task-only cells fire purely off the task signal, and
+silent cells sit at a fixed near-zero baseline. The arousal-mediated model has no such
+categories: every cell is a place cell, and its task response (if TEBC-responsive) is
+selected by the animal's instantaneous running/in-field state instead (see \S5).
+
+\paragraph{Balance parameter $\beta_i$.}
+Each \emph{place+task} neuron $i$ has a balance parameter $\beta_i \in [0,1]$ drawn from
+a population distribution $P_{\mathrm{balance}}$, controlling the relative contribution
+of the task-driven signal versus the place-cell signal. $\beta_i = 1$ means the neuron's
+task signal fully dominates; $\beta_i = 0$ means it behaves as a pure place cell.
+$\beta_i$ has no effect on place-only, task-only, or silent cells.
+
+\paragraph{Model summary (place+task category only).}
 
 \medskip
 \begin{center}
@@ -32,14 +59,14 @@ fully task-driven; $\beta_i = 0$ means it is a pure place cell.
     Model & High-level equation & Description \\
     \hline
     Independent &
-        $r_i = \beta_i\, r^{\mathrm{task}}_i(t) + (1-\beta_i)\tilde{r}^{\mathrm{place}}_i + \varepsilon$ &
-        The task signal is independent of the animal's current location and determined strictly as a function of the time since the onset of the stimuli. Each task-influenced neuron is randomly assigned 1 of 8 response functions. The place and task responses are weighted according to the balance parameter. \\[8pt]
+        $r_i = \beta_i\, r^{\mathrm{task}}_i(t) + (1-\beta_i)\tilde{r}^{\mathrm{place}}_i + \varepsilon_i$ &
+        The task signal is independent of the animal's current location and determined strictly as a function of the time since the onset of the stimuli. Each task-influenced neuron is randomly assigned 1 of 8 response functions, always scaled to a fixed peak amplitude. \\[8pt]
     Place-Dependent &
-        $r_i = \beta_i\, r^{\mathrm{task}}_i(t,\tilde{r}^{\mathrm{place}}_i) + (1-\beta_i)\tilde{r}^{\mathrm{place}}_i + \varepsilon$ &
-        The task signal is dependent on the animal's current location and determined as a function of the time since the onset of the stimuli and the active response in the place field. Each task-influenced neuron is randomly assigned 1 of 8 response functions. The place and task responses are still weighted according to the balance parameter. \\[8pt]
+        $r_i = \beta_i\, r^{\mathrm{task}}_i(t,\tilde{r}^{\mathrm{place}}_i) + (1-\beta_i)\tilde{r}^{\mathrm{place}}_i + \varepsilon_i$ &
+        The task signal is dependent on the animal's current location: it is scaled to the neuron's own live place rate rather than a fixed amplitude. Each task-influenced neuron is randomly assigned 1 of 8 response functions. \\[8pt]
     Arousal-Mediated &
-        $r_i = \tilde{r}^{\mathrm{place}}_i + r^{\mathrm{task}}_i(t,\tilde{r}^{\mathrm{place}}_i) + \varepsilon$ &
-        The task responses are selected from a subset of 4 functions based on whether the rat is running and whether the cell is in a place field. Each of these functions then depends solely on the time since the onset of the stimuli. \\
+        $r_i = \tilde{r}^{\mathrm{place}}_i + r^{\mathrm{task}}_i(t,\tilde{r}^{\mathrm{place}}_i) + \varepsilon_i$ &
+        The task response is selected from one of 4 functions based on whether the rat is running and whether the cell is in a place field, and is additive on top of the place rate rather than blended with it. \\
     \hline
 \end{tabular}
 \end{center}
@@ -48,9 +75,10 @@ fully task-driven; $\beta_i = 0$ means it is a pure place cell.
 \begin{itemize}
     \item $\tilde{r}^{\mathrm{place}}_i$ --- velocity-modulated Gaussian place cell rate
     \item $r^{\mathrm{task}}_i(t)$ --- TEBC task response for neuron $i$, drawn from type $k \in \{1,\dots,8\}$ (independent/place-dependent) or $k \in \{1,\dots,4\}$ (arousal-mediated)
-    \item $\beta_i$ --- per-neuron balance parameter
-    \item $b_i \equiv \tilde{r}^{\mathrm{place}}_i(t)$ --- live place rate, used as baseline in place-dependent and arousal-mediated models
-    \item $\varepsilon \sim \mathcal{N}(-\tfrac{0.02}{30}, \tfrac{0.02}{30})$ --- additive noise term common to all models
+    \item $A_i$ --- per-neuron task response \emph{peak amplitude}: the ceiling the normalized response shape (see \S4) is rescaled to. Model-specific; see \S2/\S3.
+    \item $\beta_i$ --- per-neuron balance parameter (place+task cells only)
+    \item $b_i \equiv \tilde{r}^{\mathrm{place}}_i(t)$ --- live place rate, used as the task amplitude $A_i$ in the place-dependent and arousal-mediated models
+    \item $\varepsilon_i \sim \mathcal{N}\!\left(-\tfrac{0.02}{30},\, \tfrac{0.02}{30}\right)$ --- additive noise term, drawn independently per neuron per timestep, common to all models
 \end{itemize}
 
 \paragraph{Notation.} All firing rates are in Hz. Time $t$ is seconds since CS onset.
@@ -71,42 +99,48 @@ For each neuron $i$ with field centre $\mathbf{c}_i$ and width $\sigma$:
 \noindent
 where $d(\mathbf{x}, \mathbf{c}_i)$ is the geodesic distance from the agent position
 $\mathbf{x}$ to the place field centre and $\sigma = 0.20\,\text{m}$.
-The values of $f_{\min}$ and $f_{\max}$ differ by model:
-
-\medskip
-\begin{center}
-\begin{tabular}{llll}
-    \hline
-    Model & $f_{\min}$ & $f_{\max}$ & Note \\
-    \hline
-    Independent      & $0\,\text{Hz}$ & $1\,\text{Hz}$  & biologically low; task constants tuned to match \\
-    Place-Dependent  & $0\,\text{Hz}$ & $12\,\text{Hz}$ & physiologically realistic \\
-    Arousal-Mediated & $0\,\text{Hz}$ & $12\,\text{Hz}$ & physiologically realistic \\
-    \hline
-\end{tabular}
-\end{center}
+$f_{\min} = 0\,\text{Hz}$ and $f_{\max} = 12\,\text{Hz}$ for \emph{all three} models ---
+the independent and place-dependent models share the same underlying place-cell
+construction (\texttt{CombinedPlaceTebc}), so independent no longer uses a reduced
+$f_{\max}=1\,\text{Hz}$ ceiling.
 
 % ---------------------------------------------------------------------------
 \section{Independent Model}
 
 \textit{The task signal is independent of the animal's current location and determined
 strictly as a function of the time since the onset of the stimuli. Each task-influenced
-neuron is randomly assigned 1 of 8 response functions. The place and task responses are
-weighted according to the balance parameter.}
+neuron is randomly assigned 1 of 8 response functions, and the task amplitude is a
+fixed constant shared by every task-responsive neuron.}
 
 \bigskip\noindent
-Each neuron $i$ has a firing rate that additively combines a velocity-modulated place cell
-component and a task-driven TEBC component, with a small noise term:
-
+\textbf{place-only cells:}
 \begin{equation}
-    r_i(t) = \beta_i\, r^{\mathrm{task}}_i(t)
-           + \bigl(1 - \beta_i\bigr)\, \tilde{r}^{\mathrm{place}}_i(t)
-           + \varepsilon, \qquad
-    \varepsilon \sim \mathcal{N}\!\left(-\tfrac{0.02}{30},\; \tfrac{0.02}{30}\right)
+    r_i(t) = \tilde{r}^{\mathrm{place}}_i(t) + \varepsilon_i
 \end{equation}
 
 \noindent
-where $\beta_i \in [0, 1]$ is the per-neuron balance parameter drawn from
+\textbf{place+task cells} (in trial; falls back to the place-only equation outside a trial):
+\begin{equation}
+    r_i(t) = \beta_i\, r^{\mathrm{task}}_i(t)
+           + \bigl(1 - \beta_i\bigr)\, \tilde{r}^{\mathrm{place}}_i(t)
+           + \varepsilon_i
+\end{equation}
+
+\noindent
+\textbf{task-only cells} (in trial; falls back to baseline outside a trial):
+\begin{equation}
+    r_i(t) = r^{\mathrm{task}}_i(t) + \varepsilon_i
+\end{equation}
+
+\noindent
+\textbf{silent cells:}
+\begin{equation}
+    r_i(t) = \tfrac{0.02}{30} + \varepsilon_i
+\end{equation}
+
+\noindent
+In all cases $\varepsilon_i \sim \mathcal{N}\!\left(-\tfrac{0.02}{30}, \tfrac{0.02}{30}\right)$
+drawn independently per neuron, and $\beta_i \in [0, 1]$ is drawn from
 $\{\beta_i\} \sim P_{\mathrm{balance}}$.
 
 \paragraph{Velocity-modulated place cell rate.}
@@ -116,7 +150,7 @@ agent's smoothed speed (m/s). The modulated rate is:
 \begin{equation}
     \tilde{r}^{\mathrm{place}}_i =
     \begin{cases}
-        0 & v < 0.02 \\[4pt]
+        \tfrac{0.02}{30} & v < 0.02 \\[4pt]
         \dfrac{p(100v)}{30}\; r^{\mathrm{PC}}_i & v \geq 0.02
     \end{cases}
 \end{equation}
@@ -133,21 +167,24 @@ where $p$ is the empirical cubic polynomial
 
 \noindent
 (argument $s = 100v$ converts m/s to cm/s).
-Non-place-cell neurons have their velocity-modulated rate fixed at $\tfrac{0.02}{30}$.
+Non-place-cell neurons have their rate fixed at $\tfrac{0.02}{30}$ regardless of $v$.
 
 \paragraph{Task firing rate.}
 \begin{equation}
     r^{\mathrm{task}}_i(t) =
     \begin{cases}
-        R_{\,c_i}(t) & \text{neuron } i \text{ is TEBC-responsive} \\
+        R_{\,c_i}(t;\, A_i) & \text{neuron } i \text{ is TEBC-responsive} \\
         0            & \text{otherwise}
     \end{cases}
 \end{equation}
 
 \noindent
-where $c_i \in \{1,\dots,8\}$ is the cell type assigned to neuron $i$.
-% TODO: validate the units of the type 1--8 response functions in the independent model
-The response profiles $R_k(t)$ map to the equations below as follows:
+where $c_i \in \{1,\dots,8\}$ is the cell type assigned to neuron $i$ and $A_i$ is the
+peak amplitude every response profile is rescaled to (\S4). In the independent model
+\textbf{$A_i$ is the same fixed constant for every task-responsive neuron}
+(place+task and task-only alike): $A_i = 12\,\text{Hz}$, the shared population $f_{\max}$
+(\S1) --- i.e. the response is not scaled by the individual cell's own place rate.
+The response profiles $R_k(t; A)$ map to the equations in \S4 as follows:
 
 \medskip
 \begin{center}
@@ -170,64 +207,90 @@ The response profiles $R_k(t)$ map to the equations below as follows:
 % ---------------------------------------------------------------------------
 \section{Place-Dependent Model}
 
-\textit{The task signal is dependent on the animal's current location and determined as a
-function of the time since the onset of the stimuli and the active response in the place
-field. Each task-influenced neuron is randomly assigned 1 of 8 response functions. The
-place and task responses are still weighted according to the balance parameter.}
+\textit{The task signal is dependent on the animal's current location: rather than a
+fixed constant, its peak amplitude is the neuron's own live place rate. Each
+task-influenced neuron is randomly assigned 1 of 8 response functions.}
 
 \bigskip\noindent
-The firing rate blends task and place components with the same balance weight, but the
-task rate is explicitly a function of the current place rate $\tilde{r}^{\mathrm{place}}_i$:
-
+\textbf{place-only cells:}
 \begin{equation}
-    r_i(t) = \beta_i\, r^{\mathrm{task}}_i\!\bigl(t,\,\tilde{r}^{\mathrm{place}}_i(t)\bigr)
-           + \bigl(1 - \beta_i\bigr)\, \tilde{r}^{\mathrm{place}}_i(t)
-           + \varepsilon, \qquad
-    \varepsilon \sim \mathcal{N}\!\left(-\tfrac{0.02}{30},\; \tfrac{0.02}{30}\right)
+    r_i(t) = \tilde{r}^{\mathrm{place}}_i(t) + \varepsilon_i
 \end{equation}
 
 \noindent
-where $b_i \equiv \tilde{r}^{\mathrm{place}}_i(t)$ is the velocity-modulated place rate:
+\textbf{place+task cells} (in trial; falls back to the place-only equation outside a trial):
+\begin{equation}
+    r_i(t) = \beta_i\, r^{\mathrm{task}}_i\!\bigl(t,\,\tilde{r}^{\mathrm{place}}_i(t)\bigr)
+           + \bigl(1 - \beta_i\bigr)\, \tilde{r}^{\mathrm{place}}_i(t)
+           + \varepsilon_i
+\end{equation}
+
+\noindent
+\textbf{task-only cells} (in trial; falls back to baseline outside a trial):
+\begin{equation}
+    r_i(t) = r^{\mathrm{task}}_i(t) + \varepsilon_i
+\end{equation}
+
+\noindent
+\textbf{silent cells:}
+\begin{equation}
+    r_i(t) = \tfrac{0.02}{30} + \varepsilon_i
+\end{equation}
+
+\noindent
+$\varepsilon_i$ and $\beta_i$ are as defined in \S2. Let $b_i \equiv \tilde{r}^{\mathrm{place}}_i(t)$
+be the neuron's own live velocity-modulated place rate:
 
 \begin{equation}
     r^{\mathrm{task}}_i(t) =
     \begin{cases}
-        R_{c_i}\!\bigl(t,\; b_i\bigr) & \text{neuron } i \text{ is TEBC-responsive} \\
+        R_{c_i}\!\bigl(t;\; A_i\bigr) & \text{neuron } i \text{ is TEBC-responsive} \\
         0 & \text{otherwise}
     \end{cases}
 \end{equation}
 
+\begin{equation}
+    A_i =
+    \begin{cases}
+        b_i & \text{place+task cell (has a place field)} \\
+        0.02/30 & \text{task-only cell (no place field)}
+    \end{cases}
+\end{equation}
+
 \noindent
-Each profile $R_k(t, b)$ has the same functional form as in the independent model
-(Equations~\eqref{eq:type1}--\eqref{eq:type8}), but all magnitude parameters are
-expressed as multiples of the live baseline $b$:
+i.e. a place+task neuron's task response peaks at its own live place rate; a task-only
+neuron (no place field to scale off) instead uses a small fixed placeholder amplitude.
+Each profile $R_k(t; A)$ has the same functional form as in the independent model
+(Equations~\eqref{eq:type1}--\eqref{eq:type8}); the shape-construction magnitude
+parameters below are expressed as multiples of a unit baseline, matching the ratios
+the shape is built with before renormalization (\S4):
 
 \medskip
 \begin{center}
 \begin{tabular}{clll}
     \hline
-    $k$ & Description & Magnitude parameters & Eq. \\
+    $k$ & Description & Shape magnitude ratios & Eq. \\
     \hline
-    1 & Bimodal Gaussian         & $A_1 = 2.14\,b$,\quad $A_2 = 5.71\,b$                       & \eqref{eq:type1} \\
-    2 & One-sided Gaussian       & $A = 3.14\,b$                                                & \eqref{eq:type2} \\
-    3 & Piecewise Linear Decay   & $d_1 = 0.33\,b$,\quad $d_2 = 0.17\,b$                       & \eqref{eq:type3} \\
-    4 & Ramp with Gaussian Burst & $A_{CS} = 0.40\,b$,\quad $A_{US} = 1.10\,b$                 & \eqref{eq:type4} \\
-    5 & Trapezoidal US Response  & $A_{US} = 3.14\,b$                                           & \eqref{eq:type5} \\
-    6 & Noisy Uniform            & (unchanged)                                                  & \eqref{eq:type6} \\
-    7 & Windowed Bimodal Gaussian& $A_1 = 1.67\,b$,\quad $A_2 = 2.14\,b$                       & \eqref{eq:type7} \\
-    8 & Post-CS Piecewise Decay  & steps at $0.46\,b$,\; $0.62\,b$,\; $0.38\,b$                & \eqref{eq:type8} \\
+    1 & Bimodal Gaussian         & $A_1 = 2.14$,\quad $A_2 = 5.71$                       & \eqref{eq:type1} \\
+    2 & One-sided Gaussian       & $A = 3.14$                                             & \eqref{eq:type2} \\
+    3 & Piecewise Linear Decay   & $d_1 = 0.33$,\quad $d_2 = 0.17$                       & \eqref{eq:type3} \\
+    4 & Ramp with Gaussian Burst & $A_{CS} = 0.40$,\quad $A_{US} = 1.10$                 & \eqref{eq:type4} \\
+    5 & Trapezoidal US Response  & $A_{US} = 3.14$                                        & \eqref{eq:type5} \\
+    6 & Noisy Uniform            & (unchanged --- not renormalized)                       & \eqref{eq:type6} \\
+    7 & Windowed Bimodal Gaussian& $A_1 = 1.67$,\quad $A_2 = 2.14$                       & \eqref{eq:type7} \\
+    8 & Post-CS Piecewise Decay  & steps at $0.46$,\; $0.62$,\; $0.38$                   & \eqref{eq:type8} \\
     \hline
 \end{tabular}
 \end{center}
 
 \paragraph{Velocity modulation.}
-The same cubic polynomial $p(s)$ is used, but below the speed threshold the rate is
-scaled rather than zeroed:
+Identical to the independent model (same cubic polynomial $p(s)$ and the same
+$\tfrac{0.02}{30}$ floor below the speed threshold):
 
 \begin{equation}
     \tilde{r}^{\mathrm{place}}_i =
     \begin{cases}
-        \tfrac{0.02}{30}\; r^{\mathrm{PC}}_i & v < 0.02 \\[4pt]
+        \tfrac{0.02}{30} & v < 0.02 \\[4pt]
         \dfrac{p(100v)}{30}\; r^{\mathrm{PC}}_i & v \geq 0.02
     \end{cases}
 \end{equation}
@@ -236,61 +299,75 @@ scaled rather than zeroed:
 \section{TEBC Response Profiles (Types 1--8)}
 
 The following profiles are shared by the independent and place-dependent models.
-In the independent model the magnitude parameters are fixed constants (given as defaults below).
-In the place-dependent model they are expressed as multiples of the live baseline
-$b_i = \tilde{r}^{\mathrm{place}}_i(t)$ (see the place-dependent model table above).
+Each type is built as a raw shape $S_k(t)$ using the magnitude constants given below
+(fitted assuming a unit baseline/amplitude of $1$), then \textbf{renormalized} to run
+from $0$ up to the neuron's actual peak amplitude $A_i$ (\S2/\S3):
+
+\begin{equation}\label{eq:normalize}
+    R_k(t; A) = \frac{S_k(t) - \min_\tau S_k(\tau)}{\max_\tau S_k(\tau) - \min_\tau S_k(\tau)} \cdot A,
+    \qquad \tau \in [-0.1,\, 2.0]\,\text{s (1000-point grid)}
+\end{equation}
+
+\noindent
+\textbf{Type 6 is the one exception} --- it is \emph{not} renormalized; see
+\eqref{eq:type6}. The raw shapes $S_k(t)$ below use the magnitude constants exactly
+as coded (independent model's fixed defaults; place-dependent's ratios from the table
+in \S3), but only their \emph{relative} shape survives \eqref{eq:normalize} --- the
+absolute constants shown do not appear directly in the final firing rate.
 
 % ---------------------------------------------------------------------------
 \subsection*{Type 1 --- Bimodal Gaussian}
 
 \begin{equation}\label{eq:type1}
-    r(t) = A_1 \exp\!\left(-\frac{(t-\mu_1)^2}{2\sigma_1^2}\right)
-         + A_2 \exp\!\left(-\frac{(t-\mu_2)^2}{2\sigma_2^2}\right) + 2b
+    S_1(t) = A_1 \exp\!\left(-\frac{(t-\mu_1)^2}{2\sigma_1^2}\right)
+         + A_2 \exp\!\left(-\frac{(t-\mu_2)^2}{2\sigma_2^2}\right)
 \end{equation}
 
 \noindent
-Default parameters: $A_1 = \tfrac{0.15}{24}$, $\mu_1 = 0.3$, $\sigma_1 = 0.1$;
-$A_2 = \tfrac{0.40}{24}$, $\mu_2 = 0.85$, $\sigma_2 = 0.1$; $b = \tfrac{0.07}{24}$.
+Independent model constants: $A_1 = 0.15$, $\mu_1 = 0.3$, $\sigma_1 = 0.1$;
+$A_2 = 0.40$, $\mu_2 = 0.85$, $\sigma_2 = 0.1$; baseline $= 0.07$ (added into both
+Gaussian terms before normalizing). Place-dependent model uses $A_1=2.14$, $A_2=5.71$,
+same $\mu,\sigma$, baseline $=1.0$.
 
 % ---------------------------------------------------------------------------
 \subsection*{Type 2 --- One-sided Gaussian}
 
 \begin{equation}\label{eq:type2}
-    r(t) = \begin{cases}
+    S_2(t) = \begin{cases}
         A \exp\!\left(-\dfrac{(t - \mu)^2}{2\sigma^2}\right) + b & t > \mu - 0.1 \\[6pt]
         b & \text{otherwise}
     \end{cases}
 \end{equation}
 
 \noindent
-Default parameters: $A = \tfrac{0.22}{24}$, $\mu = 0.75$, $\sigma = 0.15$, $b = \tfrac{0.07}{24}$.
+Independent: $A = 0.22$, $\mu = 0.75$, $\sigma = 0.15$, $b = 0.07$.
+Place-dependent: $A = 3.14$, same $\mu,\sigma$, $b = 1.0$.
 
 % ---------------------------------------------------------------------------
 \subsection*{Type 3 --- Piecewise Linear Decay}
 
-Let $d_1 = \tfrac{0.02}{24}$ and $d_2 = \tfrac{0.01}{24}$.
+Independent: $b = 0.06$, $d_1 = 0.02$, $d_2 = 0.01$.
+Place-dependent: $b = 1.0$, $d_1 = 0.33$, $d_2 = 0.17$.
 
 \begin{equation}\label{eq:type3}
-    r(t) = \begin{cases}
+    S_3(t) = \begin{cases}
         b                                                              & t \leq 0            \\[4pt]
         \dfrac{d_1 - b}{0.2}\,t + b                                   & 0 < t < 0.2         \\[8pt]
-        \dfrac{d_2 - d_1}{0.65}(t - 0.2) + 2d_1                      & 0.2 \leq t < 0.85   \\[6pt]
+        \dfrac{d_2 - d_1}{0.65}(t - 0.2) + d_1                      & 0.2 \leq t < 0.85   \\[6pt]
         d_2                                                            & 0.85 \leq t \leq 3.85 \\[4pt]
         b                                                              & t > 3.85
     \end{cases}
 \end{equation}
 
-\noindent
-Default parameters: $b = \tfrac{0.06}{24}$.
-
 % ---------------------------------------------------------------------------
 \subsection*{Type 4 --- Linear Ramp with Gaussian Burst}
 
-Let $A_{CS} = \tfrac{0.03}{24}$, $A_{US} = \tfrac{0.08}{24}$, $\sigma_{US} = 0.2$.
+Independent: $b = 0.075$, $A_{CS} = 0.03$, $A_{US} = 0.08$, $\sigma_{US} = 0.2$.
+Place-dependent: $b = 1.0$, $A_{CS} = 0.40$, $A_{US} = 1.10$, $\sigma_{US} = 0.2$.
 Define the unclamped response:
 
 \begin{equation}
-    \tilde{r}(t) = \begin{cases}
+    \tilde{S}_4(t) = \begin{cases}
         b                                                                                     & t \leq 0.05          \\[4pt]
         \dfrac{A_{CS} - b}{0.73}(t - 0.05) + b                                              & 0.05 < t \leq 0.78   \\[8pt]
         A_{US}\exp\!\left(-\dfrac{(t - 0.78)^2}{5\,\sigma_{US}^5}\right) + b               & 0.78 < t \leq 1      \\[6pt]
@@ -299,19 +376,16 @@ Define the unclamped response:
     \end{cases}
 \end{equation}
 
-The output is clamped to $[A_{CS},\, A_{US}]$:
+The output is clamped to $[A_{CS},\, A_{US}]$ before normalizing:
 \begin{equation}\label{eq:type4}
-    r(t) = \min\!\bigl(A_{US},\; \max\!\bigl(A_{CS},\; \tilde{r}(t)\bigr)\bigr)
+    S_4(t) = \min\!\bigl(A_{US},\; \max\!\bigl(A_{CS},\; \tilde{S}_4(t)\bigr)\bigr)
 \end{equation}
-
-\noindent
-Default parameters: $b = \tfrac{0.075}{24}$.
 
 % ---------------------------------------------------------------------------
 \subsection*{Type 5 --- Trapezoidal US Response}
 
 \begin{equation}\label{eq:type5}
-    r(t) = \begin{cases}
+    S_5(t) = \begin{cases}
         b                                                                    & t < 0.75            \\[4pt]
         A_{US}                                                               & 0.75 \leq t \leq 0.78 \\[4pt]
         A_{US} + \dfrac{b - A_{US}}{0.42}(t - 0.78)                        & 0.78 < t < 1.2      \\[8pt]
@@ -320,17 +394,18 @@ Default parameters: $b = \tfrac{0.075}{24}$.
 \end{equation}
 
 \noindent
-Default parameters: $b = \tfrac{0.035}{24}$, $A_{US} = \tfrac{0.11}{24}$.
+Independent: $b = 0.035$, $A_{US} = 0.11$. Place-dependent: $b = 1.0$, $A_{US} = 3.14$.
 
 % ---------------------------------------------------------------------------
-\subsection*{Type 6 --- Noisy Uniform}
+\subsection*{Type 6 --- Noisy Uniform (not renormalized)}
 
 \begin{equation}\label{eq:type6}
-    r(t) = b + \varepsilon, \qquad \varepsilon \sim \mathcal{N}\!\left(-\eta,\; \eta\right), \quad \eta = \frac{0.03}{30}
+    R_6(t; A) = 0.5\,A+\varepsilon, \qquad \varepsilon \sim \mathcal{N}\!\left(-\eta,\; \eta\right), \quad \eta = \frac{0.03}{30}
 \end{equation}
 
 \noindent
-Default parameters: $b = \tfrac{0.04}{24}$.
+Unlike types 1--5 and 7--8, this profile is applied directly to the peak amplitude
+$A$ (not passed through \eqref{eq:normalize}).
 
 % ---------------------------------------------------------------------------
 \subsection*{Type 7 --- Windowed Bimodal Gaussian}
@@ -344,58 +419,71 @@ Each Gaussian peak is truncated to a one-sided window:
     \end{cases}
 \end{equation}
 
-The total response is:
+The raw shape is:
 
 \begin{equation}\label{eq:type7}
-    r(t) = \max\!\left(\sum_{i=1}^{2} G_i(t) + b,\; b\right)
+    S_7(t) = \max\!\left(\sum_{i=1}^{2} G_i(t) + b,\; b\right)
 \end{equation}
 
 \noindent
-Default parameters: $A_1 = \tfrac{0.07}{24}$, $\mu_1 = 0.30$, $\sigma_1 = 0.08$, $D_1 = 0.25$;
-$A_2 = \tfrac{0.09}{24}$, $\mu_2 = 0.80$, $\sigma_2 = 0.15$, $D_2 = 0.10$; $b = \tfrac{0.042}{24}$.
+Independent: $A_1 = 0.07$, $\mu_1 = 0.30$, $\sigma_1 = 0.08$, $D_1 = 0.25$;
+$A_2 = 0.09$, $\mu_2 = 0.80$, $\sigma_2 = 0.15$, $D_2 = 0.10$; $b = 0.042$.
+Place-dependent: $A_1 = 1.67$, $A_2 = 2.14$, same $\mu,\sigma,D$, $b = 1.0$.
 
 % ---------------------------------------------------------------------------
 \subsection*{Type 8 --- Post-CS Piecewise Decay}
 
+Independent: $b = 0.065$, with fixed absolute steps $0.03$, $0.04$, $0.025$.
+Place-dependent: $b = 1.0$, with steps expressed as $0.46\,b$, $0.62\,b$, $0.38\,b$.
+
 \begin{equation}\label{eq:type8}
-    r(t) = \begin{cases}
+    S_8(t) = \begin{cases}
         b                                                                        & t \leq 0.25              \\[4pt]
-        \tfrac{0.03}{24}                                                         & 0.25 < t \leq 0.252      \\[6pt]
-        \dfrac{\tfrac{0.04}{24} - b}{0.498}(t - 0.252) + b                     & 0.252 < t < 0.75         \\[8pt]
-        \dfrac{\tfrac{0.025}{24} - b}{0.75}(t - 0.75) + b                      & 0.75 \leq t \leq 1.5     \\[6pt]
+        s_1                                                                      & 0.25 < t \leq 0.252      \\[6pt]
+        \dfrac{s_2 - b}{0.498}(t - 0.252) + b                                  & 0.252 < t < 0.75         \\[8pt]
+        \dfrac{s_3 - b}{0.75}(t - 0.75) + b                                    & 0.75 \leq t \leq 1.5     \\[6pt]
         b                                                                        & t > 1.5
     \end{cases}
 \end{equation}
 
 \noindent
-Default parameters: $b = \tfrac{0.065}{24}$.
+where $(s_1, s_2, s_3) = (0.03, 0.04, 0.025)$ for the independent model, and
+$(s_1,s_2,s_3) = (0.46b,\, 0.62b,\, 0.38b)$ for the place-dependent model.
 
 % ---------------------------------------------------------------------------
 \section{Arousal-Mediated Model}
 
-\textit{The task responses are selected from a subset of 4 functions based on whether
-the rat is running and whether the cell is in a place field. Each of these functions then depends solely on the time since the onset
-of the stimuli.}
+\textit{The task response is selected from one of 4 functions based on whether
+the rat is running and whether the cell is in a place field. Each of these functions
+depends solely on the time since CS onset and the neuron's own live place rate.}
 
 \bigskip\noindent
-There is no balance parameter. The task rate is added directly to the
-velocity-modulated place rate:
+There is no balance parameter and no place/task category split --- every neuron is a
+place cell, and the task response (if TEBC-responsive) is added directly on top:
 
 \begin{equation}
-    r_i(t) = \tilde{r}^{\mathrm{place}}_i(t) + r^{\mathrm{task}}_i(t) + \varepsilon,
-    \qquad \varepsilon \sim \mathcal{N}\!\left(-\tfrac{0.02}{30},\; \tfrac{0.02}{30}\right)
+    r_i(t) = \tilde{r}^{\mathrm{place}}_i(t) + r^{\mathrm{task}}_i(t) + \varepsilon_i,
+    \qquad \varepsilon_i \sim \mathcal{N}\!\left(-\tfrac{0.02}{30},\; \tfrac{0.02}{30}\right)
 \end{equation}
 
 \paragraph{Velocity modulation.}
-Uses the same cubic polynomial $p(s)$, but the slow-speed scaling constant differs:
+Uses the same cubic polynomial $p(s)$ as \S2, with a different slow-speed floor. A
+randomly chosen subset of neurons, of size $(1-\texttt{percent\_place\_cells})\times N$,
+is additionally forced to a near-zero rate whenever the animal is running --- \emph{but
+not} when it is stopped, so this subset only reads as ``non-place'' during locomotion:
 
 \begin{equation}
     \tilde{r}^{\mathrm{place}}_i =
     \begin{cases}
         \tfrac{0.2}{30}\; r^{\mathrm{PC}}_i & v < 0.02 \\[4pt]
-        \dfrac{p(100v)}{30}\; r^{\mathrm{PC}}_i & v \geq 0.02
+        \dfrac{p(100v)}{30}\; r^{\mathrm{PC}}_i & v \geq 0.02,\ i \notin \mathcal{Z} \\[4pt]
+        \tfrac{0.02}{30} & v \geq 0.02,\ i \in \mathcal{Z}
     \end{cases}
 \end{equation}
+
+\noindent
+where $\mathcal{Z}$ is the randomly sampled zeroed-out index set (resampled once per
+simulation, not per timestep).
 
 \paragraph{Task firing rate.}
 The response function is selected by two binary conditions evaluated each timestep:
@@ -426,23 +514,24 @@ used as the baseline for all magnitude expressions.
 \paragraph{Response functions.}
 
 \medskip\noindent
-\textbf{$R_1$ --- In field, running:}
+\textbf{$R_1$ --- In field, running.} Elevated through the CS and trace interval
+(the hippocampal ``bridging'' signature expected of a trace-conditioned cell), then
+peaks more strongly during the US pulse itself before returning to baseline:
 \begin{equation}
     R_1(t, b) = \begin{cases}
-        0.9\,b  & t < t_{CS}                       \\[4pt]
-        b       & t_{CS} \leq t < t_{US}            \\[4pt]
-        0.5\,b  & t = t_{US}                        \\[4pt]
-        1.2\,b  & t_{US} < t < t_{US} + 0.1         \\[4pt]
-        b       & t \geq t_{US} + 0.1
+        1.3\,b  & t < t_{US}                        \\[4pt]
+        1.5\,b  & t_{US} \leq t < t_{US} + d_{US}    \\[4pt]
+        b       & t \geq t_{US} + d_{US}
     \end{cases}
 \end{equation}
 
 \medskip\noindent
-\textbf{$R_2$ --- Out of field, running:}
+\textbf{$R_2$ --- Out of field, running:} a slight, sustained increase through the
+CS, trace interval, and US pulse:
 \begin{equation}
     R_2(t, b) = \begin{cases}
-        1.1\,b  & t < t_{US}   \\[4pt]
-        b       & t \geq t_{US}
+        1.1\,b  & t < t_{US} + d_{US}   \\[4pt]
+        b       & t \geq t_{US} + d_{US}
     \end{cases}
 \end{equation}
 
@@ -452,8 +541,8 @@ used as the baseline for all magnitude expressions.
     R_3(t, b) = \begin{cases}
         1.5\,b                                                               & t < t_{CS}              \\[6pt]
         b\!\left(1 + 0.5\,\dfrac{t_{US} - t}{t_{US} - t_{CS}}\right)       & t_{CS} \leq t < t_{US}  \\[8pt]
-        3\,b                                                                 & t = t_{US}              \\[4pt]
-        b                                                                    & t > t_{US}
+        3\,b                                                                 & t_{US} \leq t < t_{US} + d_{US} \\[4pt]
+        b                                                                    & t \geq t_{US} + d_{US}
     \end{cases}
 \end{equation}
 
@@ -462,9 +551,5 @@ used as the baseline for all magnitude expressions.
 \begin{equation}
     R_4(t, b) = b + \varepsilon_4, \qquad \varepsilon_4 \sim \mathrm{Uniform}(-0.2\,b,\; 0.2\,b)
 \end{equation}
-
-\noindent
-\emph{Note:} $R_1$ and $R_3$ include responses conditioned on $t = t_{US}$ exactly,
-which will not trigger under floating-point time discretisation.
 
 \end{document}
