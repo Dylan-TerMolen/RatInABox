@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import replace
 
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
@@ -9,6 +10,16 @@ from fastapi.responses import RedirectResponse
 from .. import config, scripts_registry, slurm_templates, view
 
 router = APIRouter(prefix="/scripts", tags=["scripts"])
+
+
+def _with_param_default_overrides(params: list, overrides: dict) -> list:
+    """params with each ParamSpec's default swapped for its config.yaml
+    override, if one's set (see config.script_form_param_defaults) --
+    otherwise unchanged."""
+    if not overrides:
+        return params
+    return [replace(p, default=overrides[p.name]) if p.name in overrides else p
+            for p in params]
 
 
 @router.get("")
@@ -30,15 +41,16 @@ def script_form(request: Request, script_id: str):
     defaults = config.slurm_defaults()
     default_job_name = re.sub(r"[^a-zA-Z0-9_]+", "_", spec.display_name).strip("_")[:40]
 
+    params = _with_param_default_overrides(spec.params, config.script_form_param_defaults(spec.id))
     visible = config.script_form_visible_params(spec.id)
     if visible is None:
-        primary_params, other_params = spec.params, []
+        primary_params, other_params = params, []
     else:
         visible_set = set(visible)
         # Required params with no default always show -- the command can't
         # be built without them, regardless of what's configured as "visible".
-        primary_params = [p for p in spec.params if p.name in visible_set or p.required]
-        other_params = [p for p in spec.params if p not in primary_params]
+        primary_params = [p for p in params if p.name in visible_set or p.required]
+        other_params = [p for p in params if p not in primary_params]
 
     return view.templates.TemplateResponse("script_form.html", {
         "request": request, "spec": spec, "defaults": defaults,
@@ -66,7 +78,13 @@ async def preview(request: Request, script_id: str):
 
     for p in positional + flagged:
         raw_value = form.get(f"value__{p.name}", "").strip()
-        is_grid = form.get(f"grid__{p.name}") == "on"
+        # Grid-eligible params (see scripts_registry.ParamSpec.grid_eligible) are
+        # exactly the ones main.py would otherwise sweep sequentially inside one
+        # process -- always split a comma-separated value into array tasks for
+        # these, no opt-in checkbox needed. Everything else keeps the manual
+        # checkbox: a comma there may be a single param's own list value (e.g.
+        # task_types), not a sweep.
+        is_grid = p.grid_eligible or form.get(f"grid__{p.name}") == "on"
         if p.type == "bool":
             if raw_value == "on":
                 bool_flags.append(p.flag)

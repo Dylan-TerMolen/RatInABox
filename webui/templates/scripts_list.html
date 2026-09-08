@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Scripts</h2>
-<p class="muted">Pick a script to build a job from a param form and an auto-generated SLURM script.
+<p class="muted">Build a job from a param form and an auto-generated SLURM script.
    Don't see what you need, or the script's args weren't auto-detected? <a href="/jobs/new-raw">Upload a ready-made .sh instead</a>.</p>
 
 {% for repo, scripts in by_repo.items() %}

@@ -61,6 +61,13 @@ def _extract_experiment_tag(script_text: str) -> str | None:
     return None
 
 
+def _to_unix_line_endings(text: str) -> str:
+    """Normalize CRLF/CR to LF -- sbatch refuses scripts with DOS line
+    breaks ("Batch script contains DOS line breaks (\\r\\n)"), which is
+    exactly what a .sh authored or saved on Windows carries in."""
+    return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
 @router.post("/new-raw")
 async def create_raw_job(request: Request, job_name: str = Form(...),
                           sh_file: UploadFile = File(...),
@@ -71,8 +78,8 @@ async def create_raw_job(request: Request, job_name: str = Form(...),
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     local_path = gen_dir / f"{job_name}_{stamp}.sh"
     contents = await sh_file.read()
-    local_path.write_bytes(contents)
-    script_text = contents.decode(errors="replace")
+    script_text = _to_unix_line_endings(contents.decode(errors="replace"))
+    local_path.write_text(script_text)
 
     job_id = db.insert_job(
         repo="ratinabox", script_id="raw-upload", script_display_name=sh_file.filename or "uploaded.sh",
@@ -97,7 +104,7 @@ async def create_from_preview(request: Request):
     script_id = form["script_id"]
     script_display_name = form["script_display_name"]
     job_name = form["job_name"]
-    script_text = form["script_text"]
+    script_text = _to_unix_line_endings(form["script_text"])
     array_count = int(form.get("array_count", "1"))
     params = json.loads(form.get("params_json", "{}"))
     grid = json.loads(form.get("grid_json", "{}")) or None
@@ -183,31 +190,34 @@ def _fixed_query_params(request: Request) -> dict[str, str]:
 
 
 @router.get("/{job_id}/results")
-def job_results(request: Request, job_id: int, facet_var: str | None = None):
+def job_results(request: Request, job_id: int, x_var: str | None = None, y_var: str | None = None,
+                 facet_var: str | None = None):
     """Grid-sweep view of this job's matched decoding logs -- see
     sweep_results.py. Toggle which metric's surface plot(s) are shown, and
-    (via the facet_var/fixed_* querystring, driven by the page's own
-    selectors) which swept param facets the plot and which value any
-    leftover swept param is pinned to. Each shown metric's actual figure is
-    fetched lazily from /results/plot below."""
+    (via the x_var/y_var/facet_var/fixed_* querystring, driven by the page's
+    own Manual axis selectors and/or the Auto-mode facet override) which
+    swept params the plot uses for x/y/facet and which value any leftover
+    swept param is pinned to. Each shown metric's actual figure is fetched
+    lazily from /results/plot below."""
     job = db.get_job(job_id)
     if job is None:
         return RedirectResponse("/jobs", status_code=303)
-    view_data = sweep_results.build_results_view(job_id, facet_var, _fixed_query_params(request))
+    view_data = sweep_results.build_results_view(job_id, x_var, y_var, facet_var, _fixed_query_params(request))
     return view.templates.TemplateResponse("job_results.html", {
         "request": request, "job": job, **view_data,
     })
 
 
 @router.get("/{job_id}/results/plot")
-def job_results_plot(request: Request, job_id: int, metric: str, facet_var: str | None = None):
+def job_results_plot(request: Request, job_id: int, metric: str, x_var: str | None = None,
+                      y_var: str | None = None, facet_var: str | None = None):
     """One metric's faceted surface figure as a PNG, rendered on demand by
     sweep_plots.py (reuses scripts/pull_and_plot_holdover_sweep.py's own
     matplotlib code) -- not precomputed, so an unrequested metric never
     costs anything. 404s rather than erroring if there's nothing to plot,
-    e.g. a stale request for a metric this job has no data for. facet_var/
-    fixed_* mirror job_results's own querystring so a lazily-loaded image
-    always matches the page's current axis selection (see
+    e.g. a stale request for a metric this job has no data for. x_var/y_var/
+    facet_var/fixed_* mirror job_results's own querystring so a lazily-loaded
+    image always matches the page's current axis selection (see
     sweep_results.resolve_view)."""
     from .. import sweep_plots  # deferred: only pull in matplotlib/pandas if a plot is actually requested
 
@@ -215,7 +225,8 @@ def job_results_plot(request: Request, job_id: int, metric: str, facet_var: str 
     if job is None:
         return Response(status_code=404)
     records = sweep_results.job_sweep_records(job_id)
-    axes, _, resolved_fixed, filtered = sweep_results.resolve_view(records, facet_var, _fixed_query_params(request))
+    axes, _, resolved_fixed, filtered = sweep_results.resolve_view(
+        records, x_var, y_var, facet_var, _fixed_query_params(request))
     png = sweep_plots.render_metric_surface_png(filtered, axes, metric, job["experiment_tag"], fixed=resolved_fixed)
     if png is None:
         return Response(status_code=404)

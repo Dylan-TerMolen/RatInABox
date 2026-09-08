@@ -40,22 +40,31 @@ script_forms:
     # which already matches every hand-written sweep script's convention.
     visible_params:
       - experiment
+      - num_iters
       - holdovers
       - percent_task_responsive_cells
       - percent_place_cells
       - percent_task_in_response_values
+    # Overrides args_parser.py's own default (1, meant for quick one-off
+    # runs) so the form pre-fills the value the most recent sweep scripts
+    # actually use -- NUM_ITERS=3 in slurm/independent_sweep.sh and
+    # slurm/place_dependent_sweep.sh (2026-08-07). Doesn't touch main.py's
+    # CLI default itself, just what this form starts you with.
+    param_defaults:
+      num_iters: 3
 
 # Defaults pre-filled into the SLURM header when generating a new script. All
-# overridable per-job in the UI.
+# overridable per-job in the UI. Matches slurm/independent_sweep.sh and
+# slurm/place_dependent_sweep.sh as of their 2026-08-07 edit.
 slurm_defaults:
-  account: "p32072"
+  account: "p32472"
   partition: "gengpu"
   gres: "gpu:a100:1"
   nodes: 1
   ntasks: 1
-  mem: "32GB"
-  time: "12:00:00"
-  mail_type: "END,FAIL"
+  mem: "8GB"
+  time: "2:00:00"
+  mail_type: "ALL"
   mail_user: "dptermolen@gmail.com"
   conda_env: "ratinabox"
 

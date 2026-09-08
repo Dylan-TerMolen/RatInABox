@@ -57,6 +57,14 @@ def script_form_visible_params(script_id: str) -> list[str] | None:
     return entry["visible_params"] if entry else None
 
 
+def script_form_param_defaults(script_id: str) -> dict:
+    """{param_name: value} overrides for this script's pre-filled form
+    values, e.g. to match a hand-written sweep script's convention where it
+    differs from args_parser.py's own CLI default. Empty dict if none set."""
+    entry = load_config().get("script_forms", {}).get(script_id, {})
+    return entry.get("param_defaults", {})
+
+
 def _resolve_app_path(key: str) -> Path:
     raw = load_config()["app"][key]
     p = Path(raw)

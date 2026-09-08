@@ -9,27 +9,51 @@
     <div><strong>X:</strong> {{ axes.x or '—' }}</div>
     <div><strong>Y:</strong> {{ axes.y or '—' }}</div>
   </div>
-  <p class="help">X/y axes are inferred from this job's swept params (best-effort match against current
-     flag naming). Facet variable defaults the same way but is selectable below -- e.g. switch it to
-     holdover on a holdover-grid sweep. Each figure is rendered server-side with
+  <p class="help">X/y/facet axes are inferred from this job's swept params by default (best-effort
+     match against current flag naming) -- switch to Manual below to pick any of them by hand for
+     edge cases the auto-match gets wrong. Each figure is rendered server-side with
      scripts/pull_and_plot_holdover_sweep.py's own matplotlib plotting code, so it matches that
      script's own surface-plot output exactly.</p>
 </div>
 
-{% if facet_options|length > 1 or fixed_options %}
+{% if facet_options|length > 1 or axis_options|length > 1 or fixed_options %}
 <div class="card">
   <h3>View</h3>
   <form method="get" action="/jobs/{{ job['id'] }}/results" class="row" id="axis-form">
+    {% if axis_options|length > 1 %}
+    <div class="field" style="max-width:200px">
+      <label>Axis selection</label>
+      <div class="segmented">
+        <label><input type="radio" name="axis_mode" value="auto" {% if not manual_mode %}checked{% endif %}> Auto</label>
+        <label><input type="radio" name="axis_mode" value="manual" {% if manual_mode %}checked{% endif %}> Manual</label>
+      </div>
+    </div>
+    {% endif %}
+
     {% if facet_options|length > 1 %}
-    <div class="field" style="max-width:260px">
+    <div class="field auto-only" style="max-width:260px" {% if manual_mode %}hidden{% endif %}>
       <label>Facet variable</label>
-      <select name="facet_var" onchange="document.getElementById('axis-form').submit()">
+      <select name="facet_var" {% if manual_mode %}disabled{% endif %} onchange="document.getElementById('axis-form').submit()">
         {% for option in facet_options %}
         <option value="{{ option }}" {% if option == axes.facet %}selected{% endif %}>{{ option }}</option>
         {% endfor %}
       </select>
     </div>
     {% endif %}
+
+    {% if axis_options|length > 1 %}
+    {% for param_name, label, current in (("x_var", "X axis", axes.x), ("y_var", "Y axis", axes.y), ("facet_var", "Facet variable", axes.facet)) %}
+    <div class="field manual-only" style="max-width:260px" {% if not manual_mode %}hidden{% endif %}>
+      <label>{{ label }}</label>
+      <select name="{{ param_name }}" {% if not manual_mode %}disabled{% endif %} onchange="document.getElementById('axis-form').submit()">
+        {% for option in axis_options %}
+        <option value="{{ option }}" {% if option == current %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endfor %}
+    {% endif %}
+
     {% for f in fixed_options %}
     <div class="field" style="max-width:260px">
       {% if f.choices|length > 1 %}
@@ -59,9 +83,9 @@
    faceted surface needs a facet plus x/y axis, so there's nothing to plot yet.</div>
 {% else %}
 <div class="card">
-  <h3>Metrics</h3>
+  <h3>Task decoding</h3>
   <div class="metric-toggles">
-    {% for m in metrics %}
+    {% for m in metrics if m.family == "task" %}
     <label class="inline-check{% if not m.available %} disabled{% endif %}">
       <input type="checkbox" class="metric-toggle" data-metric="{{ m.key }}"
              data-src="/jobs/{{ job['id'] }}/results/plot?metric={{ m.key | urlencode }}{{ plot_query_suffix }}"
@@ -72,6 +96,57 @@
     {% endfor %}
   </div>
 </div>
+
+<div class="card">
+  <h3>Place decoding</h3>
+  <div class="toggle-row">
+    <div class="segmented">
+      <label><input type="radio" name="place_task_state" value="in_task" checked> In task</label>
+      <label><input type="radio" name="place_task_state" value="out_of_task"> Out of task</label>
+    </div>
+    <div class="segmented">
+      <label><input type="radio" name="place_measure" value="r2" checked> R²</label>
+      <label><input type="radio" name="place_measure" value="cm"> Avg error (cm)</label>
+    </div>
+  </div>
+  {% for task_state in ("in_task", "out_of_task") %}
+  {% for measure in ("r2", "cm") %}
+  <div class="metric-toggles place-kind-group" data-task-state="{{ task_state }}" data-measure="{{ measure }}"
+       {% if not (task_state == "in_task" and measure == "r2") %}style="display:none"{% endif %}>
+    {% for m in metrics if m.family == "place" and m.task_state == task_state and m.measure == measure %}
+    <label class="inline-check{% if not m.available %} disabled{% endif %}">
+      <input type="checkbox" class="metric-toggle" data-metric="{{ m.key }}"
+             data-task-state="{{ task_state }}" data-measure="{{ measure }}"
+             data-src="/jobs/{{ job['id'] }}/results/plot?metric={{ m.key | urlencode }}{{ plot_query_suffix }}"
+             {% if m.default and m.available %}checked{% endif %}
+             {% if not m.available %}disabled{% endif %}>
+      {{ m.label }}{% if not m.available %} <span class="muted">(no data)</span>{% endif %}
+    </label>
+    {% endfor %}
+  </div>
+  {% endfor %}
+  {% endfor %}
+</div>
+
+{% if metrics | selectattr("family", "equalto", "place_legacy") | selectattr("available") | list %}
+<div class="card">
+  <h3>Place decoding <span class="muted">(legacy -- pre in/out-of-task split)</span></h3>
+  <p class="help">This job's logs predate the in-task/out-of-task place-decoding split above, so
+     they only carry one pooled R² per direction. Shown here rather than folded into "Place
+     decoding" so it's never mistaken for either of that split's two states.</p>
+  <div class="metric-toggles">
+    {% for m in metrics if m.family == "place_legacy" %}
+    <label class="inline-check{% if not m.available %} disabled{% endif %}">
+      <input type="checkbox" class="metric-toggle" data-metric="{{ m.key }}"
+             data-src="/jobs/{{ job['id'] }}/results/plot?metric={{ m.key | urlencode }}{{ plot_query_suffix }}"
+             {% if m.default and m.available %}checked{% endif %}
+             {% if not m.available %}disabled{% endif %}>
+      {{ m.label }}{% if not m.available %} <span class="muted">(no data)</span>{% endif %}
+    </label>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 {% for m in metrics if m.available %}
 <div class="card surface-figure" data-metric="{{ m.key }}"{% if not m.default %} style="display:none"{% endif %}>

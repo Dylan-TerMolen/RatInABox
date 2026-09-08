@@ -32,6 +32,12 @@ class ParamSpec:
     help: str = ""
     required: bool = False
     positional_order: int | None = None
+    # True for params main.py itself would sweep internally, sequentially, in
+    # one process (args_parser.GRID_ELIGIBLE_PARAMS) -- for these the webui
+    # always splits a comma-separated value into one SLURM array task per
+    # combination (matching slurm/*_sweep.sh's hand-written convention)
+    # rather than letting the whole sweep run inside a single task.
+    grid_eligible: bool = False
 
 
 @dataclass
@@ -68,6 +74,7 @@ def _introspect_ratinabox_main() -> ScriptSpec:
             choices=list(action.choices) if action.choices else None,
             help=action.help or "",
             required=bool(action.required),
+            grid_eligible=action.dest in args_parser.GRID_ELIGIBLE_PARAMS,
         ))
     return ScriptSpec(
         id="ratinabox:hsw_main",

@@ -30,7 +30,9 @@
   <div class="card">
     <h3>Script params</h3>
     <p class="help">For any param, type a comma-separated list and check "grid" to sweep it as a SLURM array
-       (one array task per combination across all grid params, row-major).</p>
+       (one array task per combination across all grid params, row-major). Params main.py sweeps itself
+       (marked "always split") don't need the checkbox -- a comma-separated value there is always split
+       into one array task per combination, never run as a sweep inside a single task.</p>
     {% for p in primary_params %}
     <div class="param-row">
       <div class="name">
@@ -57,7 +59,9 @@
         {% elif p.help %}<div class="help">{{ p.help }}</div>{% endif %}
       </div>
       <div class="grid-toggle">
-        {% if p.type != 'bool' %}
+        {% if p.grid_eligible %}
+        <span class="muted">always split (comma-sep)</span>
+        {% elif p.type != 'bool' %}
         <label class="inline"><input type="checkbox" name="grid__{{ p.name }}"> grid (comma-sep)</label>
         {% endif %}
       </div>
