@@ -4,6 +4,7 @@ import random
 import numpy as np
 
 from ratinabox.Neurons import PlaceCells
+from ratinabox.hsw import utils
 from tebc_response2 import response_profiles
 
 
@@ -83,15 +84,12 @@ class TEBC(PlaceCells):
 
 
     def _modulate_firing_rates_for_velocity(self):
-        coefficients = [-3.26092478e-04, 1.74074978e-02, 8.36619150e-02, 1.16059441]
-        firing_rate_function = np.poly1d(coefficients)
-
         vel = self.agent.smoothed_velocity
 
         if vel < 0.02:
             self.firingrate = np.zeros(self.n)
         else:
-            FR_mod = firing_rate_function(vel * 100)
+            FR_mod = utils.velocity_gain(vel * 100)
 
             self.firingrate *= (FR_mod / 30)
             self.firingrate[self.indices_to_zero_out] = 0.02 / 30

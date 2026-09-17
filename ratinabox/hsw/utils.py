@@ -20,6 +20,22 @@ def parse_list(arg_value):
     else:
         return [float(arg_value)]
 
+def velocity_gain(speed_cm_per_s, r0=1.16059441, r_max=11.6, tau=13.3):
+    """Speed-tuning gain applied to firing rate: rises roughly linearly near
+    the moving threshold, then plateaus at r_max -- never decreasing at high
+    speed, unlike a raw polynomial fit would past its fitted range.
+
+    Saturating-exponential form per Hinman et al. 2016 (Neuron), which found
+    many speed-modulated hippocampal/entorhinal cells are better fit by this
+    shape than by a pure linear speed-rate relationship (cf. Kropff et al.
+    2015, Nature, for the linear case). r0/r_max/tau are matched to the
+    intercept and incidental peak of the polynomial this replaces, so overall
+    firing-rate magnitudes are unchanged; tau puts the curve at ~95% of r_max
+    by 40 cm/s, matching where that polynomial used to peak.
+    """
+    return r0 + (r_max - r0) * (1 - np.exp(-speed_cm_per_s / tau))
+
+
 def num_place_cells_for(num_neurons, percent_place_cells):
     """How many of num_neurons carry a place field, given percent_place_cells.
 

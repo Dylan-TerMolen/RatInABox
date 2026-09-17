@@ -106,14 +106,12 @@ class CombinedPlaceTebc(PlaceCells):
 
     def _place_firing_rate(self):
         """Velocity-modulated place firing; cells without a field sit at baseline."""
-        coefficients = [-3.26092478e-04, 1.74074978e-02, 8.36619150e-02, 1.16059441]
-        firing_rate_function = np.poly1d(coefficients)
         vel = self.agent.smoothed_velocity
 
         if vel < 0.02:
             place_fr = np.full(self.n, BASELINE_FR)
         else:
-            place_fr = self.firingrate * (firing_rate_function(vel * 100) / 30)
+            place_fr = self.firingrate * (utils.velocity_gain(vel * 100) / 30)
         place_fr[~self.place_responsive_indices] = BASELINE_FR
         return place_fr
 

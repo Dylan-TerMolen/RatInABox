@@ -19,7 +19,7 @@ Design:
     of the refactor that differs between models) and the real category-routing
     / balance-blend arithmetic in `CombinedPlaceTebc` -- it just swaps out the
     (irrelevant here, unchanged by this refactor) biological curve shape.
-  - The velocity-modulation polynomial and the non-pinned-checkpoint place rate
+  - The velocity-modulation gain function and the non-pinned-checkpoint place rate
     (the agent has walked away from the pinned centre by then) are the two
     pieces still sourced from the real, trusted subsystems rather than hand
     re-derived; each is called out where used below.
@@ -28,6 +28,7 @@ import numpy as np
 import pytest
 
 from ratinabox.Neurons import PlaceCells
+from ratinabox.hsw import utils
 from ratinabox.hsw.combined_place_tebc import BASELINE_FR
 from ratinabox.hsw.environment_builder import build_rectangular_environment
 from ratinabox.hsw.independent_model.TEBC import TEBC as IndependentTEBC
@@ -46,9 +47,9 @@ BALANCE = np.array([0.0, 0.0, 0.3])                # only the mixed cell's balan
                                                      # typo in the blend formula can't hide behind 0.5 == 1-0.5
 CELL_TYPES = np.array([1, 1, 1])                   # arbitrary: response_profiles is stubbed below
 
-# The model's own published velocity-tuning polynomial (copied from
-# combined_place_tebc.py) -- reproducible with a calculator, not a re-derivation.
-VELOCITY_POLY = np.poly1d([-3.26092478e-04, 1.74074978e-02, 8.36619150e-02, 1.16059441])
+# The model's own published velocity-tuning gain function (utils.velocity_gain)
+# -- reproducible with a calculator, not a re-derivation.
+VELOCITY_GAIN = utils.velocity_gain
 WALK_SPEED_CM_S = 15  # matches conftest's ~0.15 m/s trajectory
 
 # Stand-in tEBC response: full amplitude in the CS window, half in the US
@@ -83,7 +84,7 @@ def _place_rate_oracle(model):
     PlaceCells.update(model)
     raw_place = model.firingrate.copy()
     vel = model.agent.smoothed_velocity
-    place_fr = raw_place * (VELOCITY_POLY(vel * 100) / 30)
+    place_fr = raw_place * (VELOCITY_GAIN(vel * 100) / 30)
     place_fr[~model.place_responsive_indices] = 0.02 / 30
     return place_fr
 
@@ -98,14 +99,14 @@ def test_independent_model_firing_rates_during_cs_and_us(fresh_agent, no_jitter)
     # --- CS checkpoint (time_since_cs == 0.0) ---
     # Place rate: unmodulated rate is exactly max_fr (12), by construction of
     # the pinned centre; the velocity-modulation factor is a published constant.
-    place_fr_cs = 12.0 * (VELOCITY_POLY(WALK_SPEED_CM_S) / 30)  # == 2.0926592107
+    place_fr_cs = 12.0 * (VELOCITY_GAIN(WALK_SPEED_CM_S) / 30)  # == 3.288145485430808
     # Independent model: tEBC amplitude is always max_fr (12), regardless of place firing.
     task_fr_cs = 12.0  # toy_response(0.0, amplitude=12) -> in the CS window -> 12
     balance = BALANCE[MIXED]  # 0.3
     expected_cs = np.array([
         place_fr_cs,                                                    # place-only: pure place rate
         task_fr_cs,                                                     # task-only: pure task response
-        balance * task_fr_cs + (1 - balance) * place_fr_cs,             # mixed: balance blend, == 5.0648614475
+        balance * task_fr_cs + (1 - balance) * place_fr_cs,             # mixed: balance blend, == 5.901701839801565
     ])
 
     model.update()
@@ -135,7 +136,7 @@ def test_place_dependent_model_firing_rates_during_cs_and_us(fresh_agent, no_jit
     assert model.task_only_baseline == TASK_ONLY_BASELINE  # default; the task-only cell's amplitude below relies on it
 
     # --- CS checkpoint (time_since_cs == 0.0) ---
-    place_fr_cs = 12.0 * (VELOCITY_POLY(WALK_SPEED_CM_S) / 30)  # == 2.0926592107, same derivation as independent
+    place_fr_cs = 12.0 * (VELOCITY_GAIN(WALK_SPEED_CM_S) / 30)  # == 3.288145485430808, same derivation as independent
     # Place-dependent model: task-only cell has no place field, so its amplitude
     # falls back to the fixed task_only_baseline (0.5).
     task_only_amplitude = model.task_only_baseline
