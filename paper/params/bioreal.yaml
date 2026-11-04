@@ -1,0 +1,41 @@
+# "Biologically plausible" parameter set used for every main-text figure.
+# Single source of truth -- no figure or produce/ script hardcodes these values.
+# See CLAUDE.md's "Open decisions" table for how each value was resolved.
+
+name: bioreal
+
+# Simulation params, passed straight through to simulate_experiment() /
+# assign_tebc_types_and_responsiveness().
+num_neurons: 132
+percent_place_cells: 0.2          # resolved 2026-09-23: draft manuscript value
+percent_task_responsive_cells: 0.4  # resolved 2026-09-23: draft manuscript value ("40% task-responsive")
+percent_is_task_responsive_distribution: fixed
+
+# PROVISIONAL -- not yet resolved, see CLAUDE.md open decisions #2. Set to
+# args_parser's own pre-bioreal defaults purely so produce/simulate.py has
+# something runnable (independent/place_dependent's CombinedPlaceTebc.__init__
+# requires a real value, unlike arousal_mediated which ignores this axis).
+# Do not read these as final values for the manuscript; swap them here (data,
+# not code) once decided -- nothing downstream should need to change.
+percent_task_in_response: 0.5
+percent_task_in_response_dist: fixed
+percent_task_in_response_std: 0.1
+holdover: 1.0
+
+task_types: [1, 2, 3, 8]  # DEFAULT_TASK_TYPES, see ratinabox/hsw/tebc_response.py
+
+# Decoding params. Split is sequential/unshuffled -- this is what
+# Hannahs-CEBRAs/hold_out.py actually implements (verified 2026-09-23), not a
+# choice made here. Recorded so stats.py/captions can state it accurately.
+decoder_split: sequential_75_25
+
+# Sample size per condition. Not a fixed experimental-design parameter (see
+# CLAUDE.md open decisions #4) -- this just documents whatever num_iters a
+# given produce/ run actually used; individual artifacts' meta.json is the
+# source of truth for a specific run.
+num_iters: 3
+
+# Above-chance test for stats.py: compare each real score's mean +/- CI
+# (across iterations) against its paired shuffled score's mean +/- CI;
+# non-overlap = above chance. See CLAUDE.md open decisions #5.
+above_chance_test: ci_non_overlap

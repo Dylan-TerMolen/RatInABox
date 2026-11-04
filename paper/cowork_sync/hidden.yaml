@@ -1,0 +1,9 @@
+# Figure ids left out of the figures doc and proofs page (manifest and builds untouched).
+# Owned by Cowork (paper/cowork_sync). Remove an id to bring the figure back.
+# 2026-10-05: Dylan — supplementary 7–10 are confusing; leave out for now.
+- supp_place_pct
+- supp_place_pct_all_models
+- decoding_task_summary
+- decoding_place_summary
+# 2026-10-05: Dylan — reference image is already covered; drop the trailing page.
+- legacy:reference_source_paper_tEBC_vs_nontEBC.png

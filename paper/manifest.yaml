@@ -1,0 +1,385 @@
+# Figure ID -> order, panels, data inputs, size, caption. See CLAUDE.md's
+# "Figure pipeline (paper/)" section. Figures are numbered by their position
+# in this list, not by ID -- reordering the paper is a one-line change here.
+#
+# Ordered by the manuscript draft's Results-text (FIG n) citations (2026-09-23
+# draft, "d1") -- the more complete of its two numbering schemes; the
+# end-of-draft figure plan numbers some of these differently (noted per entry).
+#
+# `bio_model` (figure plan's Figure 6, "potential biologic model?") is
+# intentionally omitted: undefined in the draft, not to be built until the
+# authors define it.
+
+figures:
+  - id: setup
+    kind: main
+    width: double
+    inputs:
+      sim: [bioreal-independent]
+    panels:
+      - schematic                    # a: CS 0–250ms, trace 250–750ms, US 750–850ms, step/box diagram
+      - decoder_time_bins            # b: the 5 task-decoder classes on a's timeline, edges from trial markers
+      - trajectory_time_A            # c: 2x2 grid, top row (time, phase on bottom row)
+      - trajectory_time_B            # c
+      - trajectory_phase_A           # c (current tone/trace/shock/inter-trial coloring;
+      - trajectory_phase_B           #    non-tEBC/tEBC split kept as a simple option, not default)
+      - place_coverage_A             # d: summed-field heatmap + field outlines, bioreal (20%),
+      - place_coverage_B             # d   annotated with each env's own place-responsive %
+      - example_fields_A              # e: 3 spatially distinct real fields, small multiples
+      - example_fields_B              # e   (legacy setup_example_fields_{A,B}.png)
+    caption: captions/setup.md
+    status: done  # 2026-10-23 figure review: (a) schematic redrawn as a step/box diagram
+                  # (matches the reference tone/trace/shock image); old (b)
+                  # trajectory-by-time and (c) trajectory-by-phase merged into one 2x2
+                  # grid under panel label "b"; old (e) remapping_examples dropped (not a
+                  # legacy requirement); old (f) place_centres dropped (IS a legacy
+                  # requirement -- paper/legacy/coverage.yaml's setup_place_centres_AB.png
+                  # entry flipped back to regenerated: false with a note, so --check keeps
+                  # flagging it and Cowork keeps the legacy image pending, per CLAUDE.md);
+                  # old (g) example_fields cut from 6 to 3 per env, chosen by
+                  # farthest-point sampling for spatial distinctness, relettered to (d).
+                  # Caption's {{stat.*}} tokens aren't resolvable yet (stats.py doesn't
+                  # exist) -- --check only warns about that, doesn't fail.
+
+  - id: models
+    kind: main
+    width: double
+    inputs:
+      sim: [bioreal-independent, bioreal-place_dependent, bioreal-arousal_mediated]
+    panels:
+      - model_schematics              # a: new -- one small diagram per model
+      - raw_response_types            # b: IM/PDM default types 1/2/3/8
+      - independent_field_grid        # c: IM in/near/out-of-field x type
+      - place_dependent_field_grid    # d: PDM, same layout as c
+      - arousal_mediated_2x2_grid     # e: ADM (in/out field) x (running/sitting)
+      - rasters_per_model              # f: one example cell per model, by field state
+                                        #    (+ running state for ADM)
+    caption: captions/models.md
+    status: done  # built and checked 2026-09-23; ported figures.ipynb cells 12-37 (some
+                  # reconstructed rather than copy-pasted -- a few notebook cells are
+                  # incomplete/broken sandbox code), renamed Additive/Dependent -> IM/PDM.
+                  # Example-cell selection for panel f picks the most in/out-of-field-
+                  # balanced place+task-responsive cell, not just the first one found.
+
+  - id: position_decoding
+    kind: main   # figure plan's Figure 2 slot ("potentially ... might be supplemental");
+                 # Results-text numbering (used here) makes it main figure 3
+    width: single
+    inputs:
+      # 2026-10-03: independent_sweep_092926, restricted to bioreal's actual
+      # percentages (place=0.2, responsive=0.4) via direction_stats/param_slice's
+      # `fixed` -- replaces the old dedicated bioreal-take-3 run, which predates
+      # the 2026-09-29 velocity-gain fix (see robustness.py's module docstring).
+      # This slice's holdover is fixed at 1.0 (not swept), and all 6 balance
+      # values are complete -- no partial-sweep flag needed.
+      # 2026-10-05: place_dependent_sweep_092926/arousal_mediated_sweep_092926
+      # added (same three-sweep policy, same bioreal-percentage fixed point) --
+      # all three models now shown, not IM alone (rule 8 was "ship what
+      # exists"; now all three exist).
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926, arousal_mediated_sweep_092926]
+    panels:
+      - within_env_position_decoding      # a: A->A, B->B, mean cm error, in-task vs
+                                           #    out-of-task, per model, vs. shuffled floor.
+                                           #    Folds in supp_position_with_task -- see note.
+      - cross_env_position_decoding       # b: A->B and B->A (see Open Question), per model,
+                                           #    vs. shuffled floor
+    caption: captions/position_decoding.md
+    status: done  # built and checked 2026-10-05. All three models' bioreal-percentage
+                  # slices built (IM/PDM vs. balance, arousal_mediated vs. holdover --
+                  # see the figure module's own docstring for why the x-axis differs).
+                  # supp_position_with_task folded into panel a per 2026-09-23 decision,
+                  # not built separately. B->A direction is an open question (decoder
+                  # currently has no B->A output). 2026-10-02: R^2 dropped from this
+                  # figure entirely (and from the whole pipeline) -- mean cm error only.
+
+  - id: task_decoding_by_balance
+    kind: main
+    width: single
+    inputs:
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926, arousal_mediated_sweep_092926]
+    panels:
+      - within_env_task_decoding_by_balance
+      - cross_env_task_decoding_by_balance
+    caption: captions/task_decoding_by_balance.md
+    status: done  # built and checked 2026-10-05. Task-stage decoding accuracy at bioreal's
+                  # percentages (20% place cells, 40% task-responsive cells), per model,
+                  # across the swept axis (task weight/balance for IM/PDM). 2026-10-05
+                  # (later same day): the earlier bar-chart version of this figure
+                  # (manifest id `task_decoding`, aggregated across the full swept range
+                  # per model) was deleted entirely -- the aggregation it did wasn't legible
+                  # on its own ("the aggregation is not clear at all"); this line-chart
+                  # version, which shows the actual values instead of folding them into one
+                  # aggregate number, replaces it as the only task-stage-decoding-at-bioreal
+                  # figure. arousal_mediated has no balance parameter, so its row shows the
+                  # single real grid point at holdover=100% (bioreal's own value) instead of
+                  # a line or an aggregate across holdover -- see the figure module's
+                  # docstring; no axis of this pipeline aggregates across arousal_mediated's
+                  # holdover anywhere anymore. 2026-10-23: collapsed from a 3-model x
+                  # 2-direction grid (6 subplots, 2 of them a single floating ADM point in an
+                  # otherwise-empty axes) down to 2 panels -- all 3 models overlaid per
+                  # direction, ADM drawn as a horizontal mean+CI band -- and the shared
+                  # y-axis now starts at 0 instead of the data-driven ~0.17-0.2.
+
+  - id: mechanism
+    kind: main
+    width: single
+    inputs:
+      sim: [bioreal-independent, bioreal-place_dependent, bioreal-arousal_mediated]
+    panels:
+      - single_cell_firing_A_vs_B   # one task-responsive place cell per model: firing in
+                                     # A vs B, task vs non-task, same trial phase
+      # stability-metric panel deliberately not planned yet -- 2026-09-23 decision: traces
+      # first, add the toggleable correlation-of-trial-averaged-response metric later if
+      # the traces alone don't make the point.
+    caption: captions/mechanism.md
+    status: done  # built and checked 2026-09-23. Not ported from figures.ipynb cells
+                  # 38-39 -- those build a different figure (a single real trajectory
+                  # crossing one field, IM/PDM only, no A-vs-B comparison), which doesn't
+                  # match this figure's actual spec. Built fresh: trial-averaged firing
+                  # rate around CS onset, env A vs env B, per model. Result: IM's A/B
+                  # traces overlay closely; PDM/ADM diverge sharply -- matches the
+                  # manuscript's claim directly.
+
+  - id: robustness
+    kind: supplementary  # 2026-09-23 decision
+    width: double
+    inputs:
+      # IM/PDM: percent_task_in_response x percent_task_responsive_cells x
+      # percent_place_cells, holdover fixed at 1.0 (2026-09-23 decision).
+      # arousal_mediated: no percent_task_in_response axis at all -- the model
+      # ignores that parameter (see CLAUDE.md) -- so its grid is necessarily
+      # percent_task_responsive_cells x holdover x percent_place_cells instead.
+      # A real modeling asymmetry, not a data gap; see 2026-09-25 chat.
+      # 2026-10-02: place_dependent/arousal_mediated on their _092926 tags
+      # (post velocity-gain-fix); 2026-10-03: independent_sweep_092926
+      # finished (216/216) and replaces independent_sweep_080726 here too --
+      # see robustness.py's module docstring for the three-sweep policy.
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926, arousal_mediated_sweep_092926]
+    panels:
+      - cross_env_decoding_over_grid   # one 3D surface grid per model (ported verbatim --
+                                        # camera, colors, z-scale -- from
+                                        # scripts/pull_and_plot_holdover_sweep.py's
+                                        # plot_metric_surface_facets, the same function
+                                        # webui/sweep_plots.py reuses), over that model's own
+                                        # swept params (axes differ for arousal_mediated)
+      - above_chance_fraction_summary  # fraction of each model's grid where the real
+                                        # direction's CI (mean +/- 95% across iterations)
+                                        # doesn't overlap its shuffled floor's CI -- printed
+                                        # as each row's subtitle, not yet a separate panel.
+                                        # Empirical-benchmark comparison (ref 19) not drawn --
+                                        # that value is still an open question.
+    caption: captions/robustness.md
+    status: done  # built and checked 2026-09-25. decoding_task_heatmap_independent/
+                  # _place_dependent (built 2026-09-23, not in this manifest) covered
+                  # 2 of 3 models informally; this is the real version, all 3 models,
+                  # plus the above-chance fraction summary. Benchmark contour still
+                  # pending ref 19's value.
+
+  - id: robustness_3d
+    kind: supplementary
+    width: double
+    inputs:
+      # Same grids/axes/tags as robustness -- see that entry's own note.
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926, arousal_mediated_sweep_092926]
+    panels:
+      - cross_env_decoding_over_grid_3d
+    caption: captions/robustness_3d.md
+    status: done  # built and checked 2026-09-29 -- the 3D-surface counterpart to
+                  # robustness.py's 2D heatmaps, same shared color/z-scale fix
+                  # (metric_range across all 3 models) applied to the 3D
+                  # rendering instead of replacing it with heatmaps. 2026-10-02:
+                  # z-axis label shortened to "Accuracy" (was colliding with
+                  # neighboring param labels) -- full description moved to the
+                  # colorbar and each block's title.
+
+  - id: task_decoding_within
+    kind: supplementary
+    width: double
+    inputs:
+      # Same grids/axes/tags/policy as robustness -- direction A->A instead of A->B.
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926, arousal_mediated_sweep_092926]
+    panels:
+      - within_env_decoding_over_grid
+    caption: captions/task_decoding_within.md
+    status: done  # built and checked 2026-10-05 (request: "show A->A task decoding
+                  # for each model in the same 3-d and 2-d views" as the existing A->B
+                  # pair). 2D-heatmap version, direction=A->A -- see robustness.py for
+                  # the shared panel code/layout this reuses verbatim.
+
+  - id: task_decoding_within_3d
+    kind: supplementary
+    width: double
+    inputs:
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926, arousal_mediated_sweep_092926]
+    panels:
+      - within_env_decoding_over_grid_3d
+    caption: captions/task_decoding_within_3d.md
+    status: done  # built and checked 2026-10-05 -- the 3D-surface counterpart to
+                  # task_decoding_within, same relationship robustness_3d has to
+                  # robustness.
+
+  - id: place_robustness_3d_within
+    kind: supplementary
+    width: double
+    inputs:
+      # 2026-10-03: independent now reads independent_sweep_092926 (not
+      # independent_sweep_080726, which predates the place cm in/out-of-task
+      # split this figure needs and could only ever render a placeholder).
+      # independent_sweep_092926 finished the same day (216/216 combos),
+      # matching place_dependent/arousal_mediated -- partial_sweep_note stays
+      # in place as a safety net for any future in-flight tag.
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926, arousal_mediated_sweep_092926]
+    panels:
+      - within_env_place_decoding_over_grid_3d
+    caption: captions/place_robustness_3d_within.md
+    status: done  # built and checked 2026-10-03. Position decoding error in cm,
+                  # lower = better (R^2 dropped from this whole pipeline per
+                  # 2026-10-02 instruction -- see the figure module's own docstring),
+                  # A->A, out-of-task only. Adds a translucent reference plane at
+                  # the mean shuffled cm error, a reversed colormap so low error
+                  # reads as "good", and a black ring around grid points whose CI
+                  # clears that shuffled floor on the lower-is-better side
+                  # (above_chance_fraction's rule, applied per-point). All three
+                  # models' sweeps are now complete (216/216 as of 2026-10-03). In-task
+                  # version built for review as place_robustness_3d_within_in_task.py
+                  # but not added here yet.
+
+  - id: place_robustness_3d_cross
+    kind: supplementary
+    width: double
+    inputs:
+      # Same policy as place_robustness_3d_within -- all three sweeps complete.
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926, arousal_mediated_sweep_092926]
+    panels:
+      - cross_env_place_decoding_over_grid_3d
+    caption: captions/place_robustness_3d_cross.md
+    status: done  # built and checked 2026-10-03, same notes as place_robustness_3d_within
+                  # but A->B. In-task version built for review as
+                  # place_robustness_3d_cross_in_task.py but not added here yet.
+
+  - id: place_robustness
+    kind: supplementary
+    width: double
+    inputs:
+      # Same policy as place_robustness_3d_cross -- all three sweeps complete.
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926, arousal_mediated_sweep_092926]
+    panels:
+      - cross_env_place_decoding_over_grid
+    caption: captions/place_robustness.md
+    status: done  # built and checked 2026-10-04 (2026-10-04 request: "a figure similar
+                  # to S1 [robustness.py] for position decoding"). 2D-heatmap counterpart
+                  # to place_robustness_3d_cross -- same data/scale/policy, print-safe
+                  # exact-value version. Cross-environment (A->B), out-of-task only,
+                  # matching robustness.py's own one-direction scope (not a within+cross
+                  # pair like the 3D version) -- see the figure module's own docstring.
+
+  - id: place_robustness_in_task
+    kind: supplementary
+    width: double
+    inputs:
+      # Same policy as place_robustness -- all three sweeps complete.
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926, arousal_mediated_sweep_092926]
+    panels:
+      - cross_env_place_decoding_over_grid_in_task
+    caption: captions/place_robustness_in_task.md
+    status: done  # built and checked 2026-10-04 ("Do b" request: a 2D-heatmap in-task
+                  # counterpart to place_robustness, same place_cm_in_task kind the
+                  # review-only place_robustness_3d_*_in_task.py scripts use but never had
+                  # wired into the manifest. Same data/scale/policy, place_cm_in_task
+                  # instead of place_cm_out_of_task -- see the figure module's docstring.
+
+  - id: supp_place_pct
+    kind: supplementary
+    width: single
+    inputs:
+      # No dedicated percent_place_cells-only sweep exists -- built instead as a
+      # slice through these two matched 3-way grids (fixed at
+      # percent_task_responsive_cells=0.4, the two percent_task_in_response grid
+      # points nearest bioreal's still-provisional balance=0.5). 2026-10-02:
+      # place_dependent on its _092926 tag; 2026-10-03: independent_sweep_092926
+      # finished and replaces independent_sweep_080726 here too -- see
+      # robustness.py's module docstring for the three-sweep policy.
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926]
+    panels:
+      - task_decoding_over_place_pct_grid
+    caption: captions/supp_place_pct.md
+    status: done  # built and checked 2026-09-25, via the matched-grid slice above,
+                  # not a dedicated sweep (none exists). Revisit once bioreal's balance
+                  # is finally decided -- 0.4/0.6 are the closest available grid points,
+                  # not the real value.
+
+  - id: supp_place_pct_all_models
+    kind: supplementary
+    width: single
+    inputs:
+      # Same slice idea as supp_place_pct, extended to arousal_mediated so all
+      # three models sit on one shared set of axes (2026-09-29 request) --
+      # percent_place_cells is the only swept axis all three grids share.
+      # 2026-10-02: place_dependent/arousal_mediated on their _092926 tags;
+      # 2026-10-03: independent_sweep_092926 finished and replaces
+      # independent_sweep_080726 here too -- see robustness.py's module docstring.
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926, arousal_mediated_sweep_092926]
+    panels:
+      - task_decoding_over_place_pct_grid_all_models
+    caption: captions/supp_place_pct_all_models.md
+    status: done  # built and checked 2026-09-29. arousal_mediated has no task-weight
+                  # axis, so its slice (fixed at holdover=1.0) is identical in both
+                  # balance-facet panels -- a real modeling fact, noted in the caption.
+
+  - id: decoding_task_summary
+    kind: supplementary
+    width: double
+    inputs:
+      # 2026-10-02 three-sweep policy (see robustness.py's module docstring):
+      # place_dependent_sweep_092926, arousal_mediated_sweep_092926, and
+      # (as of 2026-10-03, replacing the pre-fix independent_sweep_080726
+      # used while independent's own re-run was still in flight)
+      # independent_sweep_092926, now finished (216/216) -- all three models
+      # are on their post velocity-gain-fix tags.
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926, arousal_mediated_sweep_092926]
+    panels:
+      - within_env_task_decoding_sweep
+      - cross_env_task_decoding_sweep
+    caption: captions/decoding_task_summary.md
+    status: done  # built 2026-10-03, all 3 models on complete post-fix sweeps.
+
+  - id: task_decoding_by_holdover
+    kind: supplementary
+    width: double
+    inputs:
+      # 2026-10-06: independent/place_dependent now have dedicated single-axis
+      # holdover sweeps at the bioreal fixed point (slurm/independent_holdover_sweep.sh,
+      # slurm/place_dependent_holdover_sweep.sh -- 11 values, 0.0-1.0 step 0.1), closing
+      # the gap task_decoding_by_balance.py's docstring notes (IM/PDM's own
+      # _092926 grid sweeps held holdover fixed at 1.0, so no IM/PDM holdover
+      # curve existed anywhere before this). arousal_mediated reuses its
+      # existing arousal_mediated_sweep_092926 grid, sliced at the same bioreal
+      # fixed point (6 values, 0.0-1.0 step 0.2) -- a coarser but real sweep of
+      # the same parameter, not an aggregate or a single point.
+      decoding: [independent_holdover_sweep_bioreal_100526, place_dependent_holdover_sweep_bioreal_100526,
+                 arousal_mediated_sweep_092926]
+    panels:
+      - cross_env_task_decoding_by_holdover
+    caption: captions/task_decoding_by_holdover.md
+    status: done  # built and checked 2026-10-06. All three models overlaid as lines (not
+                  # per-model rows like task_decoding_by_balance) since holdover is now a
+                  # real shared axis across all three -- see the figure module's own
+                  # docstring. Cross-environment only (2026-10-06 request): holdover is a
+                  # cross-environment carryover parameter, has no within-environment effect.
+
+  - id: decoding_place_summary
+    kind: supplementary
+    width: double
+    inputs:
+      # 2026-10-03: independent now reads independent_sweep_092926, which
+      # finished the same day (216/216 combos) -- replaces the earlier
+      # independent_sweep_080726, which predated this split entirely and
+      # rendered independent as fully unavailable.
+      decoding: [independent_sweep_092926, place_dependent_sweep_092926, arousal_mediated_sweep_092926]
+    panels:
+      - place_decoding_in_task_sweep
+      - place_decoding_out_of_task_sweep
+    caption: captions/decoding_place_summary.md
+    status: done  # built 2026-10-03, all 3 models on complete sweeps (216/216 each).
+                  # Mean position error in cm (lower = better), not R^2 -- see
+                  # the figure module's own docstring.

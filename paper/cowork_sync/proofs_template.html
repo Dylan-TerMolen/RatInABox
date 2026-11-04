@@ -1,0 +1,236 @@
+<title>d1 Figure Proofs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap">
+<style>
+:root {
+  --ground: #eef1f4;
+  --surface: #ffffff;
+  --paper: #ffffff;
+  --ink: #1b2430;
+  --muted: #5b6675;
+  --rule: #d5dbe2;
+  --accent: #2f5d8a;
+  --accent-soft: #e3ecf5;
+  --ok: #2e7d4f;   --ok-soft: #e2f1e8;
+  --warn: #9a620a; --warn-soft: #f7ecd9;
+  --crit: #b3261e; --crit-soft: #f8e1df;
+  --sheet-shadow: 0 1px 2px rgba(20, 30, 45, .10), 0 6px 18px rgba(20, 30, 45, .08);
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #12161b; --surface: #1b2129; --paper: #fbfbf9;
+    --ink: #e6ebf1; --muted: #9aa6b4; --rule: #2c3540;
+    --accent: #8ab8e6; --accent-soft: #1f3044;
+    --ok: #6cc38f; --ok-soft: #173325;
+    --warn: #e2a84c; --warn-soft: #3a2c14;
+    --crit: #ef7b72; --crit-soft: #3d1c1a;
+    --sheet-shadow: 0 1px 2px rgba(0,0,0,.5), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #12161b; --surface: #1b2129; --paper: #fbfbf9;
+  --ink: #e6ebf1; --muted: #9aa6b4; --rule: #2c3540;
+  --accent: #8ab8e6; --accent-soft: #1f3044;
+  --ok: #6cc38f; --ok-soft: #173325;
+  --warn: #e2a84c; --warn-soft: #3a2c14;
+  --crit: #ef7b72; --crit-soft: #3d1c1a;
+  --sheet-shadow: 0 1px 2px rgba(0,0,0,.5), 0 8px 24px rgba(0,0,0,.35);
+}
+* { box-sizing: border-box; }
+body { background: var(--ground); color: var(--ink); font: 14px/1.5 var(--sans); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; display: grid; gap: 28px; }
+header { display: grid; gap: 14px; }
+h1 { font: 600 30px/1.15 var(--serif); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+.sub { color: var(--muted); margin: 0; max-width: 70ch; }
+.summary { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 13px; }
+.summary b { font-weight: 600; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { font: 500 13px var(--sans); color: var(--muted); background: transparent; border: 0; padding: 7px 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.seg button:focus-visible, .index a:focus-visible, .fig-img:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.index { display: flex; flex-wrap: wrap; gap: 6px; }
+.index a { font: 500 12px var(--sans); color: var(--ink); text-decoration: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 10px 4px 8px; display: inline-flex; gap: 6px; align-items: center; }
+.index a:hover { border-color: var(--accent); }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.dot.match { background: var(--ok); } .dot.stale, .dot.missing { background: var(--warn); } .dot.none { background: var(--rule); }
+
+.fig { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 28px; align-items: start; padding-top: 28px; border-top: 1px solid var(--rule); scroll-margin-top: 16px; }
+.meta { display: grid; gap: 12px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+.label { font: 600 22px/1.2 var(--serif); margin: 0; }
+.fid { font: 13px var(--mono); color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 12px var(--sans); border-radius: 6px; padding: 2px 8px; border: 1px solid transparent; }
+.chip.done, .chip.match { color: var(--ok); background: var(--ok-soft); }
+.chip.partial, .chip.planned, .chip.stale, .chip.missing { color: var(--warn); background: var(--warn-soft); }
+.chip.kind { color: var(--muted); border-color: var(--rule); }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 13px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+.gauge { display: grid; gap: 4px; }
+.gauge-track { position: relative; height: 8px; border-radius: 4px; background: var(--rule); overflow: hidden; }
+.gauge-fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--ok); }
+.gauge-fill.over { background: var(--crit); }
+.gauge-limit { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+.gauge-text { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.gauge-text .over { color: var(--crit); font-weight: 600; }
+.panels { font: 12px/1.6 var(--mono); color: var(--muted); margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 2px 10px; }
+
+.stage { min-width: 0; }
+.sheet-wrap { container-type: inline-size; width: 100%; max-width: 560px; margin-inline: auto; }
+.sheet { width: 100%; aspect-ratio: 8.5 / 11; background: var(--paper); box-shadow: var(--sheet-shadow); padding: 11.765cqw; display: flex; flex-direction: column; overflow: hidden; }
+.box { border: 1px solid #7f7f7f; padding: .94cqw; display: flex; flex-direction: column; gap: 1.2cqw; }
+.box img { display: block; margin-inline: auto; height: auto; }
+.cap { font: 1.47cqw/1.35 Georgia, "Times New Roman", serif; color: #1b1b1b; margin: 0; }
+.cap b { font-weight: 700; }
+.cap mark { background: #fff200; font-style: italic; color: #1b1b1b; }
+.cap .draft { color: #595959; font-style: italic; }
+.placeholder { font: 1.47cqw/1.35 Georgia, serif; color: #595959; font-style: italic; padding: 1cqw; }
+.full { background: var(--paper); box-shadow: var(--sheet-shadow); border-radius: 4px; padding: 16px; overflow: auto; max-height: 85vh; }
+.full img { display: block; width: 100%; height: auto; }
+.full.natural img { width: auto; max-width: none; }
+.hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.fig-img { cursor: zoom-in; }
+.full.natural .fig-img { cursor: zoom-out; }
+
+.extras h2 { font: 600 20px var(--serif); margin: 0 0 4px; }
+.extra-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 14px; }
+.extra { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px; display: grid; gap: 8px; }
+.extra img { width: 100%; background: #fff; border-radius: 4px; }
+.extra p { margin: 0; font-size: 12px; color: var(--muted); }
+footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 16px; }
+footer code { font-family: var(--mono); }
+
+@media (max-width: 760px) {
+  .fig { grid-template-columns: 1fr; gap: 16px; }
+  .meta { position: static; }
+  h1 { font-size: 24px; }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>d1 Figure Proofs</h1>
+    <p class="sub">Every figure from the RatInABox <code>paper/</code> pipeline, in manuscript order, laid out as it appears in <i>d1 Figures.docx</i>. Each figure shows whether its image in the Word document is identical to the current build.</p>
+    <div class="summary" id="summary"></div>
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" id="view-page" aria-pressed="true">Word pages</button>
+        <button type="button" id="view-full" aria-pressed="false">Full width</button>
+      </div>
+      <nav class="index" id="index" aria-label="Figures"></nav>
+    </div>
+  </header>
+  <main id="figs"></main>
+  <section class="extras" id="extras"></section>
+  <footer id="footer"></footer>
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const WORD = { match: "Word doc matches", stale: "Word doc out of date", missing: "Not in Word doc" };
+const fmtTime = iso => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return isNaN(d) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+};
+
+let view = "page";
+try { view = localStorage.getItem("proofs-view") || "page"; } catch (e) {}
+
+function gauge(f) {
+  const max = Math.max(600, f.height_mm || 0);
+  const pct = Math.min(100, (f.height_mm / max) * 100);
+  const lim = (DATA.max_h_mm / max) * 100;
+  const over = f.height_mm > DATA.max_h_mm;
+  return `<div class="gauge" aria-label="Height at ${DATA.journal_w_mm} mm width">
+    <div class="gauge-track"><div class="gauge-fill ${over ? "over" : ""}" style="width:${pct}%"></div><div class="gauge-limit" style="left:${lim}%"></div></div>
+    <div class="gauge-text">${over ? `<span class="over">${f.height_mm} mm tall</span>` : `${f.height_mm} mm tall`} at ${DATA.journal_w_mm} mm wide · one-page limit ${DATA.max_h_mm} mm</div>
+  </div>`;
+}
+
+function sheet(f) {
+  const inner = f.src
+    ? `<img class="fig-img" src="${esc(f.src)}" alt="${esc(f.label)} (${esc(f.id)})" style="width:${(f.word_width_in / 6.34 * 100).toFixed(2)}%">
+       <p class="cap"><b>${esc(f.label)}.${f.title ? " " + esc(f.title) + "." : ""}</b> <mark>[Caption for ${esc(f.id)} — to be written]</mark>${f.status !== "done" ? ` <span class="draft">(draft — pipeline status: ${esc(f.status)})</span>` : ""}</p>`
+    : `<p class="placeholder"><b>${esc(f.label)}.${f.title ? " " + esc(f.title) + "." : ""}</b> ${esc(f.id)} — not built yet (status: ${esc(f.status)}).</p>`;
+  return `<div class="sheet-wrap"><div class="sheet"><div class="box">${inner}</div></div></div>`;
+}
+
+function full(f) {
+  if (!f.src) return `<div class="full"><p class="hint">Not built yet.</p></div>`;
+  return `<div class="full"><img class="fig-img" tabindex="0" src="${esc(f.src)}" alt="${esc(f.label)} (${esc(f.id)})"></div>
+          <p class="hint">Click the figure to switch between fit-to-width and full resolution (${f.px[0]} × ${f.px[1]} px).</p>`;
+}
+
+function render() {
+  const figs = DATA.figures;
+  const built = figs.filter(f => f.src);
+  const matches = built.filter(f => f.word === "match").length;
+  const main = figs.filter(f => f.kind === "main").length;
+  const tall = built.filter(f => f.height_mm > DATA.max_h_mm).length;
+  $("#summary").innerHTML = `
+    <span><b>${figs.length}</b> figures · ${main} main, ${figs.length - main} supplementary</span>
+    <span><span class="dot ${matches === built.length ? "match" : "stale"}" style="display:inline-block"></span> Word doc: <b>${matches} of ${built.length}</b> match the current build</span>
+    <span>${tall ? `<b style="color:var(--crit)">${tall}</b> too tall for one page` : "All fit on one page"}</span>`;
+  $("#index").innerHTML = figs.map(f =>
+    `<a href="#fig-${esc(f.id)}"><span class="dot ${f.src ? f.word : "none"}"></span>${esc(f.label.replace("Supplementary Figure", "Supp."))}</a>`).join("");
+
+  $("#figs").innerHTML = figs.map(f => `
+    <section class="fig" id="fig-${esc(f.id)}">
+      <div class="meta">
+        <div><h2 class="label">${esc(f.label)}</h2>${f.title ? `<div style="font-weight:500">${esc(f.title)}</div>` : ""}<div class="fid">${esc(f.id)}</div></div>
+        <div class="chips">
+          <span class="chip ${esc(f.status)}">${esc(f.status)}</span>
+          ${f.src ? `<span class="chip ${f.word}">${WORD[f.word]}</span>` : ""}
+          <span class="chip kind">${esc(f.kind)}</span>
+        </div>
+        ${f.src ? gauge(f) : ""}
+        <dl class="facts">
+          <dt>Rendered</dt><dd>${fmtTime(f.rendered_at)}</dd>
+          ${f.src ? `<dt>In Word</dt><dd>${f.word_width_in} in wide (${f.word_scale_pct}% of journal size)</dd>
+                     <dt>Source</dt><dd style="font-family:var(--mono);font-size:12px">build/${esc(f.src)}</dd>` : ""}
+        </dl>
+        ${f.panels.length ? `<ul class="panels" aria-label="Panels">${f.panels.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}
+      </div>
+      <div class="stage">${view === "page" ? sheet(f) : full(f)}</div>
+    </section>`).join("");
+
+  $("#extras").innerHTML = DATA.extras.length ? `
+    <h2>Reference and pending images</h2>
+    <p class="sub">Kept on the last pages of the Word document. Not part of the numbered figures.</p>
+    <div class="extra-grid">${DATA.extras.map(e => `
+      <div class="extra"><img src="${esc(e.src)}" alt="${esc(e.file)}">
+        <p>${e.kind === "reference" ? "Reference (source paper): " + esc(e.note) : "Pending regeneration → " + esc(e.target)}</p></div>`).join("")}
+    </div>` : "";
+  $("#footer").innerHTML = `Word document <code>Figures/d1 Figures.docx</code> last synced ${fmtTime(DATA.docx_synced_at)}. Page layout matches the Word document: US Letter, 1 in margins, figures capped at ${DATA.max_h_mm} mm tall so the caption fits on the same page.`;
+
+  $("#view-page").setAttribute("aria-pressed", view === "page");
+  $("#view-full").setAttribute("aria-pressed", view === "full");
+}
+
+document.addEventListener("click", e => {
+  const img = e.target.closest(".full .fig-img");
+  if (img) img.closest(".full").classList.toggle("natural");
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && e.target.matches(".full .fig-img")) e.target.closest(".full").classList.toggle("natural");
+});
+for (const [id, v] of [["view-page", "page"], ["view-full", "full"]]) {
+  document.getElementById(id).addEventListener("click", () => {
+    view = v;
+    try { localStorage.setItem("proofs-view", v); } catch (e) {}
+    render();
+  });
+}
+render();
+</script>

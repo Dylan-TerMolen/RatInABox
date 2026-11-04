@@ -1,0 +1,13 @@
+# Display titles for the figures doc and proofs page, keyed by manifest id.
+# Owned by Cowork (paper/cowork_sync). Shown as "Figure n. <Title>." before the caption.
+models: Model Responses
+robustness: Cross Environment Task Decoding 2D Visualization
+robustness_3d: Cross Environment Task Decoding 3D Visualization
+place_robustness_3d_within: Within Environment Position Decoding 3D Visualization
+place_robustness_3d_cross: Cross Environment Position Decoding 3D Visualization
+task_decoding_within: Within Environment Task Decoding 2D Visualization
+task_decoding_within_3d: Within Environment Task Decoding 3D Visualization
+# 2026-10-06: typed by Dylan directly in d1 Figures.docx, captured here so rebuilds keep them
+setup: Experiment Design
+position_decoding: In and out of task position decoding per model
+task_decoding_by_balance: Task decoding across task weight per model
