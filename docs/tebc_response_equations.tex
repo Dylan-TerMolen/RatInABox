@@ -260,28 +260,10 @@ be the neuron's own live velocity-modulated place rate:
 \noindent
 i.e. a place+task neuron's task response peaks at its own live place rate; a task-only
 neuron (no place field to scale off) instead uses a small fixed placeholder amplitude.
-Each profile $R_k(t; A)$ has the same functional form as in the independent model
-(Equations~\eqref{eq:type1}--\eqref{eq:type8}); the shape-construction magnitude
-parameters below are expressed as multiples of a unit baseline, matching the ratios
-the shape is built with before renormalization (\S4):
-
-\medskip
-\begin{center}
-\begin{tabular}{clll}
-    \hline
-    $k$ & Description & Shape magnitude ratios & Eq. \\
-    \hline
-    1 & Bimodal Gaussian         & $A_1 = 2.14$,\quad $A_2 = 5.71$                       & \eqref{eq:type1} \\
-    2 & One-sided Gaussian       & $A = 3.14$                                             & \eqref{eq:type2} \\
-    3 & Piecewise Linear Decay   & $d_1 = 0.33$,\quad $d_2 = 0.17$                       & \eqref{eq:type3} \\
-    4 & Ramp with Gaussian Burst & $A_{CS} = 0.40$,\quad $A_{US} = 1.10$                 & \eqref{eq:type4} \\
-    5 & Trapezoidal US Response  & $A_{US} = 3.14$                                        & \eqref{eq:type5} \\
-    6 & Noisy Uniform            & (unchanged --- not renormalized)                       & \eqref{eq:type6} \\
-    7 & Windowed Bimodal Gaussian& $A_1 = 1.67$,\quad $A_2 = 2.14$                       & \eqref{eq:type7} \\
-    8 & Post-CS Piecewise Decay  & steps at $0.46$,\; $0.62$,\; $0.38$                   & \eqref{eq:type8} \\
-    \hline
-\end{tabular}
-\end{center}
+Each profile $R_k(t; A)$ has the identical functional form used by the independent
+model (Equations~\eqref{eq:type1}--\eqref{eq:type8}, \S4) --- both models draw their
+raw shape functions and magnitude constants from the same \texttt{tebc\_response.py}
+module.
 
 \paragraph{Velocity modulation.}
 Identical to the independent model (same cubic polynomial $p(s)$ and the same
@@ -298,10 +280,12 @@ $\tfrac{0.02}{30}$ floor below the speed threshold):
 % ---------------------------------------------------------------------------
 \section{TEBC Response Profiles (Types 1--8)}
 
-The following profiles are shared by the independent and place-dependent models.
-Each type is built as a raw shape $S_k(t)$ using the magnitude constants given below
-(fitted assuming a unit baseline/amplitude of $1$), then \textbf{renormalized} to run
-from $0$ up to the neuron's actual peak amplitude $A_i$ (\S2/\S3):
+The following profiles are shared by the independent and place-dependent models ---
+both draw from the same \texttt{tebc\_response.py} module, so the raw shape functions
+and magnitude constants below are identical for both. Each type is built as a raw
+shape $S_k(t)$ using the magnitude constants given below (fitted assuming a unit
+baseline/amplitude of $1$), then \textbf{renormalized} to run from $0$ up to the
+neuron's actual peak amplitude $A_i$ (\S2/\S3):
 
 \begin{equation}\label{eq:normalize}
     R_k(t; A) = \frac{S_k(t) - \min_\tau S_k(\tau)}{\max_\tau S_k(\tau) - \min_\tau S_k(\tau)} \cdot A,
@@ -310,10 +294,15 @@ from $0$ up to the neuron's actual peak amplitude $A_i$ (\S2/\S3):
 
 \noindent
 \textbf{Type 6 is the one exception} --- it is \emph{not} renormalized; see
-\eqref{eq:type6}. The raw shapes $S_k(t)$ below use the magnitude constants exactly
-as coded (independent model's fixed defaults; place-dependent's ratios from the table
-in \S3), but only their \emph{relative} shape survives \eqref{eq:normalize} --- the
-absolute constants shown do not appear directly in the final firing rate.
+\eqref{eq:type6}. Only the \emph{relative} shape of $S_k(t)$ survives
+\eqref{eq:normalize} --- the absolute constants shown below (fitted at unit baseline)
+do not appear directly in the final firing rate.
+
+\paragraph{Inhibitory rebound.} Types 3, 4, and 8 dip \emph{below} baseline rather than
+above it. All three hold that suppression only until $t_{\mathrm{rebound}} = 1.5\,\text{s}$
+(\texttt{TRIAL\_PERIOD} in \texttt{tebc\_response.py}), then return to baseline for
+$t > t_{\mathrm{rebound}}$ --- a shared recovery timescale rather than each type
+picking its own cutoff.
 
 % ---------------------------------------------------------------------------
 \subsection*{Type 1 --- Bimodal Gaussian}
@@ -324,10 +313,8 @@ absolute constants shown do not appear directly in the final firing rate.
 \end{equation}
 
 \noindent
-Independent model constants: $A_1 = 0.15$, $\mu_1 = 0.3$, $\sigma_1 = 0.1$;
-$A_2 = 0.40$, $\mu_2 = 0.85$, $\sigma_2 = 0.1$; baseline $= 0.07$ (added into both
-Gaussian terms before normalizing). Place-dependent model uses $A_1=2.14$, $A_2=5.71$,
-same $\mu,\sigma$, baseline $=1.0$.
+Constants: $A_1 = 2.14$, $\mu_1 = 0.3$, $\sigma_1 = 0.1$; $A_2 = 5.71$, $\mu_2 = 0.85$,
+$\sigma_2 = 0.1$; baseline $= 1.0$ (added into both Gaussian terms before normalizing).
 
 % ---------------------------------------------------------------------------
 \subsection*{Type 2 --- One-sided Gaussian}
@@ -340,30 +327,27 @@ same $\mu,\sigma$, baseline $=1.0$.
 \end{equation}
 
 \noindent
-Independent: $A = 0.22$, $\mu = 0.75$, $\sigma = 0.15$, $b = 0.07$.
-Place-dependent: $A = 3.14$, same $\mu,\sigma$, $b = 1.0$.
+Constants: $A = 3.14$, $\mu = 0.75$, $\sigma = 0.15$, $b = 1.0$.
 
 % ---------------------------------------------------------------------------
 \subsection*{Type 3 --- Piecewise Linear Decay}
 
-Independent: $b = 0.06$, $d_1 = 0.02$, $d_2 = 0.01$.
-Place-dependent: $b = 1.0$, $d_1 = 0.33$, $d_2 = 0.17$.
+Constants: $b = 1.0$, $d_1 = 0.33$, $d_2 = 0.17$.
 
 \begin{equation}\label{eq:type3}
     S_3(t) = \begin{cases}
         b                                                              & t \leq 0            \\[4pt]
         \dfrac{d_1 - b}{0.2}\,t + b                                   & 0 < t < 0.2         \\[8pt]
         \dfrac{d_2 - d_1}{0.65}(t - 0.2) + d_1                      & 0.2 \leq t < 0.85   \\[6pt]
-        d_2                                                            & 0.85 \leq t \leq 3.85 \\[4pt]
-        b                                                              & t > 3.85
+        d_2                                                            & 0.85 \leq t \leq t_{\mathrm{rebound}} \\[4pt]
+        b                                                              & t > t_{\mathrm{rebound}}
     \end{cases}
 \end{equation}
 
 % ---------------------------------------------------------------------------
 \subsection*{Type 4 --- Linear Ramp with Gaussian Burst}
 
-Independent: $b = 0.075$, $A_{CS} = 0.03$, $A_{US} = 0.08$, $\sigma_{US} = 0.2$.
-Place-dependent: $b = 1.0$, $A_{CS} = 0.40$, $A_{US} = 1.10$, $\sigma_{US} = 0.2$.
+Constants: $b = 1.0$, $A_{CS} = 0.40$, $A_{US} = 1.10$, $\sigma_{US} = 0.2$.
 Define the unclamped response:
 
 \begin{equation}
@@ -371,8 +355,8 @@ Define the unclamped response:
         b                                                                                     & t \leq 0.05          \\[4pt]
         \dfrac{A_{CS} - b}{0.73}(t - 0.05) + b                                              & 0.05 < t \leq 0.78   \\[8pt]
         A_{US}\exp\!\left(-\dfrac{(t - 0.78)^2}{5\,\sigma_{US}^5}\right) + b               & 0.78 < t \leq 1      \\[6pt]
-        A_{CS}                                                                               & 1 < t \leq 3         \\[4pt]
-        b                                                                                     & t > 3
+        A_{CS}                                                                               & 1 < t \leq t_{\mathrm{rebound}}         \\[4pt]
+        b                                                                                     & t > t_{\mathrm{rebound}}
     \end{cases}
 \end{equation}
 
@@ -394,7 +378,7 @@ The output is clamped to $[A_{CS},\, A_{US}]$ before normalizing:
 \end{equation}
 
 \noindent
-Independent: $b = 0.035$, $A_{US} = 0.11$. Place-dependent: $b = 1.0$, $A_{US} = 3.14$.
+Constants: $b = 1.0$, $A_{US} = 3.14$.
 
 % ---------------------------------------------------------------------------
 \subsection*{Type 6 --- Noisy Uniform (not renormalized)}
@@ -426,36 +410,37 @@ The raw shape is:
 \end{equation}
 
 \noindent
-Independent: $A_1 = 0.07$, $\mu_1 = 0.30$, $\sigma_1 = 0.08$, $D_1 = 0.25$;
-$A_2 = 0.09$, $\mu_2 = 0.80$, $\sigma_2 = 0.15$, $D_2 = 0.10$; $b = 0.042$.
-Place-dependent: $A_1 = 1.67$, $A_2 = 2.14$, same $\mu,\sigma,D$, $b = 1.0$.
+Constants: $A_1 = 1.67$, $\mu_1 = 0.30$, $\sigma_1 = 0.08$, $D_1 = 0.25$;
+$A_2 = 2.14$, $\mu_2 = 0.80$, $\sigma_2 = 0.15$, $D_2 = 0.10$; $b = 1.0$.
 
 % ---------------------------------------------------------------------------
 \subsection*{Type 8 --- Post-CS Piecewise Decay}
 
-Independent: $b = 0.065$, with fixed absolute steps $0.03$, $0.04$, $0.025$.
-Place-dependent: $b = 1.0$, with steps expressed as $0.46\,b$, $0.62\,b$, $0.38\,b$.
+Constants: $b = 1.0$.
 
 \begin{equation}\label{eq:type8}
     S_8(t) = \begin{cases}
         b                                                                        & t \leq 0.25              \\[4pt]
         s_1                                                                      & 0.25 < t \leq 0.252      \\[6pt]
         \dfrac{s_2 - b}{0.498}(t - 0.252) + b                                  & 0.252 < t < 0.75         \\[8pt]
-        \dfrac{s_3 - b}{0.75}(t - 0.75) + b                                    & 0.75 \leq t \leq 1.5     \\[6pt]
-        b                                                                        & t > 1.5
+        \dfrac{s_3 - b}{0.75}(t - 0.75) + b                                    & 0.75 \leq t \leq t_{\mathrm{rebound}}     \\[6pt]
+        b                                                                        & t > t_{\mathrm{rebound}}
     \end{cases}
 \end{equation}
 
 \noindent
-where $(s_1, s_2, s_3) = (0.03, 0.04, 0.025)$ for the independent model, and
-$(s_1,s_2,s_3) = (0.46b,\, 0.62b,\, 0.38b)$ for the place-dependent model.
+where $(s_1, s_2, s_3) = (0.46b,\, 0.62b,\, 0.38b)$.
 
 % ---------------------------------------------------------------------------
 \section{Arousal-Mediated Model}
 
 \textit{The task response is selected from one of 4 functions based on whether
 the rat is running and whether the cell is in a place field. Each of these functions
-depends solely on the time since CS onset and the neuron's own live place rate.}
+depends solely on the time since CS onset and the neuron's own live place rate.
+Modeled on Shan, Lubenov, Papadopoulou \& Siapas (2016), \emph{Spatial tuning and
+brain state account for dorsal hippocampal CA1 activity in a non-spatial learning
+task}, eLife 5:e14321 --- see \S5.2 for how each function maps to that paper's
+findings.}
 
 \bigskip\noindent
 There is no balance parameter and no place/task category split --- every neuron is a
@@ -503,53 +488,92 @@ place rate $r^{\mathrm{PC}}_i$:
         R_1\!\bigl(t,\, b_i\bigr) & \text{in field},\quad \text{running} \\[4pt]
         R_2\!\bigl(t,\, b_i\bigr) & \text{out of field},\quad \text{running} \\[4pt]
         R_3\!\bigl(t,\, b_i\bigr) & \text{in field},\quad \text{stopped} \\[4pt]
-        R_4\!\bigl(t,\, b_i\bigr) & \text{out of field},\quad \text{stopped}
+        R_4\!\bigl(t,\, \rho\bigr) & \text{out of field},\quad \text{stopped}
     \end{cases}
 \end{equation}
 
 \noindent
 where $b_i = \tilde{r}^{\mathrm{place}}_i(t)$ is the velocity-modulated place rate
-used as the baseline for all magnitude expressions.
+used as the baseline for $R_1$--$R_3$, and $\rho = f_{\max}/30$ (the population's
+peak per-frame rate, \emph{not} the individual neuron's own place rate) is the scale
+$R_4$ draws its ripple-driven bursts from --- see \S5, $R_4$.
+
+\subsection*{Fidelity to Shan et al. (2016)}
+
+$R_1$--$R_4$ are shaped directly off the published PSTHs in Fig.\ 3A (running) and
+3B (sitting) --- pixel heights measured off the figure itself, not just the text ---
+subject to one deliberate exclusion:
+
+\begin{itemize}
+    \item \textbf{The narrow dip exactly at US onset, visible in every Fig.\ 3 panel,
+    is not modeled.} The paper excludes the 10\,ms US delivery window from spike
+    analysis (``electrical artifacts prevent spike detection during the US delivery
+    window'') --- that dip is the blanked window, not a biological response, and it is
+    specific to extracellular electrophysiology. Simulated calcium-imaging data has no
+    equivalent electrical-saturation artifact, so none of the functions below reproduce
+    it. The genuine upticks visible on \emph{both sides} of that dip in the same panels
+    are kept.
+\end{itemize}
 
 \paragraph{Response functions.}
+Let $b = \tilde{r}^{\mathrm{place}}_i(t)$ (the neuron's own live, velocity-modulated
+place rate, i.e. the value passed in as $R_1$--$R_3$'s baseline argument), $\rho =
+f_{\max}/30$ ($R_4$'s ripple-scale argument), and $t_{\mathrm{rebound}} =
+1.5\,\text{s}$, matching the \texttt{TRIAL\_PERIOD} convention in \S4. $\mathcal{G}(t;
+\mu, A, \sigma) = A \exp\!\left(-\frac{(t-\mu)^2}{2\sigma^2}\right)$ denotes a Gaussian
+bump of peak $A$ centred at $\mu$.
 
 \medskip\noindent
-\textbf{$R_1$ --- In field, running.} Elevated through the CS and trace interval
-(the hippocampal ``bridging'' signature expected of a trace-conditioned cell), then
-peaks more strongly during the US pulse itself before returning to baseline:
+\textbf{$R_1$ --- In field, running (Fig.\ 3A top):} flat through CS and trace ---
+``CS-evoked changes in firing rate are absent when the animal is running'' --- with a
+small genuine uptick shortly after the US pulse ends:
 \begin{equation}
     R_1(t, b) = \begin{cases}
-        1.3\,b  & t < t_{US}                        \\[4pt]
-        1.5\,b  & t_{US} \leq t < t_{US} + d_{US}    \\[4pt]
-        b       & t \geq t_{US} + d_{US}
+        0 & t < t_{US} + d_{US} \\[4pt]
+        \mathcal{G}(t;\; t_{US}+d_{US}+0.05,\; 0.15\,b,\; 0.08) & t \geq t_{US} + d_{US}
     \end{cases}
 \end{equation}
 
 \medskip\noindent
-\textbf{$R_2$ --- Out of field, running:} a slight, sustained increase through the
-CS, trace interval, and US pulse:
+\textbf{$R_2$ --- Out of field, running (Fig.\ 3A bottom):} no visible modulation at
+all --- running abolishes the effect regardless of place-field membership:
 \begin{equation}
-    R_2(t, b) = \begin{cases}
-        1.1\,b  & t < t_{US} + d_{US}   \\[4pt]
-        b       & t \geq t_{US} + d_{US}
+    R_2(t, b) = 0
+\end{equation}
+
+\medskip\noindent
+\textbf{$R_3$ --- In field, stopped: arousal-mediated resumption of
+place-specific firing (Fig.\ 3B top).} A rise starting at CS onset to $\tfrac{8}{3}b$,
+a slow decline through the trace interval down to $2b$, a sharp spike to $5b$ over the
+US pulse, then a slow linear decay back down to baseline by $t=1.4\,\text{s}$. Levels
+are calibrated so $b \approx 3\,\text{Hz}$ (Fig.\ 3B's own pre-trial rate for an
+in-field sitting cell) reproduces that panel's $3 \to 8 \to 6 \to 15 \to 3\,\text{Hz}$
+trajectory directly, using linear ramps between each landmark
+($\mathrm{Ramp}(t; t_0, t_1, y_0, y_1)$ interpolates linearly from $y_0$ at $t_0$ to
+$y_1$ at $t_1$, clamped to $y_0$/$y_1$ outside that range):
+\begin{equation}\label{eq:arousal-r3}
+    R_3(t, b) = \Bigl[\mathrm{Ramp}\bigl(t;\; \cdot\bigr) - 1\Bigr] \, b, \qquad
+    \mathrm{Ramp}(t; \cdot) = \begin{cases}
+        \mathrm{Ramp}(t;\, 0,\, 0.25,\, 1,\, \tfrac{8}{3}) & t < 0.25 \\[4pt]
+        \mathrm{Ramp}(t;\, 0.25,\, 0.75,\, \tfrac{8}{3},\, 2) & 0.25 \leq t < 0.75 \\[4pt]
+        \mathrm{Ramp}(t;\, 0.75,\, 0.85,\, 2,\, 5) & 0.75 \leq t < 0.85 \\[4pt]
+        \mathrm{Ramp}(t;\, 0.85,\, 1.4,\, 5,\, 1) & 0.85 \leq t < 1.4 \\[4pt]
+        1 & t \geq 1.4
     \end{cases}
 \end{equation}
 
 \medskip\noindent
-\textbf{$R_3$ --- In field, stopped:}
+\textbf{$R_4$ --- Out of field, stopped: sharp-wave-ripple-driven spurious firing
+(Fig.\ 3B bottom / Fig.\ 4).} Ripples are intermittent --- detected in roughly half of
+pre-trial sitting periods (Fig.\ 4A) --- and ``abruptly cease following the CS onset.''
+Firing stays quiet through most of the trial except for a short, genuine uptick right
+at the US, before ripples can resume past $t_{\mathrm{rebound}}$:
 \begin{equation}
-    R_3(t, b) = \begin{cases}
-        1.5\,b                                                               & t < t_{CS}              \\[6pt]
-        b\!\left(1 + 0.5\,\dfrac{t_{US} - t}{t_{US} - t_{CS}}\right)       & t_{CS} \leq t < t_{US}  \\[8pt]
-        3\,b                                                                 & t_{US} \leq t < t_{US} + d_{US} \\[4pt]
-        b                                                                    & t \geq t_{US} + d_{US}
+    R_4(t, \rho) = \begin{cases}
+        \mathcal{G}(t;\, 0.77,\, \rho,\, 0.03) & 0 \leq t \leq t_{\mathrm{rebound}} \\[4pt]
+        \mathrm{Uniform}(0,\, \rho) & \text{otherwise, with probability } 0.5 \\[4pt]
+        0                                          & \text{otherwise, with probability } 0.5
     \end{cases}
-\end{equation}
-
-\medskip\noindent
-\textbf{$R_4$ --- Out of field, stopped:}
-\begin{equation}
-    R_4(t, b) = b + \varepsilon_4, \qquad \varepsilon_4 \sim \mathrm{Uniform}(-0.2\,b,\; 0.2\,b)
 \end{equation}
 
 \end{document}

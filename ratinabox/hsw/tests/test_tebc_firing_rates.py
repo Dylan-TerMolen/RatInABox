@@ -12,7 +12,7 @@ Design:
     exactly `max_fr` (12) by construction -- no need to trust or re-derive
     RatInABox's Gaussian/geodesic place-field math for that checkpoint.
   - The real `response_profiles` are numerically renormalized over a 1000-point
-    grid (see `_normalized` in `tebc_response2.py`), so they have no closed form
+    grid (see `_normalized` in `tebc_response.py`), so they have no closed form
     to check by hand. We substitute a trivial stand-in response shape instead:
     full amplitude during the CS window, half amplitude during the US window,
     zero otherwise. This still exercises the real `_task_amplitudes` (the part

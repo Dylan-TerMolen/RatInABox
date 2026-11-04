@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from . import config, db
-from .routers import scripts, jobs, status, sync, results
+from .routers import scripts, jobs, status, sync, results, explorer
 
 WEBUI_DIR = Path(__file__).resolve().parent
 
@@ -35,6 +35,7 @@ app.include_router(jobs.router)
 app.include_router(status.router)
 app.include_router(sync.router)
 app.include_router(results.router)
+app.include_router(explorer.router)
 
 
 @app.on_event("startup")

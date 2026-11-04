@@ -1,5 +1,7 @@
 import argparse
 
+from ratinabox.hsw.tebc_response import DEFAULT_TASK_TYPES
+
 # CEBRA hyperparameters exposed to the CLI. Each maps to a CEBRA constructor kwarg
 # (the 'cebra_' prefix stripped) and defaults to None so an unset value falls back
 # to the decoder's tuned default rather than overriding it.
@@ -82,7 +84,9 @@ def _add_arguments(parser):
                              'carry over as many of A\'s task-responsive cells as fit.')
     parser.add_argument('--task_types', type=str, default=None,
                         help='Comma-separated subset of tEBC response types to use, e.g. "1,2,7,8". '
-                             'Default: all types at their empirical prevalence. '
+                             f'Default: {",".join(map(str, DEFAULT_TASK_TYPES))} (each at its empirical '
+                             'prevalence, renormalized to sum to 1). Pass all 8 explicitly '
+                             '("1,2,3,4,5,6,7,8") to sample from every type instead. '
                              'Has no effect for --model_type arousal_mediated: that model selects '
                              'its response function from in-field/running state, not cell_types.')
     parser.add_argument('--decode_position', type=lambda x: x.lower() != 'false', default=True,
@@ -194,6 +198,8 @@ def _set_defaults(args):
 
     if args.task_types is not None:
         args.task_types = [int(t) for t in str(args.task_types).split(',')]
+    else:
+        args.task_types = list(DEFAULT_TASK_TYPES)
 
 
 def parse():

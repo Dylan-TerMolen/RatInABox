@@ -16,7 +16,7 @@ be checked unambiguously.
 import numpy as np
 import pytest
 
-from ratinabox.hsw.independent_model.assign_tebc_types_and_responsiveness import holdover_task_responsiveness
+from ratinabox.hsw.tebc_response import holdover_task_responsiveness
 
 N = 100
 

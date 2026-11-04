@@ -53,7 +53,7 @@ def position_data_pair():
 def test_simulate_experiment_runs_full_data_path(model_type, holdover, position_data_pair):
     position_data_envA, position_data_envB = position_data_pair
 
-    spikesA, firingrate_envA, agentA, spikesB, firingrate_envB, agentB = simulate_experiment(
+    spikesA, firingrate_envA, agentA, modelA, spikesB, firingrate_envB, agentB, modelB = simulate_experiment(
         model_type, position_data_envA, position_data_envB, NUM_NEURONS,
         percent_task_in_response_value=0.5, percent_task_in_response_dist="fixed", percent_task_in_response_std=0.1,
         percent_task_responsive_cells_val=0.5, percent_is_task_responsive_distribution="fixed", percent_place_cell=0.5,

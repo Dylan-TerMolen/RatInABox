@@ -1,7 +1,7 @@
 import numpy as np
 
 from ratinabox.hsw.combined_place_tebc import CombinedPlaceTebc
-from ratinabox.hsw.independent_model.tebc_response2 import response_profiles as RESPONSE_PROFILES
+from ratinabox.hsw.tebc_response import response_profiles as RESPONSE_PROFILES
 
 
 class TEBC(CombinedPlaceTebc):

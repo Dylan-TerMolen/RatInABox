@@ -93,3 +93,27 @@ canvas#chart { width: 100%; height: 360px; background: #0b0d12; border: 1px soli
 .segmented label + label { border-left: 1px solid var(--border); }
 .segmented label.active { background: var(--accent); color: #0b0d12; font-weight: 600; }
 .segmented input { display: none; }
+
+#field-canvas { display: block; background: #0b0d12; border: 1px solid var(--border); border-radius: 6px; cursor: grab; touch-action: none; }
+#field-canvas:active { cursor: grabbing; }
+.explorer-readouts { font-size: 0.85rem; margin: 0.75rem 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.explorer-readouts strong { float: right; }
+/* Keep in sync with explorer.js's PLACE_COMPONENT_COLOR/TASK_COMPONENT_COLOR/TOTAL_LINE_COLOR. */
+.legend-swatch { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 2px; vertical-align: middle; }
+.legend-swatch--place { background: rgba(88, 156, 230, 0.7); }
+.legend-swatch--task { background: rgba(240, 146, 96, 0.7); }
+.legend-swatch--total { background: none; border-bottom: 2px solid var(--text); width: 0.9em; height: 0; }
+.explorer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+.explorer-type-panel { background: #0b0d12; border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem; }
+.explorer-type-panel.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.explorer-type-panel h4 { margin: 0 0 0.4rem; font-size: 0.85rem; color: var(--text); }
+.explorer-type-panel canvas { display: block; width: 100%; height: auto; }
+
+.compact-card { padding: 0.6rem 1.25rem; }
+.category-row { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+.category-row h3 { margin: 0; font-size: 0.8rem; }
+.category-row form { margin: 0; }
+.category-row .help { margin: 0; max-width: 360px; }
+.explorer-main-row { align-items: flex-start; }
+.explorer-field-card { flex: 0 0 300px; }
+.explorer-responses-card { flex: 1 1 480px; min-width: 0; }

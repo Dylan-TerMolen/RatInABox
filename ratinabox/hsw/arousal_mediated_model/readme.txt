@@ -1,4 +1,14 @@
-
+STALE: this file describes an early design that used a balance parameter to blend
+place and tEBC responses per neuron. The current implementation (TEBC.py,
+tebc_response2.py) is exclusively additive -- every task-responsive neuron's firing is
+place_response + task_response, with no balance/blend parameter anywhere (no
+balance_distribution, no percent_task_in_response_* -- those apply only to the
+independent/place_dependent models, and args_parser.py's MODEL_REQUIRED_PARAMS for
+'arousal_mediated' is empty, so the CLI rejects them for this model). The response
+actually selected is a function of the animal's (in_field, running) state, not a
+per-neuron balance draw. Left below for historical context on the model's original
+motivation (transferring tEBC responses across environments while place responses
+remap) -- the "balance_distribution" mentions are no longer accurate.
 
 influence_learning:
 - place response changes from envA to envB

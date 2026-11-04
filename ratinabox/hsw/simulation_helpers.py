@@ -88,13 +88,18 @@ def write_iteration_results(results_filepath, identifier, fract_control_all, fra
 
 
 def write_run_header(summary_filepath, params):
-    """Write a one-time header listing every parameter passed to the job.
+    """Create this run's log and write its one-time parameter header.
 
     params: a mapping of parameter name to value (e.g. vars(args)). Parameters
     left unset (None) are omitted so the header reflects only what applies to
     this run.
+
+    Opens with "x" (exclusive create) rather than "a": summary_filepath is
+    supposed to be unique per run, so an existing file here means two runs
+    collided on the same path and would otherwise silently interleave their
+    results into one file instead of each getting their own.
     """
-    with open(summary_filepath, "a") as f:
+    with open(summary_filepath, "x") as f:
         f.write("=== Run parameters ===\n")
         for key, value in params.items():
             if value is not None:

@@ -80,6 +80,10 @@ class TEBC(PlaceCells):
         task_firing_rates = np.zeros(self.n)
 
         running = current_velocity > 0.02
+        # Scale for type_two_response's noise and type_four_response's ripple-driven
+        # bursts: the population's peak per-frame rate, not this (out-of-field) cell's
+        # own near-zero local rate -- see tebc_response2.type_two_response/type_four_response.
+        ripple_scale = self.max_fr / 30
 
         for i in range(self.n):
             if not self.task_responsive_indices[i]:
@@ -90,11 +94,11 @@ class TEBC(PlaceCells):
             if in_field and running:
                 tebc_response = type_one_response(time_since_CS, self.firingrate[i])
             elif not in_field and running:
-                tebc_response = type_two_response(time_since_CS, self.firingrate[i])
+                tebc_response = type_two_response(time_since_CS, ripple_scale)
             elif in_field and not running:
                 tebc_response = type_three_response(time_since_CS, self.firingrate[i])
             else:
-                tebc_response = type_four_response(time_since_CS, self.firingrate[i])
+                tebc_response = type_four_response(time_since_CS, ripple_scale)
 
             task_firing_rates[i] = tebc_response
 

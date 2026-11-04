@@ -1,7 +1,7 @@
 import numpy as np
 
 from ratinabox.hsw import utils
-from ratinabox.hsw.independent_model.assign_tebc_types_and_responsiveness import assign_tebc_types_and_responsiveness, holdover_task_responsiveness
+from ratinabox.hsw.tebc_response import assign_tebc_types_and_responsiveness, holdover_task_responsiveness
 from ratinabox.hsw.independent_model.TEBC import TEBC as IndependentTEBC
 from ratinabox.hsw.place_dependent_model.TEBC import TEBC as PlaceDependentTEBC
 from ratinabox.hsw.arousal_mediated_model.TEBC import TEBC as ArousalMediatedTEBC
@@ -85,7 +85,10 @@ def simulate_experiment(model_type, position_data_envA, position_data_envB, num_
     This is the exact body main.py runs per grid combination -- main.py calls
     this function rather than duplicating it, so the two can never drift apart.
     Stops short of decoding: returns everything the CEBRA decoders are handed,
-    decoding itself excluded.
+    decoding itself excluded. modelA/modelB are also returned (unused by the
+    decoding path) so callers that need cell metadata -- field centres, widths,
+    task-responsive indices -- don't have to re-run the build_agent/build_model
+    steps themselves (see paper/produce/simulate.py).
     """
     percent_task_in_response_distribution = utils.get_distribution_values(percent_task_in_response_dist, [percent_task_in_response_value, percent_task_in_response_std], num_neurons) if percent_task_in_response_value is not None else None
     percent_task_responsive_cells_distribution = utils.get_distribution_values(percent_is_task_responsive_distribution, [percent_task_responsive_cells_val], num_neurons)
@@ -113,4 +116,4 @@ def simulate_experiment(model_type, position_data_envA, position_data_envB, num_
     modelB = build_model(model_type, agentB, num_neurons, percent_task_in_response_distribution_B, percent_task_responsive_cells_distribution, task_responsive_indices_B, percent_place_cell, cell_types, place_cell_width_envB)
     spikesB, firingrate_envB, agentB = simulate_agent(modelB, agentB)
 
-    return spikesA, firingrate_envA, agentA, spikesB, firingrate_envB, agentB
+    return spikesA, firingrate_envA, agentA, modelA, spikesB, firingrate_envB, agentB, modelB

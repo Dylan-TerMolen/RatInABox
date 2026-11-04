@@ -25,7 +25,30 @@ cebra_params = args_parser.cebra_overrides(args)
 save_directory = config.get_save_directory(model_name=args.model_type)
 config.setup_ratinabox_figure_directory(save_directory)
 
-current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+def _run_id():
+    """A per-process id to keep this run's log filename unique.
+
+    datetime.now() alone is second-resolution, so SLURM array tasks that start
+    within the same wall-clock second (common once a few GPUs free up together)
+    would otherwise compute an identical filename and, via write_run_header's
+    append-mode write, silently interleave their results into one file instead
+    of each getting their own -- that's exactly what happened in the
+    independent_holdover_sweep_bioreal_100526 run (5 of 11 holdover values'
+    results ended up merged into other tasks' logs). Prefer SLURM's own task
+    identifiers, since they're stable and human-readable in a job's output;
+    fall back to PID for local/non-SLURM runs.
+    """
+    array_job_id = os.environ.get("SLURM_ARRAY_JOB_ID")
+    array_task_id = os.environ.get("SLURM_ARRAY_TASK_ID")
+    if array_job_id and array_task_id is not None:
+        return f"{array_job_id}_{array_task_id}"
+    job_id = os.environ.get("SLURM_JOB_ID")
+    if job_id:
+        return job_id
+    return str(os.getpid())
+
+
+current_date = f"{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}-{_run_id()}"
 _experiment_prefix = f"{args.experiment}-" if args.experiment is not None else ""
 _percent_task_in_response_tag = f"-percent_task_in_response-{args.percent_task_in_response_values}-{args.percent_task_in_response_dist}-std-{args.percent_task_in_response_std}" if args.percent_task_in_response_values is not None else ""
 _task_types_tag = f"-tasktypes-[{'-'.join(map(str, args.task_types))}]" if args.task_types is not None else ""
@@ -60,7 +83,7 @@ for combo in itertools.product(*grid_values):
     holdover = params['holdovers']
     print(params)
     for i in range(args.num_iters):
-        spikesA, firingrate_envA, agentA, spikesB, firingrate_envB, agentB = simulate_experiment(
+        spikesA, firingrate_envA, agentA, _modelA, spikesB, firingrate_envB, agentB, _modelB = simulate_experiment(
             args.model_type, position_data_envA, position_data_envB, num_neurons,
             percent_task_in_response_value, args.percent_task_in_response_dist, args.percent_task_in_response_std,
             percent_task_responsive_cells_val, args.percent_is_task_responsive_distribution, percent_place_cell,
