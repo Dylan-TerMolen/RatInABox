@@ -11,7 +11,7 @@ class TebcAgent(Agent):
         self.smoothed_velocities = self._calculate_smoothed_velocity(position_data, window_size)
         self._trial_markers = position_data[3, :]
         self._times = position_data[0, :]
-        self._last_cs_time = None
+        self._trial_onset_time = None
         self.position_data = position_data
 
     def _calculate_smoothed_velocity(self, position_data, window_size=30):
@@ -36,10 +36,13 @@ class TebcAgent(Agent):
     # Might need to call this on agent init / account for that case
     def update(self, dt=None, **kwargs):
         super().update(dt=dt, **kwargs)
+        was_in_trial = self.in_trial
         self._step_index += 1
 
-        if self._step_index < len(self._times) and self.cs_present:
-            self._last_cs_time = self.current_time
+        # Markers 1-10 are the 10 camera frames after tone onset, so a trial's first
+        # marked frame is the tone (t = 0) -- not the last frame marked 1-5.
+        if self._step_index < len(self._times) and self.in_trial and not was_in_trial:
+            self._trial_onset_time = self.current_time
 
     def follow_trajectory(self):
         for _ in range(len(self._times)):
@@ -55,22 +58,14 @@ class TebcAgent(Agent):
         return self._trial_markers[self._step_index]
 
     @property
-    def cs_present(self):
-        return 1 <= self.trial_marker <= 5
-
-    @property
-    def us_present(self):
-        return 6 <= self.trial_marker <= 10
-    
-    @property
     def in_trial(self):
-        return self.cs_present or self.us_present
+        return 1 <= self.trial_marker <= 10
 
     @property
     def time_since_cs(self):
-        if self._last_cs_time is None: return -1
+        if self._trial_onset_time is None: return -1
 
-        return self.current_time - self._last_cs_time
+        return self.current_time - self._trial_onset_time
 
     @property
     def current_time(self):

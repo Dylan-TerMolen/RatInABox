@@ -246,3 +246,27 @@ def test_balance_has_no_effect_outside_a_trial(no_jitter):
 
     assert model.firingrate[MIXED] == pytest.approx(place_fr[MIXED])
     assert model.firingrate[TASK_ONLY] == pytest.approx(BASELINE_FR)
+
+
+# Recorded trial shape (fixtures/rat*_pos.mat): pre-tone frames marked -1, then
+# frames 1..10 after tone onset, each frame spanning several 1/30 s steps.
+_STEPS_PER_FRAME = 4
+_REAL_TRIAL_MARKERS = np.array([0, 0, -1, -1] + [f for f in range(1, 11) for _ in range(_STEPS_PER_FRAME)] + [0, 0])
+
+
+def test_time_since_cs_counts_from_first_trial_frame():
+    """time_since_cs is real elapsed time since the trial's first marked frame (the
+    tone) on every in-trial step -- not reset on each frame marked 1-5."""
+    n_steps = len(_REAL_TRIAL_MARKERS)
+    times = np.arange(n_steps) / 30
+    position_data = np.vstack([times, np.full(n_steps, 0.4), np.full(n_steps, 0.4), _REAL_TRIAL_MARKERS])
+    env = build_rectangular_environment(np.array([[0.3, 0.3], [0.5, 0.5]]))
+    agent = TebcAgent(env, position_data)
+    agent.import_trajectory(times=times, positions=position_data[1:3].T, interpolate=False)
+    onset = np.flatnonzero(_REAL_TRIAL_MARKERS == 1)[0]
+
+    for step in range(1, n_steps - 1):
+        agent.update()
+        if _REAL_TRIAL_MARKERS[step] >= 1:
+            assert agent.time_since_cs == pytest.approx(times[step] - times[onset])
+    assert agent.time_since_cs == pytest.approx(times[n_steps - 2] - times[onset])  # keeps counting after the trial

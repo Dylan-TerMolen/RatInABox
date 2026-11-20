@@ -5,15 +5,15 @@ from ratinabox.hsw.environment_builder import build_rectangular_environment
 from ratinabox.hsw.tebc_agent import TebcAgent
 
 # Trajectory: walks a straight diagonal at a steady ~0.15 m/s. Trial markers
-# step through CS bins 1-5 (indices 2-6) then hold at a non-CS marker, so
-# time_since_cs is 0 exactly at the last CS-present sample (index 6) and grows
-# by 1/30s per step afterward.
+# step through frames 1-5 (indices 2-6) then hold at marker 6, so the trial
+# starts at index 2: time_since_cs is 0 at the first marked sample and grows by
+# 1/30s per step afterward.
 _TRAJECTORY_LEN = 40
 _WALK_SPEED = 0.15  # m/s
 
 # Step counts from the start of the trajectory to reach each checkpoint.
-CS_CHECK_STEPS = 6                        # time_since_cs == 0.0  (inside the CS window)
-US_CHECK_STEPS = 30                       # time_since_cs == 0.8  (inside the US window)
+CS_CHECK_STEPS = 2                        # time_since_cs == 0.0  (inside the CS window)
+US_CHECK_STEPS = 26                       # time_since_cs == 0.8  (inside the US window)
 STEPS_CS_TO_US = US_CHECK_STEPS - CS_CHECK_STEPS
 
 
