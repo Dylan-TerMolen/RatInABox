@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
-# One-shot setup for running the tEBC model sweeps on Quest. On a Quest login node:
+# One-shot setup for running the tEBC models on Quest.
 #
-#   mkdir -p ~/ratinabox && cp rat0313_pos.mat ~/ratinabox/
-#   bash <(curl -fsSL https://raw.githubusercontent.com/Dylan-TerMolen/RatInABox/main/hannah_setup.sh)
+#   1. ssh <netid>@quest.it.northwestern.edu
+#   2. git clone https://github.com/Dylan-TerMolen/RatInABox.git ~/ratinabox
+#   3. (from your laptop) scp rat0313_pos.mat <netid>@quest.it.northwestern.edu:~/ratinabox/
+#   4-5. cd ~/ratinabox && ./hannah_setup.sh
 #
-# Everything lives in ~/ratinabox: both repos, the Python venv, results and job logs. Runs the
-# test suite, then submits one 216-task sweep per model (independent, place_dependent,
-# arousal_mediated) with the same SLURM settings as Dylan's past Quest sweeps. Safe to re-run.
+# Installs everything inside this folder (Hannahs-CEBRAs, Python venv, results, job logs),
+# queues one independent-model test job with the bioreal parameters, then queues one 216-task
+# sweep per model that only starts if the test job succeeds. SLURM settings match Dylan's past
+# Quest sweeps.
 set -euo pipefail
 
-ROOT=$HOME/ratinabox
-REPO=$ROOT/RatInABox
+ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 CEBRAS=$ROOT/Hannahs-CEBRAs
 VENV=$ROOT/venv
 MATLAB_FILE=$ROOT/rat0313_pos.mat
@@ -33,7 +35,7 @@ find_python() {  # Quest's system python3 is too old; prefer miniconda's
 
 check_prerequisites() {
     command -v sbatch >/dev/null || die "sbatch not found -- run this on a Quest login node"
-    [ -f "$MATLAB_FILE" ] || die "copy rat0313_pos.mat to $MATLAB_FILE first"
+    [ -f "$MATLAB_FILE" ] || die "copy rat0313_pos.mat to $MATLAB_FILE first (step 3)"
 }
 
 ask_email() {
@@ -44,29 +46,25 @@ ask_email() {
     MAIL_USERS=$DYLAN_EMAIL${USER_EMAIL:+,$USER_EMAIL}
 }
 
-clone_or_pull() {  # $1 = GitHub repo name, $2 = destination
-    if [ -d "$2/.git" ]; then git -C "$2" pull -q --ff-only
-    else git clone -q "https://github.com/Dylan-TerMolen/$1.git" "$2"; fi
+clone_cebras() {
+    if [ -d "$CEBRAS/.git" ]; then git -C "$CEBRAS" pull -q --ff-only
+    else git clone -q https://github.com/Dylan-TerMolen/Hannahs-CEBRAs.git "$CEBRAS"; fi
 }
 
 install_python_env() {
+    echo "== Installing Python environment (first run takes a few minutes) =="
     [ -x "$VENV/bin/python" ] || "$(find_python)" -m venv "$VENV"
     "$VENV/bin/pip" install -q --upgrade pip
-    "$VENV/bin/pip" install -q -e "$CEBRAS" -e "$REPO" python-dotenv pytest
+    "$VENV/bin/pip" install -q -e "$CEBRAS" -e "$ROOT" python-dotenv
 }
 
 write_env_file() {
-    cat > "$REPO/ratinabox/hsw/.env" <<EOF
+    cat > "$ROOT/ratinabox/hsw/.env" <<EOF
 MATLAB_FILE_PATH=$MATLAB_FILE
 SAVE_DIRECTORY=$RESULTS
 TRAINING_DATA_DIR=$ROOT/training_data
 ENVIRONMENT="Slurm"
 EOF
-}
-
-run_tests() {
-    echo "== Running test suite =="
-    (cd "$REPO" && "$VENV/bin/python" -m pytest ratinabox/hsw/tests -q -p no:warnings)
 }
 
 sweep_axes() {  # $1 = model -> grid axes, fastest-varying first (matches the old slurm/*_sweep.sh)
@@ -76,73 +74,86 @@ sweep_axes() {  # $1 = model -> grid axes, fastest-varying first (matches the ol
     esac
 }
 
-write_sweep_job() {  # $1 = model -> path of the generated sbatch script
-    local model=$1 job=$JOBS/${1}_sweep_$TAG.sh
-    cat > "$job" <<EOF
-#!/bin/bash
-#SBATCH --account=p32472
-#SBATCH --partition=gengpu
-#SBATCH --gres=gpu:a100:1
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --array=0-215%4
-#SBATCH --mem=8GB
-#SBATCH --time=2:00:00
-#SBATCH --job-name=${model}_sweep
-#SBATCH --output=$LOGS/${model}_sweep.%A_%a.out
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=$MAIL_USERS
+write_job() {  # write_job <model> <experiment> <num_iters> <axes> <fixed params> -> path of the sbatch script
+    local model=$1 experiment=$2 num_iters=$3 axes=$4 fixed=$5 job=$JOBS/$2.sh
+    {
+        echo "#!/bin/bash"
+        echo "#SBATCH --account=p32472"
+        echo "#SBATCH --partition=gengpu"
+        echo "#SBATCH --gres=gpu:a100:1"
+        echo "#SBATCH --nodes=1"
+        echo "#SBATCH --ntasks=1"
+        echo "#SBATCH --mem=8GB"
+        echo "#SBATCH --time=2:00:00"
+        echo "#SBATCH --job-name=$experiment"
+        if [ -n "$axes" ]; then
+            echo "#SBATCH --array=0-215%4"
+            echo "#SBATCH --output=$LOGS/$experiment.%A_%a.out"
+        else
+            echo "#SBATCH --output=$LOGS/$experiment.%j.out"
+        fi
+        echo "#SBATCH --mail-type=ALL"
+        echo "#SBATCH --mail-user=$MAIL_USERS"
+        echo
+        echo "MODEL=$model EXPERIMENT=$experiment NUM_ITERS=$num_iters"
+        echo "$fixed"
+        echo "AXES=($axes)"
+        echo "PYTHON=$VENV/bin/python MAIN=$ROOT/ratinabox/hsw/main.py"
+        cat <<'EOF'
+GRID=(0.6 0.8 0.2 0.4 1.0 0.0)  # each swept axis takes these 6 values; 6^3 = 216 array tasks
 
-MODEL=$model
-EXPERIMENT=${model}_sweep_$TAG
-AXES=($(sweep_axes "$model"))
-PYTHON=$VENV/bin/python
-MAIN=$REPO/ratinabox/hsw/main.py
-EOF
-    cat >> "$job" <<'EOF'
-GRID=(0.6 0.8 0.2 0.4 1.0 0.0)  # 6^3 = 216 combinations, one per array task
-HOLDOVER=1.0 PTIR=""
-
-IDX=$SLURM_ARRAY_TASK_ID
+IDX=${SLURM_ARRAY_TASK_ID:-0}
 for axis in "${AXES[@]}"; do
     printf -v "$axis" '%s' "${GRID[$((IDX % ${#GRID[@]}))]}"
     IDX=$((IDX / ${#GRID[@]}))
 done
-echo "Task $SLURM_ARRAY_TASK_ID: model=$MODEL ptir=${PTIR:-n/a} responsive=$PTRC place=$PCS holdover=$HOLDOVER"
+echo "model=$MODEL ptir=${PTIR:-n/a} responsive=$PTRC place=$PCS holdover=$HOLDOVER iters=$NUM_ITERS"
 
 ARGS=(--model_type "$MODEL" --experiment "$EXPERIMENT"
       --percent_task_responsive_cells "$PTRC" --percent_is_task_responsive_distribution fixed
-      --percent_place_cells "$PCS" --holdovers "$HOLDOVER" --num_iters 3)
+      --percent_place_cells "$PCS" --holdovers "$HOLDOVER" --num_iters "$NUM_ITERS")
 [ -z "$PTIR" ] || ARGS+=(--percent_task_in_response_values "$PTIR" --percent_task_in_response_dist fixed)
 
 "$PYTHON" "$MAIN" "${ARGS[@]}"
 EOF
+    } > "$job"
     echo "$job"
+}
+
+write_test_job() {  # bioreal params (paper/params/bioreal.yaml); ptir/holdover there are still provisional
+    write_job independent "independent_bioreal_test_$TAG" 1 "" "PTIR=0.5 PTRC=0.4 PCS=0.2 HOLDOVER=1.0"
+}
+
+write_sweep_job() {  # $1 = model
+    write_job "$1" "${1}_sweep_$TAG" 3 "$(sweep_axes "$1")" 'PTIR="" HOLDOVER=1.0'
 }
 
 confirm_submit() {
     local answer=${SUBMIT:-}
-    [ -n "$answer" ] || { [ -t 0 ] && read -rp "Submit 3 sweeps x 216 tasks now? [y/N]: " answer; }
+    [ -n "$answer" ] || { [ -t 0 ] && read -rp "Submit the test job + 3 sweeps (sweeps wait for the test to pass)? [y/N]: " answer; }
     [[ $answer =~ ^[Yy] ]]
 }
 
-submit_sweeps() {
+submit_jobs() {
     mkdir -p "$JOBS" "$LOGS"
-    local jobs=() model job
-    for model in "${MODELS[@]}"; do jobs+=("$(write_sweep_job "$model")"); done
-    printf '== Generated ==\n'; printf '  %s\n' "${jobs[@]}"
+    local test_job sweeps=() model job test_id
+    test_job=$(write_test_job)
+    for model in "${MODELS[@]}"; do sweeps+=("$(write_sweep_job "$model")"); done
+    printf '== Generated ==\n'; printf '  %s\n' "$test_job" "${sweeps[@]}"
     confirm_submit || { echo "Not submitted. Submit later with: sbatch <script> for each file above."; return; }
-    for job in "${jobs[@]}"; do echo "  $(basename "$job"): job $(sbatch --parsable "$job")"; done
+    test_id=$(sbatch --parsable "$test_job")
+    echo "  test: job $test_id"
+    for job in "${sweeps[@]}"; do
+        echo "  $(basename "$job" .sh): job $(sbatch --parsable --dependency=afterok:"$test_id" "$job")"
+    done
     squeue -u "$USER"
+    echo "If the test job fails, the sweeps stay pending (DependencyNeverSatisfied): scancel them and check $LOGS/."
 }
 
 check_prerequisites
 ask_email
-mkdir -p "$ROOT"
-clone_or_pull RatInABox "$REPO"
-clone_or_pull Hannahs-CEBRAs "$CEBRAS"
+clone_cebras
 install_python_env
 write_env_file
-run_tests
-submit_sweeps
+submit_jobs
 echo "Job logs: $LOGS/   Results: $RESULTS/{model}_results/"
